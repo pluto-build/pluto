@@ -7,6 +7,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.sugarj.cleardep.stamp.Stamp;
+import org.sugarj.common.FileCommands;
+import org.sugarj.common.path.Path;
 import org.sugarj.common.path.RelativePath;
 
 public class BuildSchedule {
@@ -20,22 +22,22 @@ public class BuildSchedule {
 
   public static class Task {
 
-    Set<CompilationUnit> unitsToCompile;
+    Set<BuildUnit> unitsToCompile;
     Set<Task> requiredTasks;
     Set<Task> tasksRequiringMe;
     private TaskState state;
     private int id;
 
     protected Task() {
-      this(new HashSet<CompilationUnit>());
+      this(new HashSet<BuildUnit>());
     }
 
-    protected Task(CompilationUnit unit) {
+    protected Task(BuildUnit unit) {
       this();
       this.unitsToCompile.add(unit);
     }
     
-    protected Task(Set<CompilationUnit> units) {
+    protected Task(Set<BuildUnit> units) {
     	Objects.requireNonNull(units);
       this.unitsToCompile = units;
       this.requiredTasks = new HashSet<>();
@@ -45,7 +47,7 @@ public class BuildSchedule {
       maxID++;
     }
 
-    protected boolean containsUnits(CompilationUnit unit) {
+    protected boolean containsUnits(BuildUnit unit) {
       return this.unitsToCompile.contains(unit);
     }
 
@@ -53,7 +55,7 @@ public class BuildSchedule {
      * The task needs to be build iff one unit is not finished, not shallow consistent, or not consistent to interfaces.
      */
     public boolean needsToBeBuild(Map<RelativePath, Stamp> editedSourceFiles) {
-      for (CompilationUnit u : this.unitsToCompile) {
+      for (BuildUnit u : this.unitsToCompile) {
         if (!u.isFinished() || 
             !u.isConsistentShallow(editedSourceFiles)) {
           return true;
@@ -71,11 +73,11 @@ public class BuildSchedule {
       return this.state;
     }
 
-    public Set<CompilationUnit> getUnitsToCompile() {
+    public Set<BuildUnit> getUnitsToCompile() {
       return unitsToCompile;
     }
 
-    protected void addUnit(CompilationUnit unit) {
+    protected void addUnit(BuildUnit unit) {
       this.unitsToCompile.add(unit);
     }
 
@@ -111,9 +113,9 @@ public class BuildSchedule {
         reqs += dep.id + ",";
       }
       String s = "Task_" + id + "_(" + reqs + ")[";
-      for (CompilationUnit u : this.unitsToCompile)
-        for (RelativePath p : u.getSourceArtifacts())
-          s += p.getRelativePath() + ", ";
+      for (BuildUnit u : this.unitsToCompile)
+        for (Path p : u.getSourceArtifacts())
+          s += FileCommands.tryGetRelativePath(p) + ", ";
       s += "]";
       return s;
     }

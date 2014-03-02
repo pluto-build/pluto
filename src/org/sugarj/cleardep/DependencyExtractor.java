@@ -4,6 +4,6 @@ import java.util.Set;
 
 public interface DependencyExtractor {
   
-  public Set<CompilationUnit> extractDependencies(CompilationUnit unit);
+  public Set<BuildUnit> extractDependencies(BuildUnit unit);
 
 }

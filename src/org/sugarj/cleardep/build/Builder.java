@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 
-import org.sugarj.cleardep.CompilationUnit;
+import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.common.path.Path;
 
-public abstract class Builder<T extends Serializable, E extends CompilationUnit> {
+public abstract class Builder<T extends Serializable, E extends BuildUnit> {
   protected final BuildManager manager;
   protected final BuilderFactory<T, E, ? extends Builder<T,E>> sourceFactory;
   protected final T input;
@@ -50,24 +50,30 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
   
   protected <
   T_ extends Serializable, 
-  E_ extends CompilationUnit, 
+  E_ extends BuildUnit, 
   B_ extends Builder<T_,E_>,
   F_ extends BuilderFactory<T_, E_, B_>,
   SubT_ extends T_
   > E_ require(F_ factory, SubT_ input) throws IOException {
-    BuildRequirement<T_, E_, B_, F_> req = new BuildRequirement<T_, E_, B_, F_>(factory, input);
+    BuildRequest<T_, E_, B_, F_> req = new BuildRequest<T_, E_, B_, F_>(factory, input);
     E_ e = manager.require(req);
-    result.addModuleDependency(e);
+    result.requires(e);
     return e;
   }
   
   protected <
   T_ extends Serializable, 
-  E_ extends CompilationUnit,
+  E_ extends BuildUnit,
   B_ extends Builder<T_,E_>, 
-  F_ extends BuilderFactory<T_, E_, B_>> E_ require(BuildRequirement<T_, E_, B_, F_> req) throws IOException {
+  F_ extends BuilderFactory<T_, E_, B_>> E_ require(BuildRequest<T_, E_, B_, F_> req) throws IOException {
     E_ e = manager.require(req);
-    result.addModuleDependency(e);
+    result.requires(e);
     return e;
+  }
+  
+  protected void require(BuildRequest<?, ?, ?, ?>[] reqs) throws IOException {
+    if (reqs != null)
+      for (BuildRequest<?, ?, ?, ?> req : reqs)
+        require(req);
   }
 }

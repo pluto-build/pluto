@@ -2,13 +2,13 @@ package org.sugarj.cleardep.build;
 
 import java.io.Serializable;
 
-import org.sugarj.cleardep.CompilationUnit;
+import org.sugarj.cleardep.BuildUnit;
 
 import com.cedarsoftware.util.DeepEquals;
 
-public class BuildRequirement<
+public class BuildRequest<
   T extends Serializable, 
-  E extends CompilationUnit, 
+  E extends BuildUnit, 
   B extends Builder<T, E>,
   F extends BuilderFactory<T, E, B>
 > implements Serializable {
@@ -17,7 +17,7 @@ public class BuildRequirement<
   public final F factory;
   public final T input;
 
-  public BuildRequirement(F factory, T input) {
+  public BuildRequest(F factory, T input) {
     this.factory = factory;
     this.input = input;
   }
@@ -32,5 +32,10 @@ public class BuildRequirement<
   
   public int deepHashCode() {
     return DeepEquals.deepHashCode(this);
+  }
+  
+  @Override
+  public String toString() {
+    return "BuildReq(" + factory.getClass().getName() + ")";
   }
 }
