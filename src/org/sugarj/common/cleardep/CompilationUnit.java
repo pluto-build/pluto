@@ -60,7 +60,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	// Methods for initialization
 	// **************************
 
-	protected static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Map<RelativePath, Stamp> sourceFiles, Path dep) throws IOException {
+	protected static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Path dep) throws IOException {
 		E e = PersistableEntity.tryReadElseCreate(cl, stamper, dep);
 		e.init();
 		e.defaultStamper = stamper;
@@ -68,7 +68,6 @@ abstract public class CompilationUnit extends PersistableEntity {
 		e.syn = syn;
 		if (syn != null)
 			syn.markSynthesized(e);
-		e.addSourceArtifacts(sourceFiles);
 		
 		return e;
 	}
@@ -219,20 +218,15 @@ abstract public class CompilationUnit extends PersistableEntity {
 	// Methods for adding dependencies
 	// *******************************
 
-	protected void addSourceArtifact(RelativePath file) {
+	public void addSourceArtifact(RelativePath file) {
 		addSourceArtifact(file, defaultStamper.stampOf(file));
 	}
 
-	protected void addSourceArtifact(RelativePath file, Stamp stampOfFile) {
+	public void addSourceArtifact(RelativePath file, Stamp stampOfFile) {
 		sourceArtifacts.put(file, stampOfFile);
 	}
 	
-  protected void addSourceArtifacts(Map<RelativePath, Stamp> sourceFiles) {
-    for (Entry<RelativePath, Stamp> sourceFile : sourceFiles.entrySet())
-      addSourceArtifact(sourceFile.getKey(), sourceFile.getValue());
-  }
-
-	public void addExternalFileDependency(Path file) {
+  	public void addExternalFileDependency(Path file) {
 		addExternalFileDependency(file, defaultStamper.stampOf(file));
 	}
 

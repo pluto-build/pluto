@@ -28,8 +28,8 @@ public class SimpleCompilationUnit extends CompilationUnit {
     mode = (Mode<?>) ois.readObject();
   }
 
-  public static SimpleCompilationUnit create(Stamper stamper, SimpleMode mode, Synthesizer syn, Map<RelativePath, Stamp> sourceFiles, Path dep) throws IOException {
-    return CompilationUnit.create(SimpleCompilationUnit.class, stamper, mode, syn, sourceFiles, dep);
+  public static SimpleCompilationUnit create(Stamper stamper, SimpleMode mode, Synthesizer syn, Path dep) throws IOException {
+    return CompilationUnit.create(SimpleCompilationUnit.class, stamper, mode, syn, dep);
   }
   
   public static SimpleCompilationUnit read(Stamper stamper, SimpleMode mode, Path... deps) throws IOException {
