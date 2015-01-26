@@ -2,7 +2,7 @@ package org.sugarj.cleardep.stamp;
 
 import org.sugarj.common.path.Path;
 
-abstract public class SimpleStamp<T> implements Stamp {
+abstract public class SimpleStamp<T> implements Stamp, ModuleStamp {
 
   public static final long serialVersionUID = 100393450148269674L;
 

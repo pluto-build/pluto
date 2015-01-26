@@ -8,23 +8,24 @@ import org.sugarj.common.path.Path;
  * @author Sebastian Erdweg
  *
  */
-public class LastModifiedStamper implements Stamper {
+public class LastModifiedStamper implements Stamper, ModuleStamper {
 
   private LastModifiedStamper() {}
   public static final Stamper instance = new LastModifiedStamper();
+  public static final ModuleStamper minstance = new LastModifiedStamper();
   
   /**
    * @see org.sugarj.cleardep.stamp.Stamper#stampOf(org.sugarj.common.path.Path)
    */
   @Override
-  public Stamp stampOf(Path p) {
+  public LastModifiedStamp stampOf(Path p) {
     if (!FileCommands.exists(p))
       return new LastModifiedStamp(0l);
     
     return new LastModifiedStamp(p.getFile().lastModified());
   }
   
-  public Stamp stampOf(CompilationUnit m) {
+  public LastModifiedStamp stampOf(CompilationUnit m) {
     if (!m.isPersisted())
       throw new IllegalArgumentException("Cannot compute stamp of non-persisted compilation unit " + m);
 
@@ -43,10 +44,20 @@ public class LastModifiedStamper implements Stamper {
     public boolean equals(Stamp o) {
       return o instanceof LastModifiedStamp && super.equals(o);
     }
+    
+    @Override
+    public boolean equals(ModuleStamp o) {
+      return o instanceof LastModifiedStamp && super.equals((Stamp) o);
+    }
 
     @Override
     public Stamper getStamper() {
       return LastModifiedStamper.instance;
+    }
+    
+    @Override
+    public ModuleStamper getModuleStamper() {
+      return LastModifiedStamper.minstance;
     }
   }
 }

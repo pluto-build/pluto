@@ -1,6 +1,5 @@
 package org.sugarj.cleardep.stamp;
 
-import org.sugarj.cleardep.CompilationUnit;
 import org.sugarj.common.path.Path;
 
 /**
@@ -10,5 +9,4 @@ public interface Stamper {
   public static final Stamper DEFAULT = ContentHashStamper.instance;
   
   public Stamp stampOf(Path p);
-  public Stamp stampOf(CompilationUnit m);
 }

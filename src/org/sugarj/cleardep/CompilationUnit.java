@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.sugarj.cleardep.stamp.ModuleStamp;
 import org.sugarj.cleardep.stamp.SimpleStamp;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
@@ -53,8 +54,8 @@ abstract public class CompilationUnit extends PersistableEntity {
 	// But HashMap is incompatible with unmodified maps which are stored in
 	// persisted units. So this is not safe.
 	protected Map<RelativePath, Stamp> sourceArtifacts;
-	protected Map<CompilationUnit, Stamp> moduleDependencies;
-	protected Map<CompilationUnit, Stamp> circularModuleDependencies;
+	protected Map<CompilationUnit, ModuleStamp> moduleDependencies;
+	protected Map<CompilationUnit, ModuleStamp> circularModuleDependencies;
 	protected Map<Path, Stamp> externalFileDependencies;
 	protected Map<Path, Stamp> generatedFiles;
 
@@ -257,16 +258,16 @@ abstract public class CompilationUnit extends PersistableEntity {
 	}
 
 	public void addCircularModuleDependency(CompilationUnit mod) {
-		circularModuleDependencies.put(mod, defaultStamper.stampOf(mod));
+		circularModuleDependencies.put(mod, null);
 	}
-	public void addCircularModuleDependency(CompilationUnit mod, Stamp stamp) {
+	public void addCircularModuleDependency(CompilationUnit mod, ModuleStamp stamp) {
     circularModuleDependencies.put(mod, stamp);
   }
 
 	public void addModuleDependency(CompilationUnit mod) {
-	  addModuleDependency(mod, defaultStamper.stampOf(mod));
+	  addModuleDependency(mod, null);
 	}
-	public void addModuleDependency(CompilationUnit mod, Stamp stamp) {
+	public void addModuleDependency(CompilationUnit mod, ModuleStamp stamp) {
 		if (mod == this) {
 			return;
 		}
@@ -316,7 +317,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		if (!this.circularModuleDependencies.containsKey(mod)) {
 			throw new IllegalArgumentException("Given CompilationUnit is not a circular Dependency");
 		}
-		Stamp value = this.circularModuleDependencies.get(mod);
+		ModuleStamp value = this.circularModuleDependencies.get(mod);
 		this.circularModuleDependencies.remove(mod);
 		this.moduleDependencies.put(mod, value);
 	}
@@ -328,7 +329,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		if (!this.moduleDependencies.containsKey(mod)) {
 			throw new IllegalArgumentException("Given CompilationUnit is not a non circular dependency");
 		}
-		Stamp value = this.moduleDependencies.get(mod);
+		ModuleStamp value = this.moduleDependencies.get(mod);
 		this.moduleDependencies.remove(mod);
 		this.circularModuleDependencies.put(mod, value);
 	}
@@ -501,10 +502,13 @@ abstract public class CompilationUnit extends PersistableEntity {
 		return this.isConsistentToInterfaceMap(this.circularModuleDependencies);
 	}
 
-	private boolean isConsistentToInterfaceMap(Map<CompilationUnit, Stamp> unitMap) {
-		for (Entry<CompilationUnit, Stamp> deps : unitMap.entrySet()) {
-			// Get interface (use Integer because may be null)
-		  Stamp interfaceHash = deps.getValue().getStamper().stampOf(deps.getKey());
+	private boolean isConsistentToInterfaceMap(Map<CompilationUnit, ModuleStamp> unitMap) {
+		for (Entry<CompilationUnit, ModuleStamp> deps : unitMap.entrySet()) {
+		  // Null interface -> any rebuild of deps.getKey() invalidates build of this.
+		  if (deps.getValue() == null)
+		    return false;
+
+		  ModuleStamp interfaceHash = deps.getValue().getModuleStamper().stampOf(deps.getKey());
 			// Compare current interface value to stored one
 			if (!deps.getValue().equals(interfaceHash)) {
 				return false;
@@ -616,7 +620,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 			Class<? extends CompilationUnit> cl = (Class<? extends CompilationUnit>) getClass().getClassLoader().loadClass(clName);
 			Path path = (Path) in.readObject();
 			CompilationUnit mod = PersistableEntity.read(cl, stamper, path);
-			Stamp interfaceHash = (Stamp) in.readObject();
+			ModuleStamp interfaceHash = (ModuleStamp) in.readObject();
 			if (mod == null)
 				throw new IOException("Required module cannot be read: " + path);
 			moduleDependencies.put(mod, interfaceHash);
@@ -629,7 +633,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 			Class<? extends CompilationUnit> cl = (Class<? extends CompilationUnit>) getClass().getClassLoader().loadClass(clName);
 			Path path = (Path) in.readObject();
 			CompilationUnit mod = PersistableEntity.read(cl, stamper, path);
-			Stamp interfaceHash = (Stamp) in.readObject();
+			ModuleStamp interfaceHash = (ModuleStamp) in.readObject();
 			if (mod == null)
 				throw new IOException("Required module cannot be read: " + path);
 			circularModuleDependencies.put(mod, interfaceHash);
@@ -669,7 +673,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		out.writeObject(externalFileDependencies = Collections.unmodifiableMap(externalFileDependencies));
 
 		out.writeInt(moduleDependencies.size());
-		for (Entry<CompilationUnit, Stamp> entry : moduleDependencies.entrySet()) {
+		for (Entry<CompilationUnit, ModuleStamp> entry : moduleDependencies.entrySet()) {
 			CompilationUnit mod = entry.getKey();
 			assert mod.isPersisted() : "Required compilation units must be persisted.";
 			out.writeObject(mod.getClass().getCanonicalName());
@@ -678,7 +682,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		}
 
 		out.writeInt(circularModuleDependencies.size());
-		for (Entry<CompilationUnit, Stamp> entry : circularModuleDependencies.entrySet()) {
+		for (Entry<CompilationUnit, ModuleStamp> entry : circularModuleDependencies.entrySet()) {
 			CompilationUnit mod = entry.getKey();
 			out.writeObject(mod.getClass().getCanonicalName());
 			out.writeObject(mod.persistentPath);

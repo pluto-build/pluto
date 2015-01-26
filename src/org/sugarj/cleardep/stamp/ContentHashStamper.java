@@ -9,16 +9,17 @@ import org.sugarj.common.path.Path;
 /**
  * @author Sebastian Erdweg
  */
-public class ContentHashStamper implements Stamper {
+public class ContentHashStamper implements Stamper, ModuleStamper {
 
   private ContentHashStamper() {}
   public static final Stamper instance = new ContentHashStamper();
+  public static final ModuleStamper minstance = new ContentHashStamper();
   
   /**
    * @see org.sugarj.cleardep.stamp.Stamper#stampOf(org.sugarj.common.path.Path)
    */
   @Override
-  public Stamp stampOf(Path p) {
+  public ContentHashStamp stampOf(Path p) {
     if (!FileCommands.exists(p))
       return new ContentHashStamp(0);
     
@@ -30,7 +31,7 @@ public class ContentHashStamper implements Stamper {
     }
   }
 
-  public Stamp stampOf(CompilationUnit m) {
+  public ContentHashStamp stampOf(CompilationUnit m) {
     if (!m.isPersisted())
       throw new IllegalArgumentException("Cannot compute stamp of non-persisted compilation unit " + m);
 
@@ -49,10 +50,20 @@ public class ContentHashStamper implements Stamper {
     public boolean equals(Stamp o) {
       return o instanceof ContentHashStamp && super.equals(o);
     }
+    
+    @Override
+    public boolean equals(ModuleStamp o) {
+      return o instanceof ContentHashStamp && super.equals((Stamp) o);
+    }
 
     @Override
     public Stamper getStamper() {
       return ContentHashStamper.instance;
+    }
+    
+    @Override
+    public ModuleStamper getModuleStamper() {
+      return ContentHashStamper.minstance;
     }
   }
 }
