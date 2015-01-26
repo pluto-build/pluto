@@ -1,4 +1,4 @@
-package org.sugarj.common.cleardep;
+package org.sugarj.cleardep;
 
 import java.util.ArrayList;
 import java.util.Deque;
@@ -10,8 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.sugarj.common.cleardep.BuildSchedule.ScheduleMode;
-import org.sugarj.common.cleardep.BuildSchedule.Task;
+import org.sugarj.cleardep.BuildSchedule.ScheduleMode;
+import org.sugarj.cleardep.BuildSchedule.Task;
+import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.path.RelativePath;
 
 public class BuildScheduleBuilder {

@@ -1,5 +1,6 @@
-package org.sugarj.common.cleardep;
+package org.sugarj.cleardep.stamp;
 
+import org.sugarj.cleardep.CompilationUnit;
 import org.sugarj.common.path.Path;
 
 /**

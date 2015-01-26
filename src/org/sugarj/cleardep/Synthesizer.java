@@ -1,10 +1,12 @@
-package org.sugarj.common.cleardep;
+package org.sugarj.cleardep;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.sugarj.cleardep.stamp.Stamp;
+import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.common.path.Path;
 
 /**

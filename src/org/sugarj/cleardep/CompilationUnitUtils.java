@@ -1,9 +1,9 @@
-package org.sugarj.common.cleardep;
+package org.sugarj.cleardep;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import org.sugarj.common.cleardep.CompilationUnit.ModuleVisitor;
+import org.sugarj.cleardep.CompilationUnit.ModuleVisitor;
 import org.sugarj.util.Predicate;
 
 public class CompilationUnitUtils {

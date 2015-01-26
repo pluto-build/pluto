@@ -1,4 +1,4 @@
-package org.sugarj.common.cleardep;
+package org.sugarj.cleardep;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

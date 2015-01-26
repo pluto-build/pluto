@@ -1,5 +1,6 @@
-package org.sugarj.common.cleardep;
+package org.sugarj.cleardep.stamp;
 
+import org.sugarj.cleardep.CompilationUnit;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.path.Path;
 
@@ -13,7 +14,7 @@ public class LastModifiedStamper implements Stamper {
   public static final Stamper instance = new LastModifiedStamper();
   
   /**
-   * @see org.sugarj.common.cleardep.Stamper#stampOf(org.sugarj.common.path.Path)
+   * @see org.sugarj.cleardep.stamp.Stamper#stampOf(org.sugarj.common.path.Path)
    */
   @Override
   public Stamp stampOf(Path p) {

@@ -1,4 +1,4 @@
-package org.sugarj.common.cleardep;
+package org.sugarj.cleardep;
 
 import java.util.HashSet;
 import java.util.List;
@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.path.RelativePath;
 
 public class BuildSchedule {

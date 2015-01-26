@@ -1,4 +1,4 @@
-package org.sugarj.common.cleardep;
+package org.sugarj.cleardep;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -10,6 +10,8 @@ import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.sugarj.cleardep.stamp.Stamp;
+import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.path.Path;
 import org.sugarj.common.path.RelativePath;

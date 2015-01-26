@@ -1,4 +1,4 @@
-package org.sugarj.common.cleardep;
+package org.sugarj.cleardep.stamp;
 
 import java.io.Serializable;
 
