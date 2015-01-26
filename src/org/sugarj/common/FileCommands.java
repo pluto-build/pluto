@@ -174,6 +174,16 @@ public class FileCommands {
 
     return file;
   }
+  
+  public static RelativePath[] listFiles(Path p) {
+    File[] files = p.getFile().listFiles();
+    RelativePath[] paths = new RelativePath[files.length];
+    
+    for (int i = 0; i < files.length; i++)
+      paths[i] = new RelativePath(p, files[i].getName());
+    
+    return paths;
+  }
 
   /**
    * Finds the given file in the given list of paths.
@@ -371,6 +381,14 @@ public class FileCommands {
       return file.substring(0, i);
     
     return file;
+  }
+  
+  public static String dropDirectory(Path p) {
+    return fileName(p) + "." + getExtension(p);
+  }
+  
+  public static RelativePath replaceExtension(RelativePath p, String newExtension) {
+    return new RelativePath(p.getBasePath(), dropExtension(p.getRelativePath()) + "." + newExtension);
   }
 
   public static RelativePath dropFilename(RelativePath file) {

@@ -8,5 +8,5 @@ import org.sugarj.common.path.Path;
 public interface Stamper {
   public static final Stamper DEFAULT = ContentHashStamper.instance;
   
-  public int stampOf(Path p);
+  public Stamp stampOf(Path p);
 }

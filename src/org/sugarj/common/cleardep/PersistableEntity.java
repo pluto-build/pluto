@@ -24,7 +24,7 @@ public abstract class PersistableEntity implements Serializable {
 
   private final static Map<Path, SoftReference<? extends PersistableEntity>> inMemory = new HashMap<>();
   
-  protected Stamper stamper;
+//  protected Stamper stamper;
   
   public PersistableEntity() { /* for deserialization only */ }
 //  public PersistableEntity(Stamper stamper) {
@@ -35,7 +35,7 @@ public abstract class PersistableEntity implements Serializable {
    * Path and stamp of the disk-stored version of this result.
    */
   protected Path persistentPath;
-  private int persistentStamp = -1;
+  private Stamp persistentStamp = null;
   private boolean isPersisted = false;
 
   final public boolean isPersisted() {
@@ -45,22 +45,22 @@ public abstract class PersistableEntity implements Serializable {
   public boolean hasPersistentVersionChanged() {
     return isPersisted &&
            persistentPath != null && 
-           persistentStamp != stamper.stampOf(persistentPath);
+           !persistentStamp.equals(persistentStamp.getStamper().stampOf(persistentPath));
   }
   
-  final protected void setPersisted() throws IOException {
+  final protected void setPersisted(Stamper stamper) throws IOException {
     persistentStamp = stamper.stampOf(persistentPath);
     isPersisted = true;
   }
   
-  final public int stamp() {
+  final public Stamp stamp() {
     if (!isPersisted())
       throw new RuntimeException("Cannot extract stamp from non-persisted module");
     return persistentStamp;
   }
   
   
-  protected abstract void readEntity(ObjectInputStream in) throws IOException, ClassNotFoundException;
+  protected abstract void readEntity(ObjectInputStream in, Stamper stamper) throws IOException, ClassNotFoundException;
   protected abstract void writeEntity(ObjectOutputStream out) throws IOException;
   
   protected abstract void init();
@@ -89,7 +89,6 @@ public abstract class PersistableEntity implements Serializable {
       return null;
     }
 
-    entity.stamper = stamper;
     entity.persistentPath = p;
     entity.cacheInMemory();
     entity.init();
@@ -130,9 +129,8 @@ public abstract class PersistableEntity implements Serializable {
       return null;
     }
 
-    entity.stamper = stamper;
     entity.persistentPath = p;
-    entity.setPersisted();
+    entity.setPersisted(stamper);
     entity.cacheInMemory();
     
     ObjectInputStream in = new ObjectInputStream(new FileInputStream(p.getAbsolutePath()));
@@ -145,7 +143,7 @@ public abstract class PersistableEntity implements Serializable {
         return null;
       }
       
-      entity.readEntity(in);
+      entity.readEntity(in, stamper);
     } catch (Throwable e) {
       System.err.println("Could not read module's dependency file: " + p + ": " + e);
       inMemory.remove(entity.persistentPath);
@@ -158,7 +156,7 @@ public abstract class PersistableEntity implements Serializable {
     return entity;
   }
   
-  final public void write() throws IOException {
+  final public void write(Stamper stamper) throws IOException {
     FileCommands.createFile(persistentPath);
     ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(persistentPath.getAbsolutePath()));
 
@@ -170,7 +168,7 @@ public abstract class PersistableEntity implements Serializable {
       throw new IOException(e);
     } finally {
       out.close();
-      setPersisted();
+      setPersisted(stamper);
     }
   }
   

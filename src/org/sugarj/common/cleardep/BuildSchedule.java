@@ -51,7 +51,7 @@ public class BuildSchedule {
     /**
      * The task needs to be build iff one unit is not finished, not shallow consistent, or not consistent to interfaces.
      */
-    public boolean needsToBeBuild(Map<RelativePath, Integer> editedSourceFiles) {
+    public boolean needsToBeBuild(Map<RelativePath, Stamp> editedSourceFiles) {
       for (CompilationUnit u : this.unitsToCompile) {
         if (!u.isFinished() || 
             !u.isConsistentShallow(editedSourceFiles) || 

@@ -12,9 +12,9 @@ import org.sugarj.common.path.Path;
  */
 public class Synthesizer {
   public Set<CompilationUnit> generatorModules;
-  public Map<Path, Integer> files;
+  public Map<Path, Stamp> files;
   
-  public Synthesizer(Set<CompilationUnit> modules, Map<Path, Integer> files) {
+  public Synthesizer(Set<CompilationUnit> modules, Map<Path, Stamp> files) {
     this.generatorModules = modules;
     this.files = files;
   }
@@ -29,7 +29,7 @@ public class Synthesizer {
   public void markSynthesized(CompilationUnit synthesizedModule) {
     for (CompilationUnit m : generatorModules)
       synthesizedModule.addModuleDependency(m);
-    for (Entry<Path, Integer> e : files.entrySet())
+    for (Entry<Path, Stamp> e : files.entrySet())
       synthesizedModule.addExternalFileDependency(e.getKey(), e.getValue());
   }
 }

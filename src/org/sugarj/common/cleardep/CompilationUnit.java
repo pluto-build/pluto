@@ -43,26 +43,27 @@ abstract public class CompilationUnit extends PersistableEntity {
 	protected Mode<?> mode;
 
 	protected Synthesizer syn;
-
-	protected Integer interfaceHash;
-	protected Path targetDir;
+	protected Stamper defaultStamper;
+	
+	protected Stamp interfaceHash;
 	// Need to declare as HashMap, because HashMap allows null values, general
 	// Map does not guarantee an keys with null value would be lost
 	// But HashMap is incompatible with unmodified maps which are stored in
 	// persisted units. So this is not safe.
-	protected Map<RelativePath, Integer> sourceArtifacts;
-	protected Map<CompilationUnit, Integer> moduleDependencies;
-	protected Map<CompilationUnit, Integer> circularModuleDependencies;
-	protected Map<Path, Integer> externalFileDependencies;
-	protected Map<Path, Integer> generatedFiles;
+	protected Map<RelativePath, Stamp> sourceArtifacts;
+	protected Map<CompilationUnit, Stamp> moduleDependencies;
+	protected Map<CompilationUnit, Stamp> circularModuleDependencies;
+	protected Map<Path, Stamp> externalFileDependencies;
+	protected Map<Path, Stamp> generatedFiles;
 
 	// **************************
 	// Methods for initialization
 	// **************************
 
-	final protected static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Map<RelativePath, Integer> sourceFiles, Path dep) throws IOException {
+	protected static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Map<RelativePath, Stamp> sourceFiles, Path dep) throws IOException {
 		E e = PersistableEntity.tryReadElseCreate(cl, stamper, dep);
 		e.init();
+		e.defaultStamper = stamper;
 		e.mode = mode;
 		e.syn = syn;
 		if (syn != null)
@@ -76,7 +77,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	 * Reads a CompilationUnit from memory or disk. The returned Compilation unit may or may not be consistent.
 	 */
 	@SuppressWarnings("unchecked")
-	final protected static <E extends CompilationUnit> E read(Class<E> cl, Stamper stamper, Mode<E> mode, Path... deps) throws IOException {
+	protected static <E extends CompilationUnit> E read(Class<E> cl, Stamper stamper, Mode<E> mode, Path... deps) throws IOException {
 	  Set<Path> seen = new HashSet<>();
 		for (Path dep : deps) {
 		  if (seen.contains(dep))
@@ -106,7 +107,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	 * @return null if no consistent compilation unit is available.
 	 */
 	@SuppressWarnings("unchecked")
-  final protected static <E extends CompilationUnit> E readConsistent(Class<E> cl, Stamper stamper, Mode<E> mode, Map<RelativePath, Integer> editedSourceFiles, Path... deps) throws IOException {
+  protected static <E extends CompilationUnit> E readConsistent(Class<E> cl, Stamper stamper, Mode<E> mode, Map<RelativePath, Stamp> editedSourceFiles, Path... deps) throws IOException {
 	  Set<Path> seen = new HashSet<>();
 	  for (Path dep : deps) {
 	    if (seen.contains(dep))
@@ -219,31 +220,31 @@ abstract public class CompilationUnit extends PersistableEntity {
 	// *******************************
 
 	protected void addSourceArtifact(RelativePath file) {
-		addSourceArtifact(file, stamper.stampOf(file));
+		addSourceArtifact(file, defaultStamper.stampOf(file));
 	}
 
-	protected void addSourceArtifact(RelativePath file, int stampOfFile) {
+	protected void addSourceArtifact(RelativePath file, Stamp stampOfFile) {
 		sourceArtifacts.put(file, stampOfFile);
 	}
 	
-  protected void addSourceArtifacts(Map<RelativePath, Integer> sourceFiles) {
-    for (Entry<RelativePath, Integer> sourceFile : sourceFiles.entrySet())
+  protected void addSourceArtifacts(Map<RelativePath, Stamp> sourceFiles) {
+    for (Entry<RelativePath, Stamp> sourceFile : sourceFiles.entrySet())
       addSourceArtifact(sourceFile.getKey(), sourceFile.getValue());
   }
 
 	public void addExternalFileDependency(Path file) {
-		addExternalFileDependency(file, stamper.stampOf(file));
+		addExternalFileDependency(file, defaultStamper.stampOf(file));
 	}
 
-	public void addExternalFileDependency(Path file, int stampOfFile) {
+	public void addExternalFileDependency(Path file, Stamp stampOfFile) {
 		externalFileDependencies.put(file, stampOfFile);
 	}
 
 	public void addExternalFileDependencyLate(Path file) {
-		addExternalFileDependencyLate(file, stamper.stampOf(file));
+		addExternalFileDependencyLate(file, defaultStamper.stampOf(file));
 	}
 
-	public void addExternalFileDependencyLate(Path file, int stampOfFile) {
+	public void addExternalFileDependencyLate(Path file, Stamp stampOfFile) {
 		try {
 			externalFileDependencies.put(file, stampOfFile);
 		} catch (UnsupportedOperationException e) {
@@ -253,10 +254,10 @@ abstract public class CompilationUnit extends PersistableEntity {
 	}
 
 	public void addGeneratedFile(Path file) {
-		addGeneratedFile(file, stamper.stampOf(file));
+		addGeneratedFile(file, defaultStamper.stampOf(file));
 	}
 
-	public void addGeneratedFile(Path file, int stampOfFile) {
+	public void addGeneratedFile(Path file, Stamp stampOfFile) {
 		generatedFiles.put(file, stampOfFile);
 	}
 
@@ -314,7 +315,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		if (!this.circularModuleDependencies.containsKey(mod)) {
 			throw new IllegalArgumentException("Given CompilationUnit is not a circular Dependency");
 		}
-		Integer value = this.circularModuleDependencies.get(mod);
+		Stamp value = this.circularModuleDependencies.get(mod);
 		this.circularModuleDependencies.remove(mod);
 		this.moduleDependencies.put(mod, value);
 	}
@@ -326,7 +327,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		if (!this.moduleDependencies.containsKey(mod)) {
 			throw new IllegalArgumentException("Given CompilationUnit is not a non circular dependency");
 		}
-		Integer value = this.moduleDependencies.get(mod);
+		Stamp value = this.moduleDependencies.get(mod);
 		this.moduleDependencies.remove(mod);
 		this.circularModuleDependencies.put(mod, value);
 	}
@@ -443,24 +444,24 @@ abstract public class CompilationUnit extends PersistableEntity {
 	  return state == State.FAILURE;
 	}
 
-	public Integer getInterfaceHash() {
+	public Stamp getInterfaceHash() {
 		return this.interfaceHash;
 	}
 
-	public void setInterfaceHash(Integer hash) {
+	public void setInterfaceHash(Stamp hash) {
 		this.interfaceHash = hash;
 	}
 
-	protected boolean isConsistentWithSourceArtifacts(Map<RelativePath, Integer> editedSourceFiles) {
+	protected boolean isConsistentWithSourceArtifacts(Map<RelativePath, Stamp> editedSourceFiles) {
 		if (sourceArtifacts.isEmpty())
 			return false;
 
 		boolean hasEdits = editedSourceFiles != null;
-		for (Entry<RelativePath, Integer> e : sourceArtifacts.entrySet()) {
-			Integer stamp = hasEdits ? editedSourceFiles.get(e.getKey()) : null;
-			if (stamp != null && !stamp.equals(e.getValue())) {
+		for (Entry<RelativePath, Stamp> e : sourceArtifacts.entrySet()) {
+		  Stamp editStamp = hasEdits ? editedSourceFiles.get(e.getKey()) : null;
+			if (editStamp != null && !editStamp.equals(e.getValue())) {
 				return false;
-			} else if (stamp == null && e.getValue() != stamper.stampOf(e.getKey())) {
+			} else if (editStamp == null && !SimpleStamp.equalStamp(e.getValue(), e.getKey())) {
 				return false;
 			}
 		}
@@ -468,21 +469,24 @@ abstract public class CompilationUnit extends PersistableEntity {
 		return true;
 	}
 
-	public boolean isConsistentShallow(Map<RelativePath, Integer> editedSourceFiles) {
+	public boolean isConsistentShallow(Map<RelativePath, Stamp> editedSourceFiles) {
 		if (hasPersistentVersionChanged())
 			return false;
+		
+		if (!isFinished())
+      return false;
 
 		if (!isConsistentWithSourceArtifacts(editedSourceFiles))
 			return false;
 
-		for (Entry<Path, Integer> e : generatedFiles.entrySet()) {
-			if (stamper.stampOf(e.getKey()) != e.getValue()) {
+		for (Entry<Path, Stamp> e : generatedFiles.entrySet()) {
+			if (!SimpleStamp.equalStamp(e.getValue(), e.getKey())) {
 				return false;
 			}
 		}
 
-		for (Entry<? extends Path, Integer> e : externalFileDependencies.entrySet()) {
-			if (stamper.stampOf(e.getKey()) != e.getValue()) {
+		for (Entry<? extends Path, Stamp> e : externalFileDependencies.entrySet()) {
+			if (!SimpleStamp.equalStamp(e.getValue(), e.getKey())) {
 				return false;
 			}
 		}
@@ -500,10 +504,10 @@ abstract public class CompilationUnit extends PersistableEntity {
 		return this.isConsistentToInterfaceMap(this.circularModuleDependencies);
 	}
 
-	private boolean isConsistentToInterfaceMap(Map<CompilationUnit, Integer> unitMap) {
-		for (Entry<CompilationUnit, Integer> deps : unitMap.entrySet()) {
+	private boolean isConsistentToInterfaceMap(Map<CompilationUnit, Stamp> unitMap) {
+		for (Entry<CompilationUnit, Stamp> deps : unitMap.entrySet()) {
 			// Get interface (use Integer because may be null)
-			Integer interfaceHash = deps.getKey().getInterfaceHash();
+		  Stamp interfaceHash = deps.getKey().getInterfaceHash();
 			// A null interface is always inconsistent
 			if (deps.getValue() == null) {
 				return false;
@@ -516,7 +520,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		return true;
 	}
 
-	public boolean isConsistent(final Map<RelativePath, Integer> editedSourceFiles, Mode<?> mode) {
+	public boolean isConsistent(final Map<RelativePath, Stamp> editedSourceFiles, Mode<?> mode) {
 		ModuleVisitor<Boolean> isConsistentVisitor = new ModuleVisitor<Boolean>() {
 			@Override
 			public Boolean visit(CompilationUnit mod, Mode<?> mode) {
@@ -605,14 +609,13 @@ abstract public class CompilationUnit extends PersistableEntity {
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	protected void readEntity(ObjectInputStream in) throws IOException, ClassNotFoundException {
+	protected void readEntity(ObjectInputStream in, Stamper stamper) throws IOException, ClassNotFoundException {
 	  state = (State) in.readObject();
 	  mirrors = (List<CompilationUnit>) in.readObject();
-		targetDir = (Path) in.readObject();
-		sourceArtifacts = (Map<RelativePath, Integer>) in.readObject();
-		generatedFiles = (Map<Path, Integer>) in.readObject();
-		externalFileDependencies = (Map<Path, Integer>) in.readObject();
-		this.interfaceHash = (Integer) in.readObject();
+		sourceArtifacts = (Map<RelativePath, Stamp>) in.readObject();
+		generatedFiles = (Map<Path, Stamp>) in.readObject();
+		externalFileDependencies = (Map<Path, Stamp>) in.readObject();
+		this.interfaceHash = (Stamp) in.readObject();
 
 		int moduleDepencyCount = in.readInt();
 		moduleDependencies = new HashMap<>(moduleDepencyCount);
@@ -621,7 +624,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 			Class<? extends CompilationUnit> cl = (Class<? extends CompilationUnit>) getClass().getClassLoader().loadClass(clName);
 			Path path = (Path) in.readObject();
 			CompilationUnit mod = PersistableEntity.read(cl, stamper, path);
-			Integer interfaceHash = (Integer) in.readObject();
+			Stamp interfaceHash = (Stamp) in.readObject();
 			if (mod == null)
 				throw new IOException("Required module cannot be read: " + path);
 			moduleDependencies.put(mod, interfaceHash);
@@ -634,7 +637,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 			Class<? extends CompilationUnit> cl = (Class<? extends CompilationUnit>) getClass().getClassLoader().loadClass(clName);
 			Path path = (Path) in.readObject();
 			CompilationUnit mod = PersistableEntity.read(cl, stamper, path);
-			Integer interfaceHash = (Integer) in.readObject();
+			Stamp interfaceHash = (Stamp) in.readObject();
 			if (mod == null)
 				throw new IOException("Required module cannot be read: " + path);
 			circularModuleDependencies.put(mod, interfaceHash);
@@ -653,10 +656,14 @@ abstract public class CompilationUnit extends PersistableEntity {
 					throw new IOException("Required module cannot be read: " + path);
 				modules.add(mod);
 			}
-			Map<Path, Integer> files = (Map<Path, Integer>) in.readObject();
+			Map<Path, Stamp> files = (Map<Path, Stamp>) in.readObject();
 			syn = new Synthesizer(modules, files);
 		}
 	}
+	
+	public void write() throws IOException {
+    super.write(defaultStamper);
+  }
 
 	 /**
    *  Contributed state `mode` must be written by subclass.
@@ -665,14 +672,13 @@ abstract public class CompilationUnit extends PersistableEntity {
 	protected void writeEntity(ObjectOutputStream out) throws IOException {
 	  out.writeObject(state);
 	  out.writeObject(mirrors);
-	  out.writeObject(targetDir);
 		out.writeObject(sourceArtifacts = Collections.unmodifiableMap(sourceArtifacts));
 		out.writeObject(generatedFiles = Collections.unmodifiableMap(generatedFiles));
 		out.writeObject(externalFileDependencies = Collections.unmodifiableMap(externalFileDependencies));
 		out.writeObject(this.interfaceHash);
 
 		out.writeInt(moduleDependencies.size());
-		for (Entry<CompilationUnit, Integer> entry : moduleDependencies.entrySet()) {
+		for (Entry<CompilationUnit, Stamp> entry : moduleDependencies.entrySet()) {
 			CompilationUnit mod = entry.getKey();
 			assert mod.isPersisted() : "Required compilation units must be persisted.";
 			out.writeObject(mod.getClass().getCanonicalName());
@@ -681,7 +687,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		}
 
 		out.writeInt(circularModuleDependencies.size());
-		for (Entry<CompilationUnit, Integer> entry : circularModuleDependencies.entrySet()) {
+		for (Entry<CompilationUnit, Stamp> entry : circularModuleDependencies.entrySet()) {
 			CompilationUnit mod = entry.getKey();
 			out.writeObject(mod.getClass().getCanonicalName());
 			out.writeObject(mod.persistentPath);

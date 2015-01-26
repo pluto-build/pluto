@@ -118,7 +118,7 @@ public class BuildScheduleBuilder {
    *          the mode of the schedule as described
    * @return the created BuildSchedule
    */
-  public BuildSchedule createBuildSchedule(Map<RelativePath, Integer> editedSourceFiles) {
+  public BuildSchedule createBuildSchedule(Map<RelativePath, Stamp> editedSourceFiles) {
     BuildSchedule schedule = new BuildSchedule();
 
     // Calculate strongly connected components: O(E+V)
