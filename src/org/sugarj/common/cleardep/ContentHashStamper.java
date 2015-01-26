@@ -29,6 +29,12 @@ public class ContentHashStamper implements Stamper {
     }
   }
 
+  public Stamp stampOf(CompilationUnit m) {
+    if (!m.isPersisted())
+      throw new IllegalArgumentException("Cannot compute stamp of non-persisted compilation unit " + m);
+
+    return stampOf(m.getPersistentPath());
+  }
   
   public static class ContentHashStamp extends SimpleStamp<Integer> {
 

@@ -45,7 +45,6 @@ abstract public class CompilationUnit extends PersistableEntity {
 	protected Synthesizer syn;
 	protected Stamper defaultStamper;
 	
-	protected Stamp interfaceHash;
 	// Need to declare as HashMap, because HashMap allows null values, general
 	// Map does not guarantee an keys with null value would be lost
 	// But HashMap is incompatible with unmodified maps which are stored in
@@ -210,7 +209,6 @@ abstract public class CompilationUnit extends PersistableEntity {
 		circularModuleDependencies = new HashMap<>();
 		externalFileDependencies = new HashMap<>();
 		generatedFiles = new HashMap<>();
-		this.interfaceHash = null;
 		state = State.INITIALIZED;
 	}
 
@@ -256,17 +254,23 @@ abstract public class CompilationUnit extends PersistableEntity {
 	}
 
 	public void addCircularModuleDependency(CompilationUnit mod) {
-		circularModuleDependencies.put(mod, mod.getInterfaceHash());
+		circularModuleDependencies.put(mod, defaultStamper.stampOf(mod));
 	}
+	public void addCircularModuleDependency(CompilationUnit mod, Stamp stamp) {
+    circularModuleDependencies.put(mod, stamp);
+  }
 
 	public void addModuleDependency(CompilationUnit mod) {
+	  addModuleDependency(mod, defaultStamper.stampOf(mod));
+	}
+	public void addModuleDependency(CompilationUnit mod, Stamp stamp) {
 		if (mod == this) {
 			return;
 		}
 		if (mod.dependsOnTransitivelyNoncircularly(this)) {
-			this.circularModuleDependencies.put(mod, mod.getInterfaceHash());
+			this.circularModuleDependencies.put(mod, stamp);
 		} else {
-			this.moduleDependencies.put(mod, mod.getInterfaceHash());
+			this.moduleDependencies.put(mod, stamp);
 		}
 	}
 
@@ -289,18 +293,18 @@ abstract public class CompilationUnit extends PersistableEntity {
 		this.circularModuleDependencies.remove(mod);
 	}
 
-	public void updateModuleDependencyInterface(CompilationUnit mod) {
-		if (mod == null) {
-			throw new NullPointerException("Cannot handle null unit");
-		}
-		if (this.moduleDependencies.containsKey(mod)) {
-			this.moduleDependencies.put(mod, mod.getInterfaceHash());
-		} else if (this.circularModuleDependencies.containsKey(mod)) {
-			this.circularModuleDependencies.put(mod, mod.getInterfaceHash());
-		} else {
-			throw new IllegalArgumentException("Given CompilationUnit " + mod + " is not a dependency of this module");
-		}
-	}
+//	public void updateModuleDependencyInterface(CompilationUnit mod) {
+//		if (mod == null) {
+//			throw new NullPointerException("Cannot handle null unit");
+//		}
+//		if (this.moduleDependencies.containsKey(mod)) {
+//			this.moduleDependencies.put(mod, mod.getInterfaceHash());
+//		} else if (this.circularModuleDependencies.containsKey(mod)) {
+//			this.circularModuleDependencies.put(mod, mod.getInterfaceHash());
+//		} else {
+//			throw new IllegalArgumentException("Given CompilationUnit " + mod + " is not a dependency of this module");
+//		}
+//	}
 
 	public void moveCircularModulDepToNonCircular(CompilationUnit mod) {
 		if (mod == null) {
@@ -425,7 +429,11 @@ abstract public class CompilationUnit extends PersistableEntity {
 	public State getState() {
 	  return state;
 	}
-	
+
+	public Path getPersistentPath() {
+    return persistentPath;
+  }
+  	
   public void setState(State state) {
 	  this.state = state;
 	}
@@ -436,14 +444,6 @@ abstract public class CompilationUnit extends PersistableEntity {
 	
 	public boolean hasFailed() {
 	  return state == State.FAILURE;
-	}
-
-	public Stamp getInterfaceHash() {
-		return this.interfaceHash;
-	}
-
-	public void setInterfaceHash(Stamp hash) {
-		this.interfaceHash = hash;
 	}
 
 	protected boolean isConsistentWithSourceArtifacts(Map<RelativePath, Stamp> editedSourceFiles) {
@@ -501,11 +501,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	private boolean isConsistentToInterfaceMap(Map<CompilationUnit, Stamp> unitMap) {
 		for (Entry<CompilationUnit, Stamp> deps : unitMap.entrySet()) {
 			// Get interface (use Integer because may be null)
-		  Stamp interfaceHash = deps.getKey().getInterfaceHash();
-			// A null interface is always inconsistent
-			if (deps.getValue() == null) {
-				return false;
-			}
+		  Stamp interfaceHash = deps.getValue().getStamper().stampOf(deps.getKey());
 			// Compare current interface value to stored one
 			if (!deps.getValue().equals(interfaceHash)) {
 				return false;
@@ -609,7 +605,6 @@ abstract public class CompilationUnit extends PersistableEntity {
 		sourceArtifacts = (Map<RelativePath, Stamp>) in.readObject();
 		generatedFiles = (Map<Path, Stamp>) in.readObject();
 		externalFileDependencies = (Map<Path, Stamp>) in.readObject();
-		this.interfaceHash = (Stamp) in.readObject();
 
 		int moduleDepencyCount = in.readInt();
 		moduleDependencies = new HashMap<>(moduleDepencyCount);
@@ -669,7 +664,6 @@ abstract public class CompilationUnit extends PersistableEntity {
 		out.writeObject(sourceArtifacts = Collections.unmodifiableMap(sourceArtifacts));
 		out.writeObject(generatedFiles = Collections.unmodifiableMap(generatedFiles));
 		out.writeObject(externalFileDependencies = Collections.unmodifiableMap(externalFileDependencies));
-		out.writeObject(this.interfaceHash);
 
 		out.writeInt(moduleDependencies.size());
 		for (Entry<CompilationUnit, Stamp> entry : moduleDependencies.entrySet()) {

@@ -22,6 +22,13 @@ public class LastModifiedStamper implements Stamper {
     
     return new LastModifiedStamp(p.getFile().lastModified());
   }
+  
+  public Stamp stampOf(CompilationUnit m) {
+    if (!m.isPersisted())
+      throw new IllegalArgumentException("Cannot compute stamp of non-persisted compilation unit " + m);
+
+    return stampOf(m.getPersistentPath());
+  }
 
   
   public static class LastModifiedStamp extends SimpleStamp<Long> {
