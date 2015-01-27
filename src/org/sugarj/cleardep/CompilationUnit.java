@@ -50,13 +50,9 @@ abstract public class CompilationUnit extends PersistableEntity {
 	protected Synthesizer syn;
 	protected Stamper defaultStamper;
 	
-	// Need to declare as HashMap, because HashMap allows null values, general
-	// Map does not guarantee an keys with null value would be lost
-	// But HashMap is incompatible with unmodified maps which are stored in
-	// persisted units. So this is not safe.
-	protected Map<RelativePath, Stamp> sourceArtifacts;
 	protected Map<CompilationUnit, ModuleStamp> moduleDependencies;
 	protected Map<CompilationUnit, ModuleStamp> circularModuleDependencies;
+	protected Map<RelativePath, Stamp> sourceArtifacts;
 	protected Map<Path, Stamp> externalFileDependencies;
 	protected Map<Path, Stamp> generatedFiles;
 
