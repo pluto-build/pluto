@@ -28,16 +28,22 @@ public class PersistableEntityModuleStamper implements ModuleStamper {
     }
     
     @Override
-    public boolean equals(ModuleStamp s) {
-      if (!(s instanceof PersistableEntityModuleStamp))
-        return false;
-      Stamp ostamp = ((PersistableEntityModuleStamp) s).stamp;
-      return stamp == null && ostamp == null || stamp != null && stamp.equals(ostamp);
+    public boolean equals(Object s) {
+      if (s instanceof PersistableEntityModuleStamp) {
+        Stamp ostamp = ((PersistableEntityModuleStamp) s).stamp;
+        return stamp == null && ostamp == null || stamp != null && stamp.equals(ostamp);
+      }
+      return false;
     }
     
     @Override
     public ModuleStamper getModuleStamper() {
       return PersistableEntityModuleStamper.minstance;
+    }
+    
+    @Override
+    public String toString() {
+      return "PersistableEntity(" + stamp + ")";
     }
   }
 }

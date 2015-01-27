@@ -51,21 +51,18 @@ public class ContentHashStamper implements Stamper, ModuleStamper {
     }
     
     @Override
-    public boolean equals(Stamp o) {
-      if (!(o instanceof ContentHashStamp))
-        return false;
-      Integer ovalue = ((ContentHashStamp) o).value;
-      return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
+    public boolean equals(Object o) {
+      if (o instanceof ContentHashStamp) {
+        Integer ovalue = ((ContentHashStamp) o).value;
+        return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
+      }
+      if (o instanceof ContentHashStamp) {
+        Integer ovalue = ((ContentHashStamp) o).value;
+        return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
+      }
+      return false;
     }
     
-    @Override
-    public boolean equals(ModuleStamp o) {
-      if (!(o instanceof ContentHashStamp))
-        return false;
-      Integer ovalue = ((ContentHashStamp) o).value;
-      return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
-    }
-
     @Override
     public Stamper getStamper() {
       return ContentHashStamper.instance;
@@ -74,6 +71,11 @@ public class ContentHashStamper implements Stamper, ModuleStamper {
     @Override
     public ModuleStamper getModuleStamper() {
       return ContentHashStamper.minstance;
+    }
+    
+    @Override
+    public String toString() {
+      return "ContentHash(" + value + ")";
     }
   }
 }

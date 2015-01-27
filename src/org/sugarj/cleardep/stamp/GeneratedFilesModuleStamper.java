@@ -55,7 +55,7 @@ public class GeneratedFilesModuleStamper implements ModuleStamper {
     }
     
     @Override
-    public boolean equals(ModuleStamp o) {
+    public boolean equals(Object o) {
       return o instanceof GeneratedFilesModuleStamp && ((GeneratedFilesModuleStamp) o).filesStamp.equals(filesStamp);
     }
 
@@ -63,6 +63,10 @@ public class GeneratedFilesModuleStamper implements ModuleStamper {
     public ModuleStamper getModuleStamper() {
       return stamper;
     }
-    
+
+    @Override
+    public String toString() {
+      return "GenerateFiles(" + filesStamp + ")";
+    }
   }
 }

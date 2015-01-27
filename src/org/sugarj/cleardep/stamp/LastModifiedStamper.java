@@ -45,22 +45,18 @@ public class LastModifiedStamper implements Stamper, ModuleStamper {
     }
     
     @Override
-    public boolean equals(Stamp o) {
-      if (!(o instanceof LastModifiedStamp))
-        return false;
-      Long ovalue = ((LastModifiedStamp) o).value;
-      return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
+    public boolean equals(Object o) {
+      if (o instanceof LastModifiedStamp) {
+        Long ovalue = ((LastModifiedStamp) o).value;
+        return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
+      }
+      if (o instanceof LastModifiedStamp) {
+        Long ovalue = ((LastModifiedStamp) o).value;
+        return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
+      }
+      return false;
     }
     
-    @Override
-    public boolean equals(ModuleStamp o) {
-      if (!(o instanceof LastModifiedStamp))
-        return false;
-      Long ovalue = ((LastModifiedStamp) o).value;
-      return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
-    }
-
-    @Override
     public Stamper getStamper() {
       return LastModifiedStamper.instance;
     }
@@ -68,6 +64,11 @@ public class LastModifiedStamper implements Stamper, ModuleStamper {
     @Override
     public ModuleStamper getModuleStamper() {
       return LastModifiedStamper.minstance;
+    }
+    
+    @Override
+    public String toString() {
+      return "LastModified(" + value + ")";
     }
   }
 }

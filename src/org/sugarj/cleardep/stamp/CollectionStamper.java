@@ -42,7 +42,7 @@ public class CollectionStamper implements Stamper {
     }
 
     @Override
-    public boolean equals(Stamp o) {
+    public boolean equals(Object o) {
       return o instanceof CollectionStamp && ((CollectionStamp) o).value.equals(value);
     }
 
@@ -50,6 +50,10 @@ public class CollectionStamper implements Stamper {
     public CollectionStamper getStamper() {
       return stamper;
     }
-    
+
+    @Override
+    public String toString() {
+      return "Collection(" + value + ")";
+    }
   }
 }
