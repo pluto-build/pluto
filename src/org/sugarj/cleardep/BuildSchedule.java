@@ -55,8 +55,7 @@ public class BuildSchedule {
     public boolean needsToBeBuild(Map<RelativePath, Stamp> editedSourceFiles) {
       for (CompilationUnit u : this.unitsToCompile) {
         if (!u.isFinished() || 
-            !u.isConsistentShallow(editedSourceFiles) || 
-            !u.isConsistentModuleDependencies()) {
+            !u.isConsistentShallow(editedSourceFiles)) {
           return true;
         }
       }

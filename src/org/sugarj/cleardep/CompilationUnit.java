@@ -486,6 +486,9 @@ abstract public class CompilationUnit extends PersistableEntity {
 			if (!Util.stampEqual(e.getValue(), e.getKey()))
 				return false;
 
+		if (!isConsistentModuleDependencies())
+		  return false;
+		
 		if (!isConsistentExtend())
 			return false;
 
@@ -511,7 +514,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		ModuleVisitor<Boolean> isConsistentVisitor = new ModuleVisitor<Boolean>() {
 			@Override
 			public Boolean visit(CompilationUnit mod, Mode<?> mode) {
-				return mod.isConsistentShallow(editedSourceFiles) && mod.isConsistentModuleDependencies();
+				return mod.isConsistentShallow(editedSourceFiles);
 			}
 
 			@Override
