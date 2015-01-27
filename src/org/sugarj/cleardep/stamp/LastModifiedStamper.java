@@ -33,21 +33,29 @@ public class LastModifiedStamper implements Stamper, ModuleStamper {
   }
 
   
-  public static class LastModifiedStamp extends SimpleStamp<Long> {
+  public static class LastModifiedStamp implements Stamp, ModuleStamp {
     private static final long serialVersionUID = 4063932604040295576L;
 
-    public LastModifiedStamp(Long t) {
-      super(t);
+    private final Long value;
+    
+    public LastModifiedStamp(Long value) {
+      this.value = value;
     }
     
     @Override
     public boolean equals(Stamp o) {
-      return o instanceof LastModifiedStamp && super.equals(o);
+      if (!(o instanceof LastModifiedStamp))
+        return false;
+      Long ovalue = ((LastModifiedStamp) o).value;
+      return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
     }
     
     @Override
     public boolean equals(ModuleStamp o) {
-      return o instanceof LastModifiedStamp && super.equals((Stamp) o);
+      if (!(o instanceof LastModifiedStamp))
+        return false;
+      Long ovalue = ((LastModifiedStamp) o).value;
+      return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
     }
 
     @Override

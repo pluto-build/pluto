@@ -15,9 +15,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.sugarj.cleardep.stamp.ModuleStamp;
-import org.sugarj.cleardep.stamp.SimpleStamp;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
+import org.sugarj.cleardep.stamp.Util;
 import org.sugarj.common.AppendingIterable;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.path.Path;
@@ -459,7 +459,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		  Stamp editStamp = hasEdits ? editedSourceFiles.get(e.getKey()) : null;
 			if (editStamp != null && !editStamp.equals(e.getValue())) {
 				return false;
-			} else if (editStamp == null && !SimpleStamp.equalStamp(e.getValue(), e.getKey())) {
+			} else if (editStamp == null && !Util.stampEqual(e.getValue(), e.getKey())) {
 				return false;
 			}
 		}
@@ -478,13 +478,13 @@ abstract public class CompilationUnit extends PersistableEntity {
 			return false;
 
 		for (Entry<Path, Stamp> e : generatedFiles.entrySet()) {
-			if (!SimpleStamp.equalStamp(e.getValue(), e.getKey())) {
+			if (!Util.stampEqual(e.getValue(), e.getKey())) {
 				return false;
 			}
 		}
 
 		for (Entry<? extends Path, Stamp> e : externalFileDependencies.entrySet()) {
-			if (!SimpleStamp.equalStamp(e.getValue(), e.getKey())) {
+			if (!Util.stampEqual(e.getValue(), e.getKey())) {
 				return false;
 			}
 		}

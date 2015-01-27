@@ -3,7 +3,6 @@
  */
 package org.sugarj.cleardep.stamp;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +26,7 @@ public class CollectionStamper implements Stamper {
     return new CollectionStamp(Collections.singletonMap(p, elementStamper.stampOf(p)), this);
   }
   
-  public Stamp stampOf(Collection<Path> paths) {
+  public Stamp stampOf(Iterable<Path> paths) {
     Map<Path, Stamp> map = new HashMap<>();
     for (Path p : paths)
       map.put(p, elementStamper.stampOf(p));

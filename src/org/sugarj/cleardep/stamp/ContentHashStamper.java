@@ -38,22 +38,30 @@ public class ContentHashStamper implements Stamper, ModuleStamper {
     return stampOf(m.getPersistentPath());
   }
   
-  public static class ContentHashStamp extends SimpleStamp<Integer> {
+  public static class ContentHashStamp implements Stamp, ModuleStamp {
 
     private static final long serialVersionUID = 7535020621495360152L;
+    
+    private final Integer value;
 
-    public ContentHashStamp(Integer t) {
-      super(t);
+    public ContentHashStamp(Integer value) {
+      this.value = value;
     }
     
     @Override
     public boolean equals(Stamp o) {
-      return o instanceof ContentHashStamp && super.equals(o);
+      if (!(o instanceof ContentHashStamp))
+        return false;
+      Integer ovalue = ((ContentHashStamp) o).value;
+      return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
     }
     
     @Override
     public boolean equals(ModuleStamp o) {
-      return o instanceof ContentHashStamp && super.equals((Stamp) o);
+      if (!(o instanceof ContentHashStamp))
+        return false;
+      Integer ovalue = ((ContentHashStamp) o).value;
+      return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
     }
 
     @Override
