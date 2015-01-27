@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.List;
 
 import org.sugarj.common.path.AbsolutePath;
@@ -118,9 +119,17 @@ public class FileCommands {
     fos.close();
   }
 
+  public static byte[] readFileAsByteArray(Path file) throws IOException {
+    return readFileAsByteArray(file.getFile());
+  }
+  public static byte[] readFileAsByteArray(File file) throws IOException {
+    return Files.readAllBytes(file.toPath());
+  }
+  
   public static String readFileAsString(File file) throws IOException {
     return readFileAsString(new AbsolutePath(file.getAbsolutePath()));
   }
+  
   
   // from http://snippets.dzone.com/posts/show/1335
   // Author: http://snippets.dzone.com/user/daph2001
