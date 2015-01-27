@@ -478,17 +478,13 @@ abstract public class CompilationUnit extends PersistableEntity {
 		if (!isConsistentWithSourceArtifacts(editedSourceFiles))
 			return false;
 
-		for (Entry<Path, Stamp> e : generatedFiles.entrySet()) {
-			if (!Util.stampEqual(e.getValue(), e.getKey())) {
+		for (Entry<Path, Stamp> e : generatedFiles.entrySet())
+			if (!Util.stampEqual(e.getValue(), e.getKey()))
 				return false;
-			}
-		}
 
-		for (Entry<? extends Path, Stamp> e : externalFileDependencies.entrySet()) {
-			if (!Util.stampEqual(e.getValue(), e.getKey())) {
+		for (Entry<Path, Stamp> e : externalFileDependencies.entrySet())
+			if (!Util.stampEqual(e.getValue(), e.getKey()))
 				return false;
-			}
-		}
 
 		if (!isConsistentExtend())
 			return false;
@@ -496,25 +492,18 @@ abstract public class CompilationUnit extends PersistableEntity {
 		return true;
 	}
 
-	public boolean isConsistentToDependencyInterfaces() {
-		if (!this.isConsistentToInterfaceMap(this.moduleDependencies)) {
+	public boolean isConsistentModuleDependencies() {
+		if (!this.isConsistentModuleDependenciesMap(this.moduleDependencies)) {
 			return false;
 		}
-		return this.isConsistentToInterfaceMap(this.circularModuleDependencies);
+		return this.isConsistentModuleDependenciesMap(this.circularModuleDependencies);
 	}
 
-	private boolean isConsistentToInterfaceMap(Map<CompilationUnit, ModuleStamp> unitMap) {
-		for (Entry<CompilationUnit, ModuleStamp> deps : unitMap.entrySet()) {
-		  // Null interface -> any rebuild of deps.getKey() invalidates build of this.
-		  if (deps.getValue() == null)
+	private boolean isConsistentModuleDependenciesMap(Map<CompilationUnit, ModuleStamp> unitMap) {
+		for (Entry<CompilationUnit, ModuleStamp> e : unitMap.entrySet())
+		  if (!Util.stampEqual(e.getValue(), e.getKey()))
 		    return false;
-
-		  ModuleStamp interfaceHash = deps.getValue().getModuleStamper().stampOf(deps.getKey());
-			// Compare current interface value to stored one
-			if (!deps.getValue().equals(interfaceHash)) {
-				return false;
-			}
-		}
+		  
 		return true;
 	}
 
@@ -522,7 +511,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		ModuleVisitor<Boolean> isConsistentVisitor = new ModuleVisitor<Boolean>() {
 			@Override
 			public Boolean visit(CompilationUnit mod, Mode<?> mode) {
-				return mod.isConsistentShallow(editedSourceFiles);
+				return mod.isConsistentShallow(editedSourceFiles) && mod.isConsistentModuleDependencies();
 			}
 
 			@Override

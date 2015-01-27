@@ -56,7 +56,7 @@ public class BuildSchedule {
       for (CompilationUnit u : this.unitsToCompile) {
         if (!u.isFinished() || 
             !u.isConsistentShallow(editedSourceFiles) || 
-            !u.isConsistentToDependencyInterfaces()) {
+            !u.isConsistentModuleDependencies()) {
           return true;
         }
       }
