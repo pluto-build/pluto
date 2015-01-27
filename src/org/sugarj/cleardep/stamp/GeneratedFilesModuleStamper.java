@@ -1,5 +1,6 @@
 package org.sugarj.cleardep.stamp;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -9,11 +10,17 @@ import org.sugarj.common.path.Path;
 
 public class GeneratedFilesModuleStamper implements ModuleStamper {
 
+  private static final long serialVersionUID = 833479370431220856L;
+
   private final Set<String> filter;
   private final CollectionStamper cStamper;
   
   public GeneratedFilesModuleStamper(Stamper fileStamper) {
-    this(fileStamper, null);
+    this(fileStamper, (Set<String>) null);
+  }
+  
+  public GeneratedFilesModuleStamper(Stamper fileStamper, String filter) {
+    this(fileStamper, Collections.singleton(filter));
   }
   
   public GeneratedFilesModuleStamper(Stamper fileStamper, Set<String> filter) {

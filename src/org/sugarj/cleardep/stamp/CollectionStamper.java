@@ -1,6 +1,3 @@
-/**
- * 
- */
 package org.sugarj.cleardep.stamp;
 
 import java.util.Collections;
@@ -9,11 +6,9 @@ import java.util.Map;
 
 import org.sugarj.common.path.Path;
 
-/**
- * @author seba
- *
- */
 public class CollectionStamper implements Stamper {
+
+  private static final long serialVersionUID = 4966185168870429293L;
 
   private final Stamper elementStamper;
   

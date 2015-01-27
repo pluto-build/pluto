@@ -10,6 +10,8 @@ import org.sugarj.common.path.Path;
  */
 public class LastModifiedStamper implements Stamper, ModuleStamper {
 
+  private static final long serialVersionUID = 8242859577253542194L;
+
   private LastModifiedStamper() {}
   public static final Stamper instance = new LastModifiedStamper();
   public static final ModuleStamper minstance = new LastModifiedStamper();

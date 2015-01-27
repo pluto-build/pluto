@@ -11,6 +11,8 @@ import org.sugarj.common.path.Path;
  */
 public class ContentHashStamper implements Stamper, ModuleStamper {
 
+  private static final long serialVersionUID = 7688772212399111636L;
+
   private ContentHashStamper() {}
   public static final Stamper instance = new ContentHashStamper();
   public static final ModuleStamper minstance = new ContentHashStamper();
