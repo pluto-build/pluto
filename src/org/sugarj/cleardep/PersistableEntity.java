@@ -26,12 +26,8 @@ public abstract class PersistableEntity implements Serializable {
 
   private final static Map<Path, SoftReference<? extends PersistableEntity>> inMemory = new HashMap<>();
   
-//  protected Stamper stamper;
   
   public PersistableEntity() { /* for deserialization only */ }
-//  public PersistableEntity(Stamper stamper) {
-//    this.stamper = stamper;
-//  }
       
   /**
    * Path and stamp of the disk-stored version of this result.
