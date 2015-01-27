@@ -11,22 +11,28 @@ public class PersistableEntityModuleStamper implements ModuleStamper {
   
   @Override
   public ModuleStamp stampOf(CompilationUnit m) {
-    return new PersistableEntityStamp(m.stamp());
+    if (m.isPersisted())
+      return new PersistableEntityModuleStamp(m.stamp());
+    else
+      return new PersistableEntityModuleStamp(null);
   }
 
-  public static class PersistableEntityStamp implements ModuleStamp {
+  public static class PersistableEntityModuleStamp implements ModuleStamp {
 
     private static final long serialVersionUID = 8933092358103291540L;
 
     private final Stamp stamp;
     
-    public PersistableEntityStamp(Stamp stamp) {
+    public PersistableEntityModuleStamp(Stamp stamp) {
       this.stamp = stamp;
     }
     
     @Override
     public boolean equals(ModuleStamp s) {
-      return s instanceof PersistableEntityStamp && ((PersistableEntityStamp) s).stamp.equals(stamp);
+      if (!(s instanceof PersistableEntityModuleStamp))
+        return false;
+      Stamp ostamp = ((PersistableEntityModuleStamp) s).stamp;
+      return stamp == null && ostamp == null || stamp != null && stamp.equals(ostamp);
     }
     
     @Override

@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.sugarj.cleardep.stamp.ModuleStamp;
+import org.sugarj.cleardep.stamp.PersistableEntityModuleStamper;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.cleardep.stamp.Util;
@@ -258,14 +259,14 @@ abstract public class CompilationUnit extends PersistableEntity {
 	}
 
 	public void addCircularModuleDependency(CompilationUnit mod) {
-		circularModuleDependencies.put(mod, null);
+		circularModuleDependencies.put(mod, PersistableEntityModuleStamper.minstance.stampOf(mod));
 	}
 	public void addCircularModuleDependency(CompilationUnit mod, ModuleStamp stamp) {
     circularModuleDependencies.put(mod, stamp);
   }
 
 	public void addModuleDependency(CompilationUnit mod) {
-	  addModuleDependency(mod, null);
+	  addModuleDependency(mod, PersistableEntityModuleStamper.minstance.stampOf(mod));
 	}
 	public void addModuleDependency(CompilationUnit mod, ModuleStamp stamp) {
 		if (mod == this) {
