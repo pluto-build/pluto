@@ -1,6 +1,9 @@
 package org.sugarj.cleardep.build;
 
+import java.io.IOException;
+
 import org.sugarj.cleardep.CompilationUnit;
+import org.sugarj.cleardep.Mode;
 import org.sugarj.common.path.Path;
 
 public abstract class Builder<T> {
@@ -10,17 +13,17 @@ public abstract class Builder<T> {
     this.context = context;
   }
   
-  public abstract Class<T> type();
+  public abstract CompilationUnit init(Path dep);
   public abstract void build(CompilationUnit result, T input);
   
-  public <U> CompilationUnit require(String buildType, Path dep, Class<? extends CompilationUnit> depCl, U input, Class<U> inputType) {
-    Builder<U> unit = context.findBuildUnit(buildType, inputType);
-    
-    CompilationUnit depResult = CompilationUnit.readConsistent(depCl, stamper, mode, context.getEditedSourceFiles(), dep);
+  
+  public <U> CompilationUnit require(Builder<U> builder, U input, Path dep, Mode<CompilationUnit> mode) throws IOException {
+    CompilationUnit depResult = CompilationUnit.readConsistent(mode, context.getEditedSourceFiles(), dep);
     if (depResult != null)
       return depResult;
-    depResult = CompilationUnit.create(depCl, stamper, mode, syn, dep);
+    depResult = builder.init(dep);
     
-    unit.build(depResult, input);
+    builder.build(depResult, input);
+    return depResult;
   }
 }
