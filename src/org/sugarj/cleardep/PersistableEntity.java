@@ -66,7 +66,7 @@ public abstract class PersistableEntity implements Serializable {
   final protected static <E extends PersistableEntity> E create(Class<E> clazz, Path p) throws IOException {
     E entity;
     try {
-      entity = read(p);
+      entity = read(clazz, p);
     } catch (IOException e) {
       e.printStackTrace();
       entity = null;
@@ -95,7 +95,7 @@ public abstract class PersistableEntity implements Serializable {
   
   final protected static <E extends PersistableEntity> E tryReadElseCreate(Class<E> clazz, Path p) throws IOException {
     try {
-      E e = read(p);
+      E e = read(clazz, p);
       if (e != null)
         return e;
       return create(clazz, p);
@@ -106,14 +106,17 @@ public abstract class PersistableEntity implements Serializable {
     }
   }
   
-  final public static <E extends PersistableEntity> E read(Path p) throws IOException {
+  final public static <E extends PersistableEntity> E read(Class<E> clazz, Path p) throws IOException {
     if (p == null)
       return null;
     
-    ObjectInputStream in = new ObjectInputStream(new FileInputStream(p.getAbsolutePath()));
-        
+    if (!FileCommands.exists(p))
+      return null;
+      
+    ObjectInputStream in = null;
     try {
-      Class<E> clazz = (Class<E>) in.readObject();
+      in = new ObjectInputStream(new FileInputStream(p.getAbsolutePath()));
+      
       long id = in.readLong();
 
       E entity = readFromMemoryCache(clazz, p);
@@ -126,8 +129,6 @@ public abstract class PersistableEntity implements Serializable {
       if (entity != null && !entity.hasPersistentVersionChanged())
         return entity;
 
-      if (!FileCommands.exists(p))
-        return null;
 
       entity = clazz.newInstance();
       
@@ -140,11 +141,13 @@ public abstract class PersistableEntity implements Serializable {
       return entity;
     } catch (Throwable e) {
       System.err.println("Could not read module's dependency file: " + p + ": " + e);
+      e.printStackTrace();
       inMemory.remove(p);
       FileCommands.delete(p);
       return null;
     } finally {
-      in.close();
+      if (in != null)
+        in.close();
     }
   }
   
@@ -153,7 +156,6 @@ public abstract class PersistableEntity implements Serializable {
     ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(persistentPath.getAbsolutePath()));
 
     try {
-      out.writeObject(this.getClass());
       out.writeLong(this.getClass().getField("serialVersionUID").getLong(this));
       out.writeObject(stamper);
       writeEntity(out);
