@@ -495,7 +495,8 @@ abstract public class CompilationUnit extends PersistableEntity {
 		if (!this.isConsistentModuleDependenciesMap(this.moduleDependencies)) {
 			return false;
 		}
-		return this.isConsistentModuleDependenciesMap(this.circularModuleDependencies);
+//		return this.isConsistentModuleDependenciesMap(this.circularModuleDependencies);
+		return true;
 	}
 
 	private boolean isConsistentModuleDependenciesMap(Map<CompilationUnit, ModuleStamp> unitMap) {
