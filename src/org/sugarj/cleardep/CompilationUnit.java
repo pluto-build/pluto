@@ -61,7 +61,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	// **************************
 
 	protected static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Path dep) throws IOException {
-		E e = PersistableEntity.tryReadElseCreate(cl, stamper, dep);
+		E e = PersistableEntity.tryReadElseCreate(cl, dep);
 		e.init();
 		e.defaultStamper = stamper;
 		e.mode = mode;
@@ -76,14 +76,14 @@ abstract public class CompilationUnit extends PersistableEntity {
 	 * Reads a CompilationUnit from memory or disk. The returned Compilation unit may or may not be consistent.
 	 */
 	@SuppressWarnings("unchecked")
-	protected static <E extends CompilationUnit> E read(Class<E> cl, Stamper stamper, Mode<E> mode, Path... deps) throws IOException {
+	public static <E extends CompilationUnit> E read(Class<E> clazz, Mode<E> mode, Path... deps) throws IOException {
 	  Set<Path> seen = new HashSet<>();
 		for (Path dep : deps) {
 		  if (seen.contains(dep))
 		    continue;
 		  seen.add(dep);
 		  
-		  E e = PersistableEntity.read(cl, stamper, dep);
+		  E e = PersistableEntity.read(clazz, dep);
 			if (e == null)
   		  continue;
   		
@@ -106,14 +106,14 @@ abstract public class CompilationUnit extends PersistableEntity {
 	 * @return null if no consistent compilation unit is available.
 	 */
 	@SuppressWarnings("unchecked")
-  protected static <E extends CompilationUnit> E readConsistent(Class<E> cl, Stamper stamper, Mode<E> mode, Map<RelativePath, Stamp> editedSourceFiles, Path... deps) throws IOException {
+  public static <E extends CompilationUnit> E readConsistent(Class<E> clazz, Mode<E> mode, Map<? extends Path, Stamp> editedSourceFiles, Path... deps) throws IOException {
 	  Set<Path> seen = new HashSet<>();
 	  for (Path dep : deps) {
 	    if (seen.contains(dep))
         continue;
       seen.add(dep);
       
-	    E e = PersistableEntity.read(cl, stamper, dep);
+	    E e = PersistableEntity.read(clazz, dep);
       if (e == null)
         continue;
       
@@ -447,7 +447,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	  return state == State.FAILURE;
 	}
 
-	protected boolean isConsistentWithSourceArtifacts(Map<RelativePath, Stamp> editedSourceFiles) {
+	protected boolean isConsistentWithSourceArtifacts(Map<? extends Path, Stamp> editedSourceFiles) {
 		if (sourceArtifacts.isEmpty())
 			return false;
 
@@ -464,7 +464,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		return true;
 	}
 
-	public boolean isConsistentShallow(Map<RelativePath, Stamp> editedSourceFiles) {
+	public boolean isConsistentShallow(Map<? extends Path, Stamp> editedSourceFiles) {
 		if (hasPersistentVersionChanged())
 			return false;
 		
@@ -495,7 +495,8 @@ abstract public class CompilationUnit extends PersistableEntity {
 		if (!this.isConsistentModuleDependenciesMap(this.moduleDependencies)) {
 			return false;
 		}
-		return this.isConsistentModuleDependenciesMap(this.circularModuleDependencies);
+//		return this.isConsistentModuleDependenciesMap(this.circularModuleDependencies);
+		return true;
 	}
 
 	private boolean isConsistentModuleDependenciesMap(Map<CompilationUnit, ModuleStamp> unitMap) {
@@ -506,7 +507,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		return true;
 	}
 
-	public boolean isConsistent(final Map<RelativePath, Stamp> editedSourceFiles, Mode<?> mode) {
+	public boolean isConsistent(final Map<? extends Path, Stamp> editedSourceFiles, Mode<?> mode) {
 		ModuleVisitor<Boolean> isConsistentVisitor = new ModuleVisitor<Boolean>() {
 			@Override
 			public Boolean visit(CompilationUnit mod, Mode<?> mode) {
@@ -595,7 +596,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	protected void readEntity(ObjectInputStream in, Stamper stamper) throws IOException, ClassNotFoundException {
+	protected void readEntity(ObjectInputStream in) throws IOException, ClassNotFoundException {
 	  state = (State) in.readObject();
 	  mirrors = (List<CompilationUnit>) in.readObject();
 		sourceArtifacts = (Map<RelativePath, Stamp>) in.readObject();
@@ -608,7 +609,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 			String clName = (String) in.readObject();
 			Class<? extends CompilationUnit> cl = (Class<? extends CompilationUnit>) getClass().getClassLoader().loadClass(clName);
 			Path path = (Path) in.readObject();
-			CompilationUnit mod = PersistableEntity.read(cl, stamper, path);
+			CompilationUnit mod = PersistableEntity.read(cl, path);
 			ModuleStamp interfaceHash = (ModuleStamp) in.readObject();
 			if (mod == null)
 				throw new IOException("Required module cannot be read: " + path);
@@ -621,7 +622,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 			String clName = (String) in.readObject();
 			Class<? extends CompilationUnit> cl = (Class<? extends CompilationUnit>) getClass().getClassLoader().loadClass(clName);
 			Path path = (Path) in.readObject();
-			CompilationUnit mod = PersistableEntity.read(cl, stamper, path);
+			CompilationUnit mod = PersistableEntity.read(cl, path);
 			ModuleStamp interfaceHash = (ModuleStamp) in.readObject();
 			if (mod == null)
 				throw new IOException("Required module cannot be read: " + path);
@@ -636,7 +637,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 				String clName = (String) in.readObject();
 				Class<? extends CompilationUnit> cl = (Class<? extends CompilationUnit>) getClass().getClassLoader().loadClass(clName);
 				Path path = (Path) in.readObject();
-				CompilationUnit mod = PersistableEntity.read(cl, stamper, path);
+				CompilationUnit mod = PersistableEntity.read(cl, path);
 				if (mod == null)
 					throw new IOException("Required module cannot be read: " + path);
 				modules.add(mod);

@@ -58,15 +58,15 @@ public abstract class PersistableEntity implements Serializable {
   }
   
   
-  protected abstract void readEntity(ObjectInputStream in, Stamper stamper) throws IOException, ClassNotFoundException;
+  protected abstract void readEntity(ObjectInputStream in) throws IOException, ClassNotFoundException;
   protected abstract void writeEntity(ObjectOutputStream out) throws IOException;
   
   protected abstract void init();
   
-  final protected static <E extends PersistableEntity> E create(Class<E> clazz, Stamper stamper, Path p) throws IOException {
+  final protected static <E extends PersistableEntity> E create(Class<E> clazz, Path p) throws IOException {
     E entity;
     try {
-      entity = read(clazz, stamper, p);
+      entity = read(clazz, p);
     } catch (IOException e) {
       e.printStackTrace();
       entity = null;
@@ -93,65 +93,62 @@ public abstract class PersistableEntity implements Serializable {
     return entity;
   }
   
-  final protected static <E extends PersistableEntity> E tryReadElseCreate(Class<E> clazz, Stamper stamper, Path p) throws IOException {
+  final protected static <E extends PersistableEntity> E tryReadElseCreate(Class<E> clazz, Path p) throws IOException {
     try {
-      E e = read(clazz, stamper, p);
+      E e = read(clazz, p);
       if (e != null)
         return e;
-      return create(clazz, stamper, p);
+      return create(clazz, p);
     }
     catch (IOException e) {
       e.printStackTrace();
-      return create(clazz, stamper, p);
+      return create(clazz, p);
     }
   }
   
-  final protected static <E extends PersistableEntity> E read(Class<E> clazz, Stamper stamper, Path p) throws IOException {
+  final public static <E extends PersistableEntity> E read(Class<E> clazz, Path p) throws IOException {
     if (p == null)
       return null;
     
-    E entity = readFromMemoryCache(clazz, p);
-    if (entity != null && !entity.hasPersistentVersionChanged())
-      return entity;
-
     if (!FileCommands.exists(p))
       return null;
-
+      
+    ObjectInputStream in = null;
     try {
-      entity = clazz.newInstance();
-    } catch (InstantiationException e) {
-      e.printStackTrace();
-      return null;
-    } catch (IllegalAccessException e) {
-      e.printStackTrace();
-      return null;
-    }
-
-    entity.persistentPath = p;
-    entity.setPersisted(stamper);
-    entity.cacheInMemory();
-    
-    ObjectInputStream in = new ObjectInputStream(new FileInputStream(p.getAbsolutePath()));
-
-    try {
+      in = new ObjectInputStream(new FileInputStream(p.getAbsolutePath()));
+      
       long id = in.readLong();
+
+      E entity = readFromMemoryCache(clazz, p);
       long readId = clazz.getField("serialVersionUID").getLong(entity);
       if (id != readId) {
         inMemory.remove(entity.persistentPath);
         return null;
       }
       
-      entity.readEntity(in, stamper);
+      if (entity != null && !entity.hasPersistentVersionChanged())
+        return entity;
+
+
+      entity = clazz.newInstance();
+      
+      Stamper stamper = (Stamper) in.readObject();
+      entity.persistentPath = p;
+      entity.setPersisted(stamper);
+      entity.cacheInMemory();
+
+      entity.readEntity(in);
+      return entity;
     } catch (Throwable e) {
       System.err.println("Could not read module's dependency file: " + p + ": " + e);
-      inMemory.remove(entity.persistentPath);
-      FileCommands.delete(entity.persistentPath);
+      e.printStackTrace();
+      inMemory.remove(p);
+      FileCommands.delete(p);
       return null;
     } finally {
-      in.close();
+      if (in != null)
+        in.close();
     }
-    
-    return entity;
   }
   
   final public void write(Stamper stamper) throws IOException {
@@ -160,6 +157,7 @@ public abstract class PersistableEntity implements Serializable {
 
     try {
       out.writeLong(this.getClass().getField("serialVersionUID").getLong(this));
+      out.writeObject(stamper);
       writeEntity(out);
     } catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
       e.printStackTrace();
