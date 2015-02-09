@@ -257,7 +257,8 @@ abstract public class CompilationUnit extends PersistableEntity {
 	public void addGeneratedFile(Path file, Stamp stampOfFile) {
 		generatedFiles.put(file, stampOfFile);
 		try {
-      xattr.setGenBy(file, this);
+		  if (FileCommands.exists(file)) 
+		    xattr.setGenBy(file, this);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -457,8 +458,8 @@ abstract public class CompilationUnit extends PersistableEntity {
 	}
 
 	protected boolean isConsistentWithSourceArtifacts(Map<? extends Path, Stamp> editedSourceFiles) {
-		if (sourceArtifacts.isEmpty())
-			return false;
+//		if (sourceArtifacts.isEmpty())
+//			return false;
 
 		boolean hasEdits = editedSourceFiles != null;
 		for (Entry<RelativePath, Stamp> e : sourceArtifacts.entrySet()) {
