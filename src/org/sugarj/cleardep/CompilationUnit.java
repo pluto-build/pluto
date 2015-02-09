@@ -19,6 +19,8 @@ import org.sugarj.cleardep.stamp.PersistableEntityModuleStamper;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.cleardep.stamp.Util;
+import org.sugarj.cleardep.xattr.Xattr;
+import org.sugarj.cleardep.xattr.XattrCommandStrategy;
 import org.sugarj.common.AppendingIterable;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.path.Path;
@@ -32,6 +34,8 @@ import org.sugarj.common.path.RelativePath;
 abstract public class CompilationUnit extends PersistableEntity {
 
 	public static final long serialVersionUID = -5713504273621720673L;
+	
+	public static final Xattr xattr = new Xattr(new XattrCommandStrategy());
 	
 	public static enum State {
 	  NEW, INITIALIZED, IN_PROGESS, SUCCESS, FAILURE;
@@ -60,7 +64,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	// Methods for initialization
 	// **************************
 
-	protected static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Path dep) throws IOException {
+	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Path dep) throws IOException {
 		E e = PersistableEntity.tryReadElseCreate(cl, dep);
 		e.init();
 		e.defaultStamper = stamper;
@@ -252,6 +256,11 @@ abstract public class CompilationUnit extends PersistableEntity {
 
 	public void addGeneratedFile(Path file, Stamp stampOfFile) {
 		generatedFiles.put(file, stampOfFile);
+		try {
+      xattr.setGenBy(file, this);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
 	}
 
 	public void addCircularModuleDependency(CompilationUnit mod) {

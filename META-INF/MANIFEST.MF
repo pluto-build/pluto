@@ -11,4 +11,5 @@ Export-Package: org.sugarj.cleardep,
  org.sugarj.common,
  org.sugarj.common.path,
  org.sugarj.util
-Require-Bundle: org.eclipse.core.runtime
+Require-Bundle: org.eclipse.core.runtime,
+ org.sugarj.common
