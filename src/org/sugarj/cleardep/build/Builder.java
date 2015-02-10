@@ -29,12 +29,10 @@ public abstract class Builder<C extends BuildContext, T, E extends CompilationUn
       build(depResult, input);
       if (!depResult.isFinished())
         depResult.setState(CompilationUnit.State.SUCCESS);
-      if (!depResult.isPersisted())
-        depResult.write();
+      depResult.write();
     } catch (Throwable t) {
       depResult.setState(CompilationUnit.State.FAILURE);
-      if (!depResult.isPersisted())
-        depResult.write();
+      depResult.write();
       throw t;
     }
     
