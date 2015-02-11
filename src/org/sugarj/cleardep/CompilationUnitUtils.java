@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.sugarj.cleardep.CompilationUnit.ModuleVisitor;
-import org.sugarj.util.Predicate;
+import org.sugarj.common.util.Predicate;
 
 public class CompilationUnitUtils {
 
