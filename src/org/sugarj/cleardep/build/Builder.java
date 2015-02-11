@@ -14,11 +14,13 @@ public abstract class Builder<C extends BuildContext, T, E extends CompilationUn
     this.context = context;
   }
   
+  protected abstract Path persistentPath(T input);
   protected abstract Class<E> resultClass();
   protected abstract Stamper defaultStamper();
   protected abstract void build(E result, T input) throws IOException;
   
-  public CompilationUnit require(T input, Path dep, Mode<E> mode) throws IOException {
+  public CompilationUnit require(T input, Mode<E> mode) throws IOException {
+    Path dep = persistentPath(input);
     E depResult = CompilationUnit.readConsistent(resultClass(), mode, context.getEditedSourceFiles(), dep);
     if (depResult != null)
       return depResult;

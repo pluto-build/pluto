@@ -39,6 +39,10 @@ abstract public class CompilationUnit extends PersistableEntity {
 	
 	public static enum State {
 	  NEW, INITIALIZED, IN_PROGESS, SUCCESS, FAILURE;
+	  
+	  public static State finished(boolean success) {
+	    return success ? SUCCESS : FAILURE;
+	  }
 	}
 
 	public CompilationUnit() { /* for deserialization only */ }
