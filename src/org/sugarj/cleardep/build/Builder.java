@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.sugarj.cleardep.CompilationUnit;
 import org.sugarj.cleardep.Mode;
 import org.sugarj.cleardep.stamp.Stamper;
+import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 
 public abstract class Builder<C extends BuildContext, T, E extends CompilationUnit> {
@@ -35,7 +36,8 @@ public abstract class Builder<C extends BuildContext, T, E extends CompilationUn
     } catch (Throwable t) {
       depResult.setState(CompilationUnit.State.FAILURE);
       depResult.write();
-      throw t;
+      t.printStackTrace(Log.err);
+      return depResult;
     }
     
     return depResult;
