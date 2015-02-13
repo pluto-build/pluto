@@ -9,14 +9,14 @@ import org.sugarj.common.path.Path;
 
 public class XattrCommandStrategy implements XattrStrategy {
 
-  CommandExecution exec = new CommandExecution(false);
+  CommandExecution exec = new CommandExecution(true);
   
   @Override
   public void setXattr(Path p, String key, String value) throws IOException {
     try {
       exec.execute("xattr", "-w", Xattr.PREFIX + ":" + key, value, p.getAbsolutePath());
     } catch (CommandExecution.ExecutionError e) {
-      System.err.println(e.getMessage());
+      throw new IOException(e);
     }
   }
 
@@ -28,7 +28,6 @@ public class XattrCommandStrategy implements XattrStrategy {
         return out[0][0];
       return null;
     } catch (CommandExecution.ExecutionError e) {
-      System.err.println(e.getMessage());
       return null;
     }
   }
@@ -47,7 +46,6 @@ public class XattrCommandStrategy implements XattrStrategy {
       }
       return attrs;
     } catch (CommandExecution.ExecutionError e) {
-      System.err.println(e.getMessage());
       return null;
     }
   }

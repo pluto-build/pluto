@@ -23,6 +23,7 @@ import org.sugarj.cleardep.xattr.Xattr;
 import org.sugarj.cleardep.xattr.XattrCommandStrategy;
 import org.sugarj.common.AppendingIterable;
 import org.sugarj.common.FileCommands;
+import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 import org.sugarj.common.path.RelativePath;
 
@@ -231,6 +232,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 
 	public void addSourceArtifact(RelativePath file, Stamp stampOfFile) {
 		sourceArtifacts.put(file, stampOfFile);
+		checkUnitDependency(file);
 	}
 	
   	public void addExternalFileDependency(Path file) {
@@ -239,22 +241,47 @@ abstract public class CompilationUnit extends PersistableEntity {
 
 	public void addExternalFileDependency(Path file, Stamp stampOfFile) {
 		externalFileDependencies.put(file, stampOfFile);
+		checkUnitDependency(file);
 	}
+	
+	private void checkUnitDependency(Path file) {
+	  if (FileCommands.exists(file)) {
+	    try {
+        final Path dep = xattr.getGenBy(file);
+        if (dep == null)
+          return;
+        
+        boolean foundDep = visit(new ModuleVisitor<Boolean>() {
+          @Override
+          public Boolean visit(CompilationUnit mod, Mode<?> mode) {
+            return dep.equals(mod.getPersistentPath());
+          }
 
-	public void addExternalFileDependencyLate(Path file) {
-		addExternalFileDependencyLate(file, defaultStamper.stampOf(file));
-	}
+          @Override
+          public Boolean combine(Boolean t1, Boolean t2) {
+            return t1 || t2;
+          }
 
-	public void addExternalFileDependencyLate(Path file, Stamp stampOfFile) {
-		try {
-			externalFileDependencies.put(file, stampOfFile);
-		} catch (UnsupportedOperationException e) {
-			externalFileDependencies = new HashMap<>(externalFileDependencies);
-			externalFileDependencies.put(file, stampOfFile);
-		}
-	}
+          @Override
+          public Boolean init() {
+            return false;
+          }
 
-	public void addGeneratedFile(Path file) {
+          @Override
+          public boolean cancel(Boolean t) {
+            return t;
+          }
+        });
+        
+        if (!foundDep)
+          throw new IllegalDependencyException("Illegal dependency to file " + file + " without build-unit dependency on " + dep + ", which generated " + file + ". The current builder should mark a dependency to " + dep + " by `requiring` the corresponding builder.");
+      } catch (IOException e) {
+        Log.log.log("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, Log.IMPORT);
+      }
+	  }
+  }
+
+  public void addGeneratedFile(Path file) {
 		addGeneratedFile(file, defaultStamper.stampOf(file));
 	}
 
@@ -366,13 +393,28 @@ abstract public class CompilationUnit extends PersistableEntity {
 		return getModuleDependencies().contains(other) || getCircularModuleDependencies().contains(other);
 	}
 
-	public boolean dependsOnTransitively(CompilationUnit other) {
-		if (dependsOn(other))
-			return true;
-		for (CompilationUnit mod : getModuleDependencies())
-			if (mod.dependsOnTransitively(other))
-				return true;
-		return false;
+	public boolean dependsOnTransitively(final CompilationUnit other) {
+	  return visit(new ModuleVisitor<Boolean>() {
+      @Override
+      public Boolean visit(CompilationUnit mod, Mode<?> mode) {
+        return mod.equals(other);
+      }
+
+      @Override
+      public Boolean combine(Boolean t1, Boolean t2) {
+        return t1 || t2;
+      }
+
+      @Override
+      public Boolean init() {
+        return false;
+      }
+
+      @Override
+      public boolean cancel(Boolean t) {
+        return t;
+      }
+    });
 	}
 
 	public Set<RelativePath> getSourceArtifacts() {
