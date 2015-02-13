@@ -3,8 +3,8 @@ package org.sugarj.cleardep.build;
 import java.io.IOException;
 
 import org.sugarj.cleardep.CompilationUnit;
-import org.sugarj.cleardep.IllegalDependencyException;
 import org.sugarj.cleardep.Mode;
+import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
@@ -35,10 +35,12 @@ public abstract class Builder<C extends BuildContext, T, E extends CompilationUn
       return depResult;
     
     depResult = CompilationUnit.create(resultClass(), defaultStamper(), mode, null, dep);
+    String taskDescription = taskDescription(input);
     try {
       depResult.setState(CompilationUnit.State.IN_PROGESS);
       
-      Log.log.beginInlineTask(taskDescription(input), Log.CORE);
+      if (taskDescription != null)
+        Log.log.beginTask(taskDescription, Log.CORE);
       
       // call the actual builder
       build(depResult, input);
@@ -46,20 +48,29 @@ public abstract class Builder<C extends BuildContext, T, E extends CompilationUn
       if (!depResult.isFinished())
         depResult.setState(CompilationUnit.State.SUCCESS);
       depResult.write();
-    } catch (IllegalDependencyException e) {
+    } catch(RequiredBuilderFailed e) {
+      BuilderResult required = e.getLastAddedBuilder();
+      depResult.addModuleDependency(required.result);
+      depResult.setState(CompilationUnit.State.FAILURE);
+      depResult.write();
+      
+      e.addBuilder(this, input, depResult);
+      if (taskDescription != null)
+        Log.log.logErr("Required builder failed", Log.CORE);
+      throw e;
+    } catch (Throwable e) {
       depResult.setState(CompilationUnit.State.FAILURE);
       depResult.write();
       Log.log.logErr(e.getMessage(), Log.CORE);
-      return depResult;
-    } catch (Throwable t) {
-      depResult.setState(CompilationUnit.State.FAILURE);
-      depResult.write();
-      t.printStackTrace(Log.err);
-      return depResult;
+      throw new RequiredBuilderFailed(this, input, depResult, e);
     } finally {
-      Log.log.endTask();
+      if (taskDescription != null)
+        Log.log.endTask();
     }
     
+    if (depResult.getState() == CompilationUnit.State.FAILURE)
+      throw new RequiredBuilderFailed(this, input, depResult, new IllegalStateException("Builder failed for unknown reason, please confer log."));
+
     return depResult;
   }
   
