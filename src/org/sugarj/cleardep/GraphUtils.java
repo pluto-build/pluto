@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
@@ -127,6 +128,7 @@ public class GraphUtils {
    *         a unit u2 in the list does not depend on u2 in the spanning DAG
    */
   public static List<CompilationUnit> sortTopologicalFrom(CompilationUnit root) {
+    Objects.requireNonNull(root);
     LinkedList<CompilationUnit> sorting = new LinkedList<>();
 
     Map<CompilationUnit, Boolean> visitedUnits = new HashMap<>();
