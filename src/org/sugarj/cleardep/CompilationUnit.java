@@ -20,7 +20,7 @@ import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.cleardep.stamp.Util;
 import org.sugarj.cleardep.xattr.Xattr;
-import org.sugarj.cleardep.xattr.XattrCommandStrategy;
+import org.sugarj.cleardep.xattr.XattrAttributeViewStrategy;
 import org.sugarj.common.AppendingIterable;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
@@ -36,7 +36,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 
 	public static final long serialVersionUID = -5713504273621720673L;
 	
-	public static final Xattr xattr = new Xattr(new XattrCommandStrategy());
+	public static final Xattr xattr = Xattr.getDefault();
 	
 	public static enum State {
 	  NEW, INITIALIZED, IN_PROGESS, SUCCESS, FAILURE;
@@ -274,7 +274,7 @@ abstract public class CompilationUnit extends PersistableEntity {
         });
         
         if (!foundDep)
-          throw new IllegalDependencyException("Illegal dependency to file " + file + " without build-unit dependency on " + dep + ", which generated " + file + ". The current builder should mark a dependency to " + dep + " by `requiring` the corresponding builder.");
+          throw new IllegalDependencyException("Build unit " + getPersistentPath() + " has a hidden dependency on file " + file + " without build-unit dependency on " + dep + ", which generated this file. The current builder " + FileCommands.fileName(getPersistentPath()) + " should mark a dependency to " + FileCommands.fileName(dep) + " by `requiring` the corresponding builder.");
       } catch (IOException e) {
         Log.log.log("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, Log.IMPORT);
       }

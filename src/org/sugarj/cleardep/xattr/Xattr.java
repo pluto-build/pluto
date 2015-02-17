@@ -13,6 +13,27 @@ import org.sugarj.common.path.Path;
 
 public class Xattr {
 
+  public static Xattr getDefault() {
+    return new Xattr(new XattrPreferencesStrategy());
+//    try {
+//      if (Files.getFileStore(new File(".").toPath()).supportsFileAttributeView(UserDefinedFileAttributeView.class))
+//        return new Xattr(new XattrAttributeViewStrategy());
+//    } catch (IOException e) {
+//    }
+//    
+//    XattrCommandStrategy xcs = new XattrCommandStrategy();
+//    try {
+//      Path p = FileCommands.newTempFile("xxx");
+//      xcs.setXattr(p, "test", "test-value");
+//      String val = xcs.getXattr(p, "test");
+//      if (val != null && val.equals("test-value"))
+//        return new Xattr(xcs);
+//    } catch (IOException e) {
+//    }
+//
+//    throw new IllegalStateException("No Xattr strategy available.");
+  }
+  
   public final static String PREFIX = "org.sugarj.cleardep";
   
   public final XattrStrategy strategy;
