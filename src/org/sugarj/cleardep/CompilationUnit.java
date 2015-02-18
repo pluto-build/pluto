@@ -20,7 +20,6 @@ import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.cleardep.stamp.Util;
 import org.sugarj.cleardep.xattr.Xattr;
-import org.sugarj.cleardep.xattr.XattrAttributeViewStrategy;
 import org.sugarj.common.AppendingIterable;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
