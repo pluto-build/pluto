@@ -110,9 +110,10 @@ public class BuildManager {
     
     Path dep = builder.persistentPath(input);
     
-    E depResult = CompilationUnit.readConsistent(builder.resultClass(), mode, builder.context.getEditedSourceFiles(), dep);
-       if (depResult != null)
-         return depResult;
+    E depResult;
+//    = CompilationUnit.readConsistent(builder.resultClass(), mode, builder.context.getEditedSourceFiles(), dep);
+//       if (depResult != null)
+//         return depResult;
     
     if (this.isConsistent(dep, builder.resultClass(), mode, builder.context.getEditedSourceFiles())) {
       depResult = CompilationUnit.read(builder.resultClass(), mode, dep);
