@@ -3,6 +3,7 @@ package org.sugarj.cleardep;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
 
 import org.sugarj.cleardep.stamp.ModuleStamp;
@@ -544,9 +546,37 @@ abstract public class CompilationUnit extends PersistableEntity {
 	}
 
 	public <T> T visit(ModuleVisitor<T> visitor, Mode<?> thisMode) {
-		return visit(visitor, thisMode, false);
+	  Queue<CompilationUnit> queue = new ArrayDeque<>();
+	  queue.add(this);
+	  
+	  Set<CompilationUnit> seenUnits = new HashSet<>();
+    seenUnits.add(this);
+	  
+	  T result = visitor.init();
+	  while(!queue.isEmpty()) {
+	    CompilationUnit toVisit = queue.poll();
+	 // Mode for required modules iff mod it not this and thismode not
+      // null
+	    Mode<?> mode = thisMode;
+      if (this != toVisit && mode != null) {
+        mode = mode.getModeForRequiredModules();
+      }
+      T newResult = visitor.visit(toVisit, mode);
+      result = visitor.combine(result, newResult);
+      if (visitor.cancel(result))
+        break;
+      
+      for (CompilationUnit dep : toVisit.getModuleDependencies()) {
+        if (!seenUnits.contains(dep)) {
+          queue.add(dep);
+          seenUnits.add(dep);
+        }
+      }
+	  }
+	  
+	return result;
 	}
-
+/*
 	public <T> T visit(ModuleVisitor<T> visitor, Mode<?> thisMode, boolean reverseOrder) {
 		List<CompilationUnit> topologicalOrder = GraphUtils.sortTopologicalFrom(this);
 		if (reverseOrder) {
@@ -571,7 +601,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		}
 
 		return result;
-	}
+	}*/
 
 	// *************************
 	// Methods for serialization

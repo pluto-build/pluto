@@ -37,7 +37,7 @@ public class CompilationUnitUtils {
       }
     };
 
-    startUnit.visit(visitor, null, reverse);
+    startUnit.visit(visitor, null);
 
     return results;
   }
