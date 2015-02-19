@@ -97,11 +97,16 @@ public class BuildManager {
     if (builder.context.getBuildManager() != this) {
       throw new RuntimeException("Illegal builder using another build manager for this build");
     }
-
+    
     Path dep = builder.persistentPath(input);
-
+    
+    E depResult;
+//    = CompilationUnit.readConsistent(builder.resultClass(), mode, builder.context.getEditedSourceFiles(), dep);
+//       if (depResult != null)
+//         return depResult;
+    
     if (this.isConsistent(dep, builder.resultClass(), mode, builder.context)) {
-      E depResult = CompilationUnit.read(builder.resultClass(), mode, dep);
+      depResult = CompilationUnit.read(builder.resultClass(), mode, dep);
       if (!depResult.isConsistent(builder.context.getEditedSourceFiles(), mode)) {
         throw new AssertionError("BuildManager does not guarantee soundness");
       }
@@ -115,12 +120,15 @@ public class BuildManager {
     }
     this.requireCallStack.push(entry);
 
+
     // E depResult = CompilationUnit.readConsistent(builder.resultClass(), mode,
     // builder.context.getEditedSourceFiles(), dep);
     // if (depResult != null)
     // return depResult;
 
-    E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep);
+    depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep);
+
+
     String taskDescription = builder.taskDescription(input);
     try {
       depResult.setState(CompilationUnit.State.IN_PROGESS);

@@ -23,7 +23,6 @@ import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.cleardep.stamp.Util;
 import org.sugarj.cleardep.xattr.Xattr;
-import org.sugarj.cleardep.xattr.XattrAttributeViewStrategy;
 import org.sugarj.common.AppendingIterable;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
@@ -275,7 +274,7 @@ abstract public class CompilationUnit extends PersistableEntity {
         });
         
         if (!foundDep)
-          throw new IllegalDependencyException("Build unit " + getPersistentPath() + " has a hidden dependency on file " + file + " without build-unit dependency on " + dep + ", which generated this file. The current builder " + FileCommands.fileName(getPersistentPath()) + " should mark a dependency to " + FileCommands.fileName(dep) + " by `requiring` the corresponding builder.");
+          throw new IllegalDependencyException("Build unit " + FileCommands.tryGetRelativePath(getPersistentPath()) + " has a hidden dependency on file " + FileCommands.tryGetRelativePath(file) + " without build-unit dependency on " + dep + ", which generated this file. The current builder " + FileCommands.fileName(getPersistentPath()) + " should mark a dependency to " + FileCommands.tryGetRelativePath(dep) + " by `requiring` the corresponding builder.");
       } catch (IOException e) {
         Log.log.log("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, Log.IMPORT);
       }
