@@ -94,7 +94,7 @@ public class GraphUtils {
 
       this.stackPush(unit);
 
-      for (CompilationUnit dep : unit.getCircularAndNonCircularModuleDependencies()) {
+      for (CompilationUnit dep : unit.getModuleDependencies()) {
         if (this.unitIndices.containsKey(dep)) {
           if (this.stackContains(dep)) {
             this.unitLowLinks.put(unit, Math.min(this.unitLowLinks.get(unit), this.unitIndices.get(dep)));
@@ -156,6 +156,7 @@ public class GraphUtils {
           }
           else if (depstatus == PENDING) {
             // cycle
+            throw new RuntimeException("Cycle detected in topological sort");
           }
         }
         // Shorten: If no dep was pushed on the stack, we can finish p.a right
@@ -189,7 +190,7 @@ public class GraphUtils {
   private static boolean validateTopolocialSorting(List<CompilationUnit> units) {
     for (int i = 0; i < units.size() - 1; i++) {
       for (int j = i + 1; j < units.size(); j++) {
-        if (units.get(i).dependsOnTransitivelyNoncircularly(units.get(j))) {
+        if (units.get(i).dependsOnTransitively(units.get(j))) {
           return false;
         }
       }
@@ -197,178 +198,5 @@ public class GraphUtils {
     return true;
   }
 
-  /**
-   * Calculates the connected components of the given graph (a set of
-   * compilation units. All compilation units in a connected component are
-   * connected using module dependencies.
-   * 
-   * @param units
-   *          the graph of units to partition
-   * @return a set of connected components, a partition of units
-   */
-  public static Set<Set<CompilationUnit>> calculateConnectedComponents(Set<CompilationUnit> units) {
-    Map<CompilationUnit, Set<CompilationUnit>> components = new HashMap<>();
-    Map<CompilationUnit, CompilationUnit> representants = new HashMap<>();
-    Queue<CompilationUnit> unitsToVisit = new LinkedList<>(units);
-    for (CompilationUnit unit : units) {
-      components.put(unit, new HashSet<>(Collections.singleton(unit)));
-      representants.put(unit, unit);
-    }
-
-    while (!unitsToVisit.isEmpty()) {
-      CompilationUnit unit = unitsToVisit.poll();
-      CompilationUnit unitRep = representants.get(unit);
-      Set<CompilationUnit> unitComp = components.get(unitRep);
-      for (CompilationUnit dep : unit.getCircularAndNonCircularModuleDependencies()) {
-        CompilationUnit depRep = representants.get(dep);
-        if (depRep == null) {
-          // dep is not a member of units
-          continue;
-        }
-        if (depRep != unitRep) {
-          Set<CompilationUnit> depComp = components.get(depRep);
-          unitComp.addAll(depComp);
-          for (CompilationUnit u : depComp) {
-            representants.put(u, unitRep);
-          }
-          components.remove(depRep);
-        }
-      }
-    }
-
-    Set<Set<CompilationUnit>> componentsSet = new HashSet<>(components.values());
-    assert validateConnectedComponents(componentsSet, units) : "Connected components wrong " + componentsSet;
-    return componentsSet;
-  }
-
-  private static boolean validateConnectedComponents(Set<Set<CompilationUnit>> connectComps, Set<CompilationUnit> allUnits) {
-    List<Set<CompilationUnit>> components = new ArrayList<>(connectComps);
-
-    Set<CompilationUnit> allUnitsCopy = new HashSet<>(allUnits);
-
-    for (Set<CompilationUnit> component : components) {
-      allUnitsCopy.removeAll(component);
-      boolean connected = component.size() <= 1;
-      for (CompilationUnit u : component) {
-        if (!allUnits.contains(u)) {
-          System.err.println("Contains unit which is not in allUnits");
-          return false;
-        }
-        for (CompilationUnit u2 : component) {
-          if (u == u2)
-            continue;
-          if (dependsOnTransitivlyUsing(u, u2, component)) {
-            connected = true;
-            break;
-          }
-        }
-      }
-      if (!connected) {
-        System.err.println("Component is not connected");
-        return false;
-      }
-    }
-
-    if (allUnitsCopy.size() > 0) {
-      System.err.println("Partition does not cover all units");
-      return false;
-    }
-
-    for (int i = 0; i < components.size() - 1; i++) {
-      for (int j = i + 1; j < components.size(); j++) {
-        Set<CompilationUnit> comp1 = components.get(i);
-        Set<CompilationUnit> comp2 = components.get(j);
-        for (CompilationUnit u1 : comp1) {
-          for (CompilationUnit u2 : comp2) {
-            if (u1 == u2 || dependsOnTransitivlyUsing(u1, u2, allUnits)) {
-              System.err.println("Connections between components");
-              return false;
-            }
-          }
-        }
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Checks whether unit depends transitivly on other using only availableUnits
-   * as intermediate units on the path from unit to other.
-   * 
-   * @param unit
-   *          the unit the start at
-   * @param other
-   *          the unit to check whether start depends transitivly on
-   * @param availableUnits
-   *          the units which
-   * @return
-   */
-  public static boolean dependsOnTransitivlyUsing(CompilationUnit unit, CompilationUnit other, Set<CompilationUnit> availableUnits) {
-    Queue<CompilationUnit> queue = new LinkedList<CompilationUnit>();
-    Set<CompilationUnit> seenUnits = new HashSet<>();
-    queue.add(unit);
-    seenUnits.add(unit);
-    while (!queue.isEmpty()) {
-      CompilationUnit u = queue.poll();
-      if (u == other)
-        return true;
-      for (CompilationUnit dep : u.getCircularAndNonCircularModuleDependencies()) {
-        if (availableUnits.contains(dep) && !seenUnits.contains(dep)) {
-          seenUnits.add(dep);
-          queue.add(dep);
-        }
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Repairs the dependency graph when e.g. dependencies has been removed. Than
-   * circular module dependencies maybe need to be moved to nun circular ones.
-   * This cannot be done by the {@link CompilationUnit} locally.
-   * 
-   * @param rootUnits
-   */
-  public static void repairGraph(Set<CompilationUnit> rootUnits) {
-    Set<CompilationUnit> allUnits = new HashSet<>();
-    for (CompilationUnit unit : rootUnits) {
-      allUnits.addAll(CompilationUnitUtils.findAllUnits(unit));
-    }
-
-    // Set all dependencies to non circular an then remove circular dependencies
-    for (CompilationUnit unit : allUnits) {
-      HashSet<CompilationUnit> circDeps = new HashSet<>(unit.getCircularModuleDependencies());
-      for (CompilationUnit dep : circDeps) {
-        unit.moveCircularModulDepToNonCircular(dep);
-      }
-    }
-
-    Set<CompilationUnit> seenUnits = new HashSet<>();
-    Set<CompilationUnit> newUnits = new HashSet<>();
-    newUnits.addAll(rootUnits);
-
-    while (!newUnits.isEmpty()) {
-      CompilationUnit unit = newUnits.iterator().next();
-      newUnits.remove(unit);
-      seenUnits.add(unit);
-
-      // Need to copy the depencies because we are going to modify the
-      // dependencies while iterating through them
-      Set<CompilationUnit> moduleDeps = new HashSet<>(unit.getModuleDependencies());
-      for (CompilationUnit dep : moduleDeps) {
-        if (seenUnits.contains(dep)) {
-          // This dep whould close a circle
-          unit.moveModuleDepToCircular(dep);
-        } else {
-          newUnits.add(dep);
-        }
-      }
-    }
-
-    // Validate the result
-    assert BuildScheduleBuilder.validateDepGraphCycleFree(rootUnits) : "The repaired graph contains cycles";
-    assert BuildScheduleBuilder.validateCircDepsAreCircDeps(rootUnits) : "The graph contains circular dependencies which are not circular";
-  }
 
 }

@@ -3,6 +3,7 @@ package org.sugarj.cleardep;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -12,6 +13,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
 
 import org.sugarj.cleardep.stamp.ModuleStamp;
@@ -59,7 +62,6 @@ abstract public class CompilationUnit extends PersistableEntity {
 	protected Stamper defaultStamper;
 	
 	protected Map<CompilationUnit, ModuleStamp> moduleDependencies;
-	protected Map<CompilationUnit, ModuleStamp> circularModuleDependencies;
 	protected Map<RelativePath, Stamp> sourceArtifacts;
 	protected Map<Path, Stamp> externalFileDependencies;
 	protected Map<Path, Stamp> generatedFiles;
@@ -215,7 +217,6 @@ abstract public class CompilationUnit extends PersistableEntity {
 	  mirrors = new ArrayList<>();
 		sourceArtifacts = new HashMap<>();
 		moduleDependencies = new HashMap<>();
-		circularModuleDependencies = new HashMap<>();
 		externalFileDependencies = new HashMap<>();
 		generatedFiles = new HashMap<>();
 		state = State.INITIALIZED;
@@ -293,45 +294,23 @@ abstract public class CompilationUnit extends PersistableEntity {
       throw new RuntimeException(e);
     }
 	}
-
-	public void addCircularModuleDependency(CompilationUnit mod) {
-		circularModuleDependencies.put(mod, PersistableEntityModuleStamper.minstance.stampOf(mod));
-	}
-	public void addCircularModuleDependency(CompilationUnit mod, ModuleStamp stamp) {
-    circularModuleDependencies.put(mod, stamp);
-  }
-
 	public void addModuleDependency(CompilationUnit mod) {
 	  addModuleDependency(mod, PersistableEntityModuleStamper.minstance.stampOf(mod));
 	}
 	public void addModuleDependency(CompilationUnit mod, ModuleStamp stamp) {
-		if (mod == this) {
-			return;
-		}
-		if (mod.dependsOnTransitivelyNoncircularly(this)) {
-			this.circularModuleDependencies.put(mod, stamp);
-		} else {
-			this.moduleDependencies.put(mod, stamp);
-		}
+	  Objects.requireNonNull(mod);
+	  Objects.requireNonNull(stamp);
+		this.moduleDependencies.put(mod, stamp);
 	}
 
 	/**
-	 * Removes a module dependency. Note: THIS METHOD IS NOT SAFE AND LEADS TO
-	 * INCONSISTENT STATES. Therefore it is protected. The Problem is that
-	 * removing a module dependency may change the spanning tree at another non
-	 * local point. It is necessary to repair the dependency tree after removing
-	 * a dependency This is not done after removing a module dependency because
-	 * it requires to rebuild all dependencies which can be done after multiple
-	 * removals once.
-	 * 
+	
 	 * @param mod
 	 * @see GraphUtils#repairGraph(Set)
 	 */
 	protected void removeModuleDependency(CompilationUnit mod) {
 		// Just remove from both maps because mod is exactly in one
-		// But queriing is not cheaper
 		this.moduleDependencies.remove(mod);
-		this.circularModuleDependencies.remove(mod);
 	}
 
 //	public void updateModuleDependencyInterface(CompilationUnit mod) {
@@ -347,49 +326,13 @@ abstract public class CompilationUnit extends PersistableEntity {
 //		}
 //	}
 
-	public void moveCircularModulDepToNonCircular(CompilationUnit mod) {
-		if (mod == null) {
-			throw new NullPointerException("Cannot handle null unit");
-		}
-		if (!this.circularModuleDependencies.containsKey(mod)) {
-			throw new IllegalArgumentException("Given CompilationUnit is not a circular Dependency");
-		}
-		ModuleStamp value = this.circularModuleDependencies.get(mod);
-		this.circularModuleDependencies.remove(mod);
-		this.moduleDependencies.put(mod, value);
-	}
-
-	public void moveModuleDepToCircular(CompilationUnit mod) {
-		if (mod == null) {
-			throw new NullPointerException("Cannot handle null unit");
-		}
-		if (!this.moduleDependencies.containsKey(mod)) {
-			throw new IllegalArgumentException("Given CompilationUnit is not a non circular dependency");
-		}
-		ModuleStamp value = this.moduleDependencies.get(mod);
-		this.moduleDependencies.remove(mod);
-		this.circularModuleDependencies.put(mod, value);
-	}
 
 	// *********************************
 	// Methods for querying dependencies
 	// *********************************
 
-	public boolean dependsOnNoncircularly(CompilationUnit other) {
-		return getModuleDependencies().contains(other);
-	}
-
-	public boolean dependsOnTransitivelyNoncircularly(CompilationUnit other) {
-		if (dependsOnNoncircularly(other))
-			return true;
-		for (CompilationUnit mod : getModuleDependencies())
-			if (mod.dependsOnTransitivelyNoncircularly(other))
-				return true;
-		return false;
-	}
-
 	public boolean dependsOn(CompilationUnit other) {
-		return getModuleDependencies().contains(other) || getCircularModuleDependencies().contains(other);
+		return getModuleDependencies().contains(other) ;
 	}
 
 	public boolean dependsOnTransitively(final CompilationUnit other) {
@@ -424,14 +367,6 @@ abstract public class CompilationUnit extends PersistableEntity {
 		return moduleDependencies.keySet();
 	}
 
-	public Set<CompilationUnit> getCircularModuleDependencies() {
-		return circularModuleDependencies.keySet();
-	}
-
-	public Iterable<CompilationUnit> getCircularAndNonCircularModuleDependencies() {
-		return new AppendingIterable<>(Arrays.asList(this.getModuleDependencies(), this.getCircularModuleDependencies()));
-	}
-
 	public Set<Path> getExternalFileDependencies() {
 		return externalFileDependencies.keySet();
 	}
@@ -458,9 +393,6 @@ abstract public class CompilationUnit extends PersistableEntity {
 					dependencies.add(p);
 
 			for (CompilationUnit nextDep : res.getModuleDependencies())
-				if (!visited.contains(nextDep) && !queue.contains(nextDep))
-					queue.addFirst(nextDep);
-			for (CompilationUnit nextDep : res.getCircularModuleDependencies())
 				if (!visited.contains(nextDep) && !queue.contains(nextDep))
 					queue.addFirst(nextDep);
 		}
@@ -613,9 +545,37 @@ abstract public class CompilationUnit extends PersistableEntity {
 	}
 
 	public <T> T visit(ModuleVisitor<T> visitor, Mode<?> thisMode) {
-		return visit(visitor, thisMode, false);
+	  Queue<CompilationUnit> queue = new ArrayDeque<>();
+	  queue.add(this);
+	  
+	  Set<CompilationUnit> seenUnits = new HashSet<>();
+    seenUnits.add(this);
+	  
+	  T result = visitor.init();
+	  while(!queue.isEmpty()) {
+	    CompilationUnit toVisit = queue.poll();
+	 // Mode for required modules iff mod it not this and thismode not
+      // null
+	    Mode<?> mode = thisMode;
+      if (this != toVisit && mode != null) {
+        mode = mode.getModeForRequiredModules();
+      }
+      T newResult = visitor.visit(toVisit, mode);
+      result = visitor.combine(result, newResult);
+      if (visitor.cancel(result))
+        break;
+      
+      for (CompilationUnit dep : toVisit.getModuleDependencies()) {
+        if (!seenUnits.contains(dep)) {
+          queue.add(dep);
+          seenUnits.add(dep);
+        }
+      }
+	  }
+	  
+	return result;
 	}
-
+/*
 	public <T> T visit(ModuleVisitor<T> visitor, Mode<?> thisMode, boolean reverseOrder) {
 		List<CompilationUnit> topologicalOrder = GraphUtils.sortTopologicalFrom(this);
 		if (reverseOrder) {
@@ -640,7 +600,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		}
 
 		return result;
-	}
+	}*/
 
 	// *************************
 	// Methods for serialization
@@ -669,19 +629,6 @@ abstract public class CompilationUnit extends PersistableEntity {
 			if (mod == null)
 				throw new IOException("Required module cannot be read: " + path);
 			moduleDependencies.put(mod, interfaceHash);
-		}
-
-		int circularModuleDependencyCount = in.readInt();
-		circularModuleDependencies = new HashMap<>(circularModuleDependencyCount);
-		for (int i = 0; i < circularModuleDependencyCount; i++) {
-			String clName = (String) in.readObject();
-			Class<? extends CompilationUnit> cl = (Class<? extends CompilationUnit>) getClass().getClassLoader().loadClass(clName);
-			Path path = (Path) in.readObject();
-			CompilationUnit mod = PersistableEntity.read(cl, path);
-			ModuleStamp interfaceHash = (ModuleStamp) in.readObject();
-			if (mod == null)
-				throw new IOException("Required module cannot be read: " + path);
-			circularModuleDependencies.put(mod, interfaceHash);
 		}
 
 		boolean hasSyn = in.readBoolean();
@@ -721,14 +668,6 @@ abstract public class CompilationUnit extends PersistableEntity {
 		for (Entry<CompilationUnit, ModuleStamp> entry : moduleDependencies.entrySet()) {
 			CompilationUnit mod = entry.getKey();
 			assert mod.isPersisted() : "Required compilation units must be persisted.";
-			out.writeObject(mod.getClass().getCanonicalName());
-			out.writeObject(mod.persistentPath);
-			out.writeObject(entry.getValue());
-		}
-
-		out.writeInt(circularModuleDependencies.size());
-		for (Entry<CompilationUnit, ModuleStamp> entry : circularModuleDependencies.entrySet()) {
-			CompilationUnit mod = entry.getKey();
 			out.writeObject(mod.getClass().getCanonicalName());
 			out.writeObject(mod.persistentPath);
 			out.writeObject(entry.getValue());
