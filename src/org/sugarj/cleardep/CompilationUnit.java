@@ -456,8 +456,8 @@ abstract public class CompilationUnit extends PersistableEntity {
 	}
 
 	  
-	public static enum InconsistenyReason {
-	  FILES_NOT_CONSISTENT, DEPENDENCIES_NOT_CONSISTENT, OTHER, NO_REASON
+	public static enum InconsistenyReason implements Comparable<InconsistenyReason>{
+	  NO_REASON, FILES_NOT_CONSISTENT, DEPENDENCIES_NOT_CONSISTENT, OTHER, 
 	  
 	}
 	  

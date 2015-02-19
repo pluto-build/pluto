@@ -14,7 +14,6 @@ import org.sugarj.cleardep.CompilationUnit.InconsistenyReason;
 import org.sugarj.cleardep.GraphUtils;
 import org.sugarj.cleardep.Mode;
 import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
-import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 
@@ -26,7 +25,6 @@ public class BuildManager {
 
   private Map<Path, InconsistenyReason> extendedInconsistencyMap = new HashMap<>();
 
-  
   private <E extends CompilationUnit> boolean isConsistent(Path depPath, Class<E> resultClass, Mode<E> mode, BuildContext context) throws IOException {
     InconsistenyReason inconsistency = extendedInconsistencyMap.get(depPath);
     if (inconsistency != null) {
@@ -39,8 +37,8 @@ public class BuildManager {
     }
     return inconsistency == NO_REASON;
   }
-  
-  private <E extends CompilationUnit> void fillInconsistentCache(Path path,Class<E> resultClass, Mode<E> mode, BuildContext context ) throws IOException{
+
+  private <E extends CompilationUnit> void fillInconsistentCache(Path path, Class<E> resultClass, Mode<E> mode, BuildContext context) throws IOException {
     CompilationUnit rootUnit = CompilationUnit.read(resultClass, mode, path);
 
     if (rootUnit == null) {
@@ -48,43 +46,33 @@ public class BuildManager {
     } else {
       fillInconsistentCache(rootUnit, context);
     }
-    
+
   }
-    
+
   private void fillInconsistentCache(CompilationUnit root, BuildContext context) {
     List<Set<CompilationUnit>> sccs = GraphUtils.calculateStronglyConnectedComponents(Collections.singleton(root));
 
-    for (Set<CompilationUnit> scc : sccs) {
+    for (final Set<CompilationUnit> scc : sccs) {
       boolean sccConsistent = true;
       for (CompilationUnit unit : scc) {
         InconsistenyReason reason = extendedInconsistencyMap.get(unit.getPersistentPath());
         if (reason == null) {
-          reason = NO_REASON;
-
-          for (CompilationUnit dep : unit.getModuleDependencies()) {
-            if (!scc.contains(dep)) {
-              if (extendedInconsistencyMap.get(dep.getPersistentPath()) != NO_REASON) {
+          reason = unit.isConsistentShallowReason(context.getEditedSourceFiles());
+          if (reason.compareTo(DEPENDENCIES_NOT_CONSISTENT) < 0) {
+            for (CompilationUnit dep : unit.getModuleDependencies()) {
+              if (!scc.contains(dep) && extendedInconsistencyMap.get(dep.getPersistentPath()) != NO_REASON) {
                 reason = DEPENDENCIES_NOT_CONSISTENT;
-                sccConsistent = false;
+                break;
               }
             }
           }
-          InconsistenyReason localReason = unit.isConsistentShallowReason(context.getEditedSourceFiles());
-          if (reason == NO_REASON) {
-            reason = localReason;
-            sccConsistent = localReason == NO_REASON;
-          } else if (localReason == FILES_NOT_CONSISTENT || localReason == OTHER) {
-            reason = localReason;
-          }
         }
-        if (reason != NO_REASON) {
-          sccConsistent = false;
-        }
+        sccConsistent &= reason == NO_REASON;
         extendedInconsistencyMap.put(unit.getPersistentPath(), reason);
       }
       if (!sccConsistent && scc.size() > 1) {
         for (CompilationUnit unit : scc) {
-          if (extendedInconsistencyMap.get(unit.getPersistentPath()) == NO_REASON) {
+          if (extendedInconsistencyMap.get(unit.getPersistentPath()).compareTo(DEPENDENCIES_NOT_CONSISTENT) < 0) {
             extendedInconsistencyMap.put(unit.getPersistentPath(), DEPENDENCIES_NOT_CONSISTENT);
           }
         }
@@ -97,14 +85,15 @@ public class BuildManager {
     if (builder.context.getBuildManager() != this) {
       throw new RuntimeException("Illegal builder using another build manager for this build");
     }
-    
+
     Path dep = builder.persistentPath(input);
-    
+
     E depResult;
-//    = CompilationUnit.readConsistent(builder.resultClass(), mode, builder.context.getEditedSourceFiles(), dep);
-//       if (depResult != null)
-//         return depResult;
-    
+    // = CompilationUnit.readConsistent(builder.resultClass(), mode,
+    // builder.context.getEditedSourceFiles(), dep);
+    // if (depResult != null)
+    // return depResult;
+
     if (this.isConsistent(dep, builder.resultClass(), mode, builder.context)) {
       depResult = CompilationUnit.read(builder.resultClass(), mode, dep);
       if (!depResult.isConsistent(builder.context.getEditedSourceFiles(), mode)) {
@@ -120,14 +109,12 @@ public class BuildManager {
     }
     this.requireCallStack.push(entry);
 
-
     // E depResult = CompilationUnit.readConsistent(builder.resultClass(), mode,
     // builder.context.getEditedSourceFiles(), dep);
     // if (depResult != null)
     // return depResult;
 
     depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep);
-
 
     String taskDescription = builder.taskDescription(input);
     try {

@@ -1,7 +1,6 @@
 package org.sugarj.cleardep.build;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
 
 import org.sugarj.cleardep.CompilationUnit;
 import org.sugarj.cleardep.Mode;
