@@ -1,6 +1,7 @@
 package org.sugarj.cleardep.build;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
 
 import org.sugarj.cleardep.CompilationUnit;
 import org.sugarj.cleardep.Mode;
@@ -30,4 +31,16 @@ public abstract class Builder<C extends BuildContext, T, E extends CompilationUn
     return this.context.getBuildManager().require(this, input, mode);
   }
   
+  public RequirableCompilationUnit requireLater(final T input, final Mode<E> mode) {
+    return new RequirableCompilationUnit() {
+      @Override
+      public CompilationUnit require() throws IOException {
+        return Builder.this.require(input, mode);
+      }
+    };
+  }
+  
+  public static interface RequirableCompilationUnit {
+    public CompilationUnit require() throws IOException;
+  }
 }
