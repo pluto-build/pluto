@@ -451,32 +451,42 @@ abstract public class CompilationUnit extends PersistableEntity {
 
 		return true;
 	}
-
+	
 	public boolean isConsistentShallow(Map<? extends Path, Stamp> editedSourceFiles) {
+	  return isConsistentShallowReason(editedSourceFiles) == InconsistenyReason.NO_REASON;
+	}
+
+	  
+	public static enum InconsistenyReason {
+	  FILES_NOT_CONSISTENT, DEPENDENCIES_NOT_CONSISTENT, OTHER, NO_REASON
+	  
+	}
+	  
+	public InconsistenyReason isConsistentShallowReason(Map<? extends Path, Stamp> editedSourceFiles) {
 		if (hasPersistentVersionChanged())
-			return false;
+			return InconsistenyReason.OTHER;
 		
 		if (!isFinished())
-      return false;
+      return InconsistenyReason.OTHER;
 
 		if (!isConsistentWithSourceArtifacts(editedSourceFiles))
-			return false;
+			return InconsistenyReason.FILES_NOT_CONSISTENT;
 
 		for (Entry<Path, Stamp> e : generatedFiles.entrySet())
 			if (!Util.stampEqual(e.getValue(), e.getKey()))
-				return false;
+				return InconsistenyReason.FILES_NOT_CONSISTENT;
 
 		for (Entry<Path, Stamp> e : externalFileDependencies.entrySet())
 			if (!Util.stampEqual(e.getValue(), e.getKey()))
-				return false;
+				return InconsistenyReason.FILES_NOT_CONSISTENT;
 
 		if (!isConsistentModuleDependencies())
-		  return false;
+		  return InconsistenyReason.DEPENDENCIES_NOT_CONSISTENT;
 		
 		if (!isConsistentExtend())
-			return false;
+			return InconsistenyReason.OTHER;
 
-		return true;
+		return InconsistenyReason.NO_REASON;
 	}
 
 	public boolean isConsistentModuleDependencies() {
