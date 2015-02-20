@@ -29,14 +29,14 @@ public class CollectionStamper implements Stamper {
   }
 
   
-  public class CollectionStamp implements Stamp {
+  public static class CollectionStamp implements Stamp {
 
     private static final long serialVersionUID = -2072413432321939737L;
 
     private final Map<Path, Stamp> value;
-    private final CollectionStamper stamper;
+    private final Stamper stamper;
     
-    public CollectionStamp(Map<Path, Stamp> value, CollectionStamper stamper) {
+    public CollectionStamp(Map<Path, Stamp> value, Stamper stamper) {
       this.value = value;
       this.stamper = stamper;
     }
@@ -47,7 +47,7 @@ public class CollectionStamper implements Stamper {
     }
 
     @Override
-    public CollectionStamper getStamper() {
+    public Stamper getStamper() {
       return stamper;
     }
 
