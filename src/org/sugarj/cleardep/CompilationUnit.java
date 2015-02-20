@@ -5,7 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,7 +22,6 @@ import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.cleardep.stamp.Util;
 import org.sugarj.cleardep.xattr.Xattr;
-import org.sugarj.common.AppendingIterable;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
@@ -235,7 +233,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		checkUnitDependency(file);
 	}
 	
-  	public void addExternalFileDependency(Path file) {
+  public void addExternalFileDependency(Path file) {
 		addExternalFileDependency(file, defaultStamper.stampOf(file));
 	}
 
