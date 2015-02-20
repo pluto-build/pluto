@@ -1,6 +1,11 @@
 package org.sugarj.cleardep.build;
 
+import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.DEPENDENCIES_NOT_CONSISTENT;
+import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.NO_REASON;
+import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.OTHER;
+
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
@@ -16,8 +21,6 @@ import org.sugarj.cleardep.Mode;
 import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
-
-import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.*;
 
 public class BuildManager {
 
@@ -80,7 +83,7 @@ public class BuildManager {
     }
   }
 
-  public <C extends BuildContext, T, E extends CompilationUnit> E require(Builder<C, T, E> builder, T input, Mode<E> mode) throws IOException {
+  public <C extends BuildContext, T extends Serializable, E extends CompilationUnit> E require(Builder<C, T, E> builder, T input, Mode<E> mode) throws IOException {
 
     if (builder.context.getBuildManager() != this) {
       throw new RuntimeException("Illegal builder using another build manager for this build");

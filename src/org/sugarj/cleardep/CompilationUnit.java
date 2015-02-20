@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
+import org.sugarj.cleardep.build.FactoryInputTuple;
 import org.sugarj.cleardep.stamp.ModuleStamp;
 import org.sugarj.cleardep.stamp.PersistableEntityModuleStamper;
 import org.sugarj.cleardep.stamp.Stamp;
@@ -65,17 +66,25 @@ abstract public class CompilationUnit extends PersistableEntity {
 	protected Map<RelativePath, Stamp> sourceArtifacts;
 	protected Map<Path, Stamp> externalFileDependencies;
 	protected Map<Path, Stamp> generatedFiles;
+	
+	protected FactoryInputTuple<?, ?, ?, ?, ?> generatedBy;
 
 	// **************************
 	// Methods for initialization
 	// **************************
 
 	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Path dep) throws IOException {
+	  return create(cl, stamper, mode, syn, dep, null);
+	}
+	  
+	
+	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Path dep, FactoryInputTuple<?, ?, E, ?, ?> generatedBy) throws IOException {
 		E e = PersistableEntity.tryReadElseCreate(cl, dep);
 		e.init();
 		e.defaultStamper = stamper;
 		e.mode = mode;
 		e.syn = syn;
+		e.generatedBy = generatedBy;
 		if (syn != null)
 			syn.markSynthesized(e);
 		
@@ -312,19 +321,6 @@ abstract public class CompilationUnit extends PersistableEntity {
 		// Just remove from both maps because mod is exactly in one
 		this.moduleDependencies.remove(mod);
 	}
-
-//	public void updateModuleDependencyInterface(CompilationUnit mod) {
-//		if (mod == null) {
-//			throw new NullPointerException("Cannot handle null unit");
-//		}
-//		if (this.moduleDependencies.containsKey(mod)) {
-//			this.moduleDependencies.put(mod, mod.getInterfaceHash());
-//		} else if (this.circularModuleDependencies.containsKey(mod)) {
-//			this.circularModuleDependencies.put(mod, mod.getInterfaceHash());
-//		} else {
-//			throw new IllegalArgumentException("Given CompilationUnit " + mod + " is not a dependency of this module");
-//		}
-//	}
 
 
 	// *********************************
@@ -657,6 +653,11 @@ abstract public class CompilationUnit extends PersistableEntity {
 			Map<Path, Stamp> files = (Map<Path, Stamp>) in.readObject();
 			syn = new Synthesizer(modules, files);
 		}
+		
+		boolean hasGeneratedBy = in.readBoolean();
+		if (hasGeneratedBy) {
+		  this.generatedBy = (FactoryInputTuple<?, ?, ?, ?, ?>) in.readObject();
+		}
 	}
 	
 	public void write() throws IOException {
@@ -693,5 +694,8 @@ abstract public class CompilationUnit extends PersistableEntity {
 
 			out.writeObject(syn.files);
 		}
+		out.writeBoolean(this.generatedBy != null);
+		out.writeObject(generatedBy);
+		
 	}
 }
