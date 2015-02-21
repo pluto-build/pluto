@@ -29,7 +29,7 @@ public class GraphUtils {
    *          the compilations units to start searching with
    * @return a list of the SCCs in inverse topological order
    */
-  public static List<Set<CompilationUnit>> calculateStronglyConnectedComponents(Iterable<CompilationUnit> rootUnits) {
+  public static List<Set<CompilationUnit>> calculateStronglyConnectedComponents(Iterable<? extends CompilationUnit> rootUnits) {
     return new TarjanAlgorithm().calculateStronglyConnectedUnits(rootUnits);
   }
 
@@ -71,7 +71,7 @@ public class GraphUtils {
     // For pseudo code see e.g. here
     // https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
 
-    public List<Set<CompilationUnit>> calculateStronglyConnectedUnits(Iterable<CompilationUnit> units) {
+    public List<Set<CompilationUnit>> calculateStronglyConnectedUnits(Iterable<? extends CompilationUnit> units) {
       this.index = 0;
       this.stack = new LinkedList<>();
       this.stackUnits = new HashSet<CompilationUnit>();

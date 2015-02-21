@@ -370,6 +370,10 @@ abstract public class CompilationUnit extends PersistableEntity {
 	public Set<Path> getGeneratedFiles() {
 		return generatedFiles.keySet();
 	}
+	
+	public FactoryInputTuple<?, ?, ?, ?, ?> getGeneratedBy() {
+    return generatedBy;
+  }
 
 	public Set<Path> getCircularFileDependencies() throws IOException {
 		Set<Path> dependencies = new HashSet<Path>();

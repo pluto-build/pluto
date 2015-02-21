@@ -34,7 +34,7 @@ public abstract class Builder<C extends BuildContext, T extends Serializable, E 
   protected abstract Stamper defaultStamper();
   protected abstract void build(E result, T input) throws IOException;
   
-  public CompilationUnit require(T input, Mode<E> mode) throws IOException {
+  public E require(T input, Mode<E> mode) throws IOException {
     return this.context.getBuildManager().require(this, input, mode);
   }
   
