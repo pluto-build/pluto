@@ -1,21 +1,28 @@
 package org.sugarj.cleardep.build;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 import org.sugarj.cleardep.CompilationUnit;
 import org.sugarj.cleardep.Mode;
 
-public class BuildRequirement<T_ extends Serializable, E_ extends CompilationUnit, B_ extends Builder<T_,E_>> implements Serializable{
-    /**
+public class BuildRequirement<T extends Serializable, E extends CompilationUnit, B extends Builder<T, E>> implements Serializable {
+  /**
    * 
    */
   private static final long serialVersionUID = -1598265221666746521L;
-    final BuilderFactory<T_, E_, B_> factory;
-    final T_ input;
-    final Mode<E_> mode;
-    public BuildRequirement(BuilderFactory<T_, E_, B_> factory, T_ input, Mode<E_> mode) {
-      this.factory = factory;
-      this.input = input;
-      this.mode = mode;
-    }
+  final BuilderFactory<T, E, B> factory;
+  final T input;
+  final Mode<E> mode;
+
+  public BuildRequirement(BuilderFactory<T, E, B> factory, T input, Mode<E> mode) {
+    this.factory = factory;
+    this.input = input;
+    this.mode = mode;
   }
+
+  public E createBuilderAndRequire(BuildManager manager) throws IOException {
+    return manager.require(factory.makeBuilder(input, manager), mode);
+  }
+
+}

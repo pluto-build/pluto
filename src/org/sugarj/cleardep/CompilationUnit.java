@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
-import org.sugarj.cleardep.build.FactoryInputTuple;
+import org.sugarj.cleardep.build.BuildRequirement;
 import org.sugarj.cleardep.stamp.ModuleStamp;
 import org.sugarj.cleardep.stamp.PersistableEntityModuleStamper;
 import org.sugarj.cleardep.stamp.Stamp;
@@ -65,7 +65,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	protected Map<Path, Stamp> externalFileDependencies;
 	protected Map<Path, Stamp> generatedFiles;
 	
-	protected FactoryInputTuple<?, ?, ?, ?> generatedBy;
+	protected BuildRequirement<?, ?, ?> generatedBy;
 
 	// **************************
 	// Methods for initialization
@@ -76,7 +76,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	}
 	  
 	
-	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Path dep, FactoryInputTuple< ?, E, ?, ?> generatedBy) throws IOException {
+	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Path dep, BuildRequirement< ?, E, ?> generatedBy) throws IOException {
 		E e = PersistableEntity.tryReadElseCreate(cl, dep);
 		e.init();
 		e.defaultStamper = stamper;
@@ -369,7 +369,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		return generatedFiles.keySet();
 	}
 	
-	public FactoryInputTuple< ?, ?, ?, ?> getGeneratedBy() {
+	public BuildRequirement< ?, ?, ?> getGeneratedBy() {
     return generatedBy;
   }
 
@@ -658,7 +658,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		
 		boolean hasGeneratedBy = in.readBoolean();
 		if (hasGeneratedBy) {
-		  this.generatedBy = (FactoryInputTuple<?, ?, ?, ?>) in.readObject();
+		  this.generatedBy = (BuildRequirement<?, ?, ?>) in.readObject();
 		}
 	}
 	

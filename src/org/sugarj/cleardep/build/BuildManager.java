@@ -173,7 +173,7 @@ public class BuildManager {
       boolean sccFileInconsistent = false;
       for (CompilationUnit unit : sccs.get(topMostFileInconsistentScc)) {
         if (getInconsistencyReason(unit).compareTo(FILES_NOT_CONSISTENT) >= 0) {
-          FactoryInputTuple<?, ?, ?, ?> source = unit.getGeneratedBy();
+          BuildRequirement<?, ?, ?> source = unit.getGeneratedBy();
           source.createBuilderAndRequire(this);
           sccFileInconsistent = true;
         }
@@ -188,7 +188,7 @@ public class BuildManager {
       updateInconsistentCacheForScc(sccs.get(index));
       for (CompilationUnit unit : sccs.get(index)) {
         if (getInconsistencyReason(unit).compareTo(NO_REASON) > 0) {
-          FactoryInputTuple<?, ?, ?, ?> source = unit.getGeneratedBy();
+          BuildRequirement<?, ?,?> source = unit.getGeneratedBy();
           source.createBuilderAndRequire(this);
         }
       }
@@ -212,7 +212,7 @@ public class BuildManager {
     }
     this.requireCallStack.push(entry);
 
-    E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep, new FactoryInputTuple<>(builder.sourceFactory, builder.input, mode));
+    E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep, new BuildRequirement<>(builder.sourceFactory, builder.input, mode));
     String taskDescription = builder.taskDescription();
 
     try {
@@ -285,7 +285,7 @@ public class BuildManager {
       return depResult;
     }
     if (depResult == null) {
-      depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep, new FactoryInputTuple<>(builder.sourceFactory, builder.input, mode));
+      depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep, new BuildRequirement<>(builder.sourceFactory, builder.input, mode));
 
     }
 
