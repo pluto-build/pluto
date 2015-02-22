@@ -1,8 +1,12 @@
 package org.sugarj.cleardep.stamp;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.sugarj.cleardep.CompilationUnit;
+import org.sugarj.cleardep.stamp.CollectionStamper.CollectionStamp;
+import org.sugarj.cleardep.stamp.LastModifiedStamper.LastModifiedStamp;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.path.Path;
 
@@ -21,10 +25,27 @@ public class ContentHashStamper implements Stamper, ModuleStamper {
    * @see org.sugarj.cleardep.stamp.Stamper#stampOf(org.sugarj.common.path.Path)
    */
   @Override
-  public ContentHashStamp stampOf(Path p) {
+  public Stamp stampOf(Path p) {
     if (!FileCommands.exists(p))
       return new ContentHashStamp(0);
     
+    if (p.getFile().isDirectory()) {
+      Map<Path, Stamp> stamps = new HashMap<>();
+      stamps.put(p, new LastModifiedStamp(p.getFile().lastModified()));
+      
+      for (Path sub : FileCommands.listFilesRecursive(p))
+        if (sub.getFile().isDirectory())
+          stamps.put(sub, new LastModifiedStamp(sub.getFile().lastModified()));
+        else
+          stamps.put(sub, fileContentHashStamp(sub));
+      
+      return new CollectionStamp(stamps, this);
+    }
+    
+    return fileContentHashStamp(p);
+  }
+
+  private ContentHashStamp fileContentHashStamp(Path p) {
     try {
       return new ContentHashStamp(FileCommands.fileHash(p));
     } catch (IOException e) {
@@ -36,8 +57,11 @@ public class ContentHashStamper implements Stamper, ModuleStamper {
   public ContentHashStamp stampOf(CompilationUnit m) {
     if (!m.isPersisted())
       throw new IllegalArgumentException("Cannot compute stamp of non-persisted compilation unit " + m);
-
-    return stampOf(m.getPersistentPath());
+    
+    if (!FileCommands.exists(m.getPersistentPath()))
+      return new ContentHashStamp(0);
+    
+    return fileContentHashStamp(m.getPersistentPath());
   }
   
   public static class ContentHashStamp implements Stamp, ModuleStamp {

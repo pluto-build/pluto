@@ -1,6 +1,9 @@
 package org.sugarj.cleardep.build;
 
-import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.*;
+import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.DEPENDENCIES_NOT_CONSISTENT;
+import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.FILES_NOT_CONSISTENT;
+import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.NO_REASON;
+import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.OTHER;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -18,15 +21,24 @@ import org.sugarj.cleardep.CompilationUnit.InconsistenyReason;
 import org.sugarj.cleardep.GraphUtils;
 import org.sugarj.cleardep.Mode;
 import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
+import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 
 public class BuildManager {
 
+private final Map<Path, Stamp> editedSourceFiles;
   private Deque<BuildStackEntry> requireCallStack = new ArrayDeque<>();
 
   private Map<Path, InconsistenyReason> extendedInconsistencyMap = new HashMap<>();
-
+  
+  public BuildManager() {
+    this(null);
+  }
+  public BuildManager(Map<Path, Stamp> editedSourceFiles) {
+    this.editedSourceFiles = editedSourceFiles;
+  }
+  
   private <E extends CompilationUnit> InconsistenyReason getInconsistencyReason(CompilationUnit unit) throws IOException {
     Objects.requireNonNull(unit);
     InconsistenyReason inconsistency = extendedInconsistencyMap.get(unit.getPersistentPath());
@@ -36,12 +48,12 @@ public class BuildManager {
     throw new AssertionError("Caller did not ensures that unit has been cached");
   }
   
-  private <E extends CompilationUnit> boolean isConsistent(Path depPath, Class<E> resultClass, Mode<E> mode, BuildContext context) throws IOException {
+  private <E extends CompilationUnit> boolean isConsistent(Path depPath, Class<E> resultClass, Mode<E> mode) throws IOException {
     InconsistenyReason inconsistency = extendedInconsistencyMap.get(depPath);
     if (inconsistency != null) {
       return inconsistency == NO_REASON;
     }
-    fillInconsistentCache(depPath, resultClass, mode, context);
+    fillInconsistentCache(depPath, resultClass, mode);
     inconsistency = extendedInconsistencyMap.get(depPath);
     if (inconsistency == null) {
       throw new AssertionError("Cache not filled up correctly");
@@ -49,31 +61,31 @@ public class BuildManager {
     return inconsistency == NO_REASON;
   }
 
-  private <E extends CompilationUnit> void fillInconsistentCache(Path path, Class<E> resultClass, Mode<E> mode, BuildContext context) throws IOException {
+  private <E extends CompilationUnit> void fillInconsistentCache(Path path, Class<E> resultClass, Mode<E> mode) throws IOException {
     CompilationUnit rootUnit = CompilationUnit.read(resultClass, mode, path);
 
     if (rootUnit == null) {
       extendedInconsistencyMap.put(path, OTHER);
     } else {
-      fillInconsistentCache(rootUnit, context);
+      fillInconsistentCache(rootUnit);
     }
 
   }
 
-  private void fillInconsistentCache(CompilationUnit root, BuildContext context) {
+  private void fillInconsistentCache(CompilationUnit root) {
     List<Set<CompilationUnit>> sccs = GraphUtils.calculateStronglyConnectedComponents(Collections.singleton(root));
 
     for (final Set<CompilationUnit> scc : sccs) {
-      updateInconsistentCacheForScc(context, scc);
+      updateInconsistentCacheForScc(scc);
     }
   }
 
-  private void updateInconsistentCacheForScc(BuildContext context, final Set<CompilationUnit> scc) {
+  private void updateInconsistentCacheForScc(final Set<CompilationUnit> scc) {
     boolean sccConsistent = true;
     for (CompilationUnit unit : scc) {
       InconsistenyReason reason = extendedInconsistencyMap.get(unit.getPersistentPath());
       if (reason == null) {
-        reason = unit.isConsistentShallowReason(context.getEditedSourceFiles());
+        reason = unit.isConsistentShallowReason(this.editedSourceFiles);
         if (reason.compareTo(DEPENDENCIES_NOT_CONSISTENT) < 0) {
           for (CompilationUnit dep : unit.getModuleDependencies()) {
             if (!scc.contains(dep) && extendedInconsistencyMap.get(dep.getPersistentPath()) != NO_REASON) {
@@ -98,12 +110,12 @@ public class BuildManager {
   
   
   
-  private <C extends BuildContext, T extends Serializable, E extends CompilationUnit> E scheduleRequire(Builder<C, T, E> builder, T input, Mode<E> mode) throws IOException{
-    if (builder.context.getBuildManager() != this) {
+  private <T extends Serializable, E extends CompilationUnit> E scheduleRequire(Builder<T, E> builder, Mode<E> mode) throws IOException{
+    if (builder.manager!= this) {
       throw new RuntimeException("Illegal builder using another build manager for this build");
     }
 
-    Path dep = builder.persistentPath(input);
+    Path dep = builder.persistentPath();
     System.out.println("\nSchedule for: " + dep);
 
     E depResult;
@@ -114,8 +126,9 @@ public class BuildManager {
 
     depResult = CompilationUnit.read(builder.resultClass(), mode, dep);
 
-    if (this.isConsistent(dep, builder.resultClass(), mode, builder.context)) {
-      if (!depResult.isConsistent(builder.context.getEditedSourceFiles(), mode)) {
+    if (this.isConsistent(dep, builder.resultClass(), mode)) {
+      if (!depResult.isConsistent(editedSourceFiles, mode)) {
+
         throw new AssertionError("BuildManager does not guarantee soundness");
       }
       return depResult;
@@ -132,8 +145,8 @@ public class BuildManager {
       boolean sccFileInconsistent = false;
       for (CompilationUnit unit : sccs.get(topMostFileInconsistentScc)) {
         if (getInconsistencyReason(unit).compareTo(FILES_NOT_CONSISTENT) >= 0) {
-          FactoryInputTuple<C, ?, ?, ?, ?> source = (FactoryInputTuple<C, ?, ?, ?, ?>) unit.getGeneratedBy();
-          source.createBuilderAndRequire(builder.context);
+          FactoryInputTuple<?, ?, ?, ?> source = unit.getGeneratedBy();
+          source.createBuilderAndRequire(this);
         }
       }
       if (sccFileInconsistent) {
@@ -142,11 +155,11 @@ public class BuildManager {
     }
     // Now we need to check all the units above
     for (int index = topMostFileInconsistentScc +1; index <= sccs.size(); index ++) {
-      updateInconsistentCacheForScc(builder.context, sccs.get(index));
+      updateInconsistentCacheForScc( sccs.get(index));
       for (CompilationUnit unit : sccs.get(index)) {
         if (getInconsistencyReason(unit).compareTo(NO_REASON) > 0) {
-          FactoryInputTuple<C, ?, ?, ?, ?> source = (FactoryInputTuple<C, ?, ?, ?, ?>) unit.getGeneratedBy();
-          source.createBuilderAndRequire(builder.context);
+          FactoryInputTuple<?, ?, ?, ?> source =  unit.getGeneratedBy();
+          source.createBuilderAndRequire(this);
         }
       }
     }
@@ -157,29 +170,24 @@ public class BuildManager {
     return depResult;
   }
   
-  protected <C extends BuildContext, T extends Serializable, E extends CompilationUnit> E executeBuilder(Builder<C, T, E> builder, T input, Mode<E> mode) throws IOException {
+  protected < T extends Serializable, E extends CompilationUnit> E executeBuilder(Builder<T, E> builder, Mode<E> mode) throws IOException {
     
-    Path dep = builder.persistentPath(input);
+    Path dep = builder.persistentPath();
 
     System.out.println("\nExecute for: "+ dep);
  
     
-    BuildStackEntry entry = new BuildStackEntry(builder, dep);
+    BuildStackEntry entry = new BuildStackEntry(builder.sourceFactory, dep);
 
     if (this.requireCallStack.contains(entry)) {
       throw new BuildCycleException("Build contains a dependency cycle on " + dep);
     }
     this.requireCallStack.push(entry);
     
-    E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep);
 
-    // E depResult = CompilationUnit.readConsistent(builder.resultClass(), mode,
-    // builder.context.getEditedSourceFiles(), dep);
-    // if (depResult != null)
-    // return depResult;
+    E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep, new FactoryInputTuple<>(builder.sourceFactory, builder.input, mode));
+    String taskDescription = builder.taskDescription();
 
-   
-    String taskDescription = builder.taskDescription(input);
     try {
       depResult.setState(CompilationUnit.State.IN_PROGESS);
 
@@ -187,7 +195,10 @@ public class BuildManager {
         Log.log.beginTask(taskDescription, Log.CORE);
 
       // call the actual builder
-      builder.build(depResult, input);
+
+      builder.triggerBuild(depResult);
+//      build(depResult, input);
+      
 
       if (!depResult.isFinished())
         depResult.setState(CompilationUnit.State.SUCCESS);
@@ -198,7 +209,8 @@ public class BuildManager {
       depResult.setState(CompilationUnit.State.FAILURE);
       depResult.write();
 
-      e.addBuilder(builder, input, depResult);
+      
+      e.addBuilder(builder, depResult);
       if (taskDescription != null)
         Log.log.logErr("Required builder failed", Log.CORE);
       throw e;
@@ -206,7 +218,7 @@ public class BuildManager {
       depResult.setState(CompilationUnit.State.FAILURE);
       depResult.write();
       Log.log.logErr(e.getMessage(), Log.CORE);
-      throw new RequiredBuilderFailed(builder, input, depResult, e);
+      throw new RequiredBuilderFailed(builder, depResult, e);
     } finally {
       if (taskDescription != null)
         Log.log.endTask();
@@ -219,19 +231,19 @@ public class BuildManager {
     extendedInconsistencyMap.put(dep, NO_REASON);
 
     if (depResult.getState() == CompilationUnit.State.FAILURE)
-      throw new RequiredBuilderFailed(builder, input, depResult, new IllegalStateException("Builder failed for unknown reason, please confer log."));
+      throw new RequiredBuilderFailed(builder, depResult, new IllegalStateException("Builder failed for unknown reason, please confer log."));
 
     return depResult;
   }
-  
+ 
 
-  public <C extends BuildContext, T extends Serializable, E extends CompilationUnit> E require(Builder<C, T, E> builder, T input, Mode<E> mode) throws IOException {
+  public <T extends Serializable, E extends CompilationUnit> E require(Builder< T, E> builder, Mode<E> mode) throws IOException {
 
-    if (builder.context.getBuildManager() != this) {
+    if (builder.manager != this) {
       throw new RuntimeException("Illegal builder using another build manager for this build");
     }
 
-    Path dep = builder.persistentPath(input);
+    Path dep = builder.persistentPath();
     System.out.println("\n Require for " +dep);
     E depResult;
     depResult = CompilationUnit.read(builder.resultClass(), mode, dep);
@@ -240,27 +252,27 @@ public class BuildManager {
     // if (depResult != null)
     // return depResult;
     
-    boolean consistent = this.isConsistent(dep, builder.resultClass(), mode, builder.context);
+    boolean consistent = this.isConsistent(dep, builder.resultClass(), mode);
     
     System.out.println("Consistent "+consistent +" "+ dep);
 
     if (consistent) {
      
-      if (!depResult.isConsistent(builder.context.getEditedSourceFiles(), mode)) {
+      if (!depResult.isConsistent(this.editedSourceFiles, mode)) {
         throw new AssertionError("BuildManager does not guarantee soundness");
       }
       return depResult;
     }
     if (depResult == null) {
-      depResult   = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep);
+      depResult   = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep, new FactoryInputTuple<>(builder.sourceFactory, builder.input, mode));
 
     }
     
     // No recursion of current unit has changed files
     if (getInconsistencyReason(depResult).compareTo(FILES_NOT_CONSISTENT) >= 0) {
-      return executeBuilder(builder, input, mode);
+      return executeBuilder(builder, mode);
     } else {
-      return scheduleRequire(builder, input, mode);
+      return scheduleRequire(builder, mode);
     }
 
     

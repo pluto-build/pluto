@@ -3,20 +3,20 @@ package org.sugarj.cleardep.build;
 import org.sugarj.common.path.Path;
 
 class BuildStackEntry {
-  private final Builder<?, ?, ?> builder;
+  private final BuilderFactory<?, ?, ?> factory;
   private final Path persistencePath;
   
   
-  public BuildStackEntry(Builder<?, ?, ?> builder, Path persistencePath) {
+  public BuildStackEntry(BuilderFactory<?, ?, ?> factory, Path persistencePath) {
     super();
-    this.builder = builder;
+    this.factory = factory;
     this.persistencePath = persistencePath;
   }
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + ((builder == null) ? 0 : builder.hashCode());
+    result = prime * result + ((factory == null) ? 0 : factory.hashCode());
     result = prime * result + ((persistencePath == null) ? 0 : persistencePath.hashCode());
     return result;
   }
@@ -29,10 +29,10 @@ class BuildStackEntry {
     if (getClass() != obj.getClass())
       return false;
     BuildStackEntry other = (BuildStackEntry) obj;
-    if (builder == null) {
-      if (other.builder != null)
+    if (factory == null) {
+      if (other.factory != null)
         return false;
-    } else if (!builder.equals(other.builder))
+    } else if (!factory.equals(other.factory))
       return false;
     if (persistencePath == null) {
       if (other.persistencePath != null)

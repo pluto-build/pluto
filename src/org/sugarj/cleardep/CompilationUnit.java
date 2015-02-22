@@ -5,7 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,7 +23,6 @@ import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.cleardep.stamp.Util;
 import org.sugarj.cleardep.xattr.Xattr;
-import org.sugarj.common.AppendingIterable;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
@@ -67,7 +65,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	protected Map<Path, Stamp> externalFileDependencies;
 	protected Map<Path, Stamp> generatedFiles;
 	
-	protected FactoryInputTuple<?, ?, ?, ?, ?> generatedBy;
+	protected FactoryInputTuple<?, ?, ?, ?> generatedBy;
 
 	// **************************
 	// Methods for initialization
@@ -78,7 +76,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	}
 	  
 	
-	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Path dep, FactoryInputTuple<?, ?, E, ?, ?> generatedBy) throws IOException {
+	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Path dep, FactoryInputTuple< ?, E, ?, ?> generatedBy) throws IOException {
 		E e = PersistableEntity.tryReadElseCreate(cl, dep);
 		e.init();
 		e.defaultStamper = stamper;
@@ -244,7 +242,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		checkUnitDependency(file);
 	}
 	
-  	public void addExternalFileDependency(Path file) {
+  public void addExternalFileDependency(Path file) {
 		addExternalFileDependency(file, defaultStamper.stampOf(file));
 	}
 
@@ -371,7 +369,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		return generatedFiles.keySet();
 	}
 	
-	public FactoryInputTuple<?, ?, ?, ?, ?> getGeneratedBy() {
+	public FactoryInputTuple< ?, ?, ?, ?> getGeneratedBy() {
     return generatedBy;
   }
 
@@ -660,7 +658,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		
 		boolean hasGeneratedBy = in.readBoolean();
 		if (hasGeneratedBy) {
-		  this.generatedBy = (FactoryInputTuple<?, ?, ?, ?, ?>) in.readObject();
+		  this.generatedBy = (FactoryInputTuple<?, ?, ?, ?>) in.readObject();
 		}
 	}
 	
