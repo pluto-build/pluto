@@ -2,10 +2,8 @@ package org.sugarj.cleardep.build;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -16,18 +14,25 @@ import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
-import org.sugarj.common.util.Pair;
 
 public class BuildManager {
   
+  private final Map<Path, Stamp> editedSourceFiles;
   private Map<Path, Boolean> consistencyMap = new HashMap<>();
   
+  public BuildManager() {
+    this(null);
+  }
+  public BuildManager(Map<Path, Stamp> editedSourceFiles) {
+    this.editedSourceFiles = editedSourceFiles;
+  }
+  
   private static class BuildStackEntry {
-    private final Builder<?, ?, ?> builder;
+    private final Builder<?, ?> builder;
     private final Path persistencePath;
     
     
-    public BuildStackEntry(Builder<?, ?, ?> builder, Path persistencePath) {
+    public BuildStackEntry(Builder<?, ?> builder, Path persistencePath) {
       super();
       this.builder = builder;
       this.persistencePath = persistencePath;
@@ -101,23 +106,23 @@ public class BuildManager {
   }
 
   
-  public <C extends BuildContext, T, E extends CompilationUnit> E require(Builder<C, T, E> builder, T input, Mode<E> mode) throws IOException {
+  public <T, E extends CompilationUnit> E require(Builder<T, E> builder, Mode<E> mode) throws IOException {
     
     
-    if (builder.context.getBuildManager() != this) {
+    if (builder.manager != this) {
       throw new RuntimeException("Illegal builder using another build manager for this build");
     }
     
-    Path dep = builder.persistentPath(input);
+    Path dep = builder.persistentPath();
     
     E depResult;
 //    = CompilationUnit.readConsistent(builder.resultClass(), mode, builder.context.getEditedSourceFiles(), dep);
 //       if (depResult != null)
 //         return depResult;
     
-    if (this.isConsistent(dep, builder.resultClass(), mode, builder.context.getEditedSourceFiles())) {
+    if (this.isConsistent(dep, builder.resultClass(), mode, editedSourceFiles)) {
       depResult = CompilationUnit.read(builder.resultClass(), mode, dep);
-      if (!depResult.isConsistent(builder.context.getEditedSourceFiles(), mode)) {
+      if (!depResult.isConsistent(editedSourceFiles, mode)) {
         throw new AssertionError("BuildManager does not guarantee soundness");
       }
       return depResult;
@@ -131,7 +136,7 @@ public class BuildManager {
     this.requireCallStack.push(entry);
     
     depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep);
-    String taskDescription = builder.taskDescription(input);
+    String taskDescription = builder.taskDescription();
     try {
       depResult.setState(CompilationUnit.State.IN_PROGESS);
       
@@ -139,7 +144,8 @@ public class BuildManager {
         Log.log.beginTask(taskDescription, Log.CORE);
       
       // call the actual builder
-      builder.build(depResult, input);
+      builder.triggerBuild(depResult);
+//      build(depResult, input);
       
       if (!depResult.isFinished())
         depResult.setState(CompilationUnit.State.SUCCESS);
@@ -150,7 +156,7 @@ public class BuildManager {
       depResult.setState(CompilationUnit.State.FAILURE);
       depResult.write();
       
-      e.addBuilder(builder, input, depResult);
+      e.addBuilder(builder, depResult);
       if (taskDescription != null)
         Log.log.logErr("Required builder failed", Log.CORE);
       throw e;
@@ -158,7 +164,7 @@ public class BuildManager {
       depResult.setState(CompilationUnit.State.FAILURE);
       depResult.write();
       Log.log.logErr(e.getMessage(), Log.CORE);
-      throw new RequiredBuilderFailed(builder, input, depResult, e);
+      throw new RequiredBuilderFailed(builder, depResult, e);
     } finally {
       if (taskDescription != null)
         Log.log.endTask();
@@ -172,7 +178,7 @@ public class BuildManager {
     
     
     if (depResult.getState() == CompilationUnit.State.FAILURE)
-      throw new RequiredBuilderFailed(builder, input, depResult, new IllegalStateException("Builder failed for unknown reason, please confer log."));
+      throw new RequiredBuilderFailed(builder, depResult, new IllegalStateException("Builder failed for unknown reason, please confer log."));
 
     return depResult;
   }

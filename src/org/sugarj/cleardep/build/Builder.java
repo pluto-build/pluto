@@ -1,18 +1,22 @@
 package org.sugarj.cleardep.build;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
 
 import org.sugarj.cleardep.CompilationUnit;
 import org.sugarj.cleardep.Mode;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.common.path.Path;
 
-public abstract class Builder<C extends BuildContext, T, E extends CompilationUnit> {
-  protected final C context;
+public abstract class Builder<T, E extends CompilationUnit> {
+  BuildManager manager;
+  protected final T input;
   
-  public Builder(C context) {
-    this.context = context;
+  public Builder(T input) {
+    this.input = input;
+  }
+  
+  private void setBuildManager(BuildManager manager) {
+    this.manager = manager;
   }
   
   /**
@@ -21,26 +25,35 @@ public abstract class Builder<C extends BuildContext, T, E extends CompilationUn
    * 
    * @return the task description or `null` if no logging is wanted.
    */
-  protected abstract String taskDescription(T input);
-  protected abstract Path persistentPath(T input);
+  protected abstract String taskDescription();
+  protected abstract Path persistentPath();
   protected abstract Class<E> resultClass();
   protected abstract Stamper defaultStamper();
-  protected abstract void build(E result, T input) throws IOException;
+  protected abstract void build(E result) throws IOException;
   
-  public CompilationUnit require(T input, Mode<E> mode) throws IOException {
-    return this.context.getBuildManager().require(this, input, mode);
+  private E result;
+  void triggerBuild(E result) throws IOException {
+    this.result = result;
+    try {
+      build(result);
+    } finally {
+      this.result = null;
+    }
   }
   
-  public RequirableCompilationUnit requireLater(final T input, final Mode<E> mode) {
-    return new RequirableCompilationUnit() {
-      @Override
-      public CompilationUnit require() throws IOException {
-        return Builder.this.require(input, mode);
-      }
-    };
+  protected <T_, E_ extends CompilationUnit, B_ extends Builder<T_,E_>> E_ require(BuilderFactory<T_, E_, B_> factory, T_ input, Mode<E_> mode) throws IOException {
+    Builder<T_,E_> builder = factory.makeBuilder(input);
+    builder.setBuildManager(this.manager);
+    E_ e = manager.require(builder, mode);
+    result.addModuleDependency(e);
+    return e;
   }
   
-  public static interface RequirableCompilationUnit {
-    public CompilationUnit require() throws IOException;
+  protected <T_, E_ extends CompilationUnit, B_ extends Builder<T_,E_>> E_ require(BuildRequirement<T_, E_, B_> req) throws IOException {
+    Builder<T_,E_> builder = req.factory.makeBuilder(req.input);
+    builder.setBuildManager(this.manager);
+    E_ e = manager.require(builder, req.mode);
+    result.addModuleDependency(e);
+    return e;
   }
 }
