@@ -31,9 +31,9 @@ import org.sugarj.common.path.RelativePath;
  */
 public class CompilationUnit extends PersistableEntity {
 
-	public static final long serialVersionUID = -5713504273621720673L;
-	
-	public static final Xattr xattr = Xattr.getDefault();
+  public static final long serialVersionUID = -2821414386853890682L;
+
+  public static final Xattr xattr = Xattr.getDefault();
 	
 	public static enum State {
 	  NEW, INITIALIZED, IN_PROGESS, SUCCESS, FAILURE;
@@ -495,6 +495,5 @@ public class CompilationUnit extends PersistableEntity {
 
 		out.writeBoolean(this.generatedBy != null);
 		out.writeObject(generatedBy);
-		
 	}
 }
