@@ -192,7 +192,7 @@ public class BuildManager {
     }
     this.requireCallStack.push(entry);
 
-    E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), null, dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
+    E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
     String taskDescription = builder.taskDescription();
 
     try {
@@ -258,7 +258,7 @@ public class BuildManager {
     }
     
     if (depResult == null) {
-      depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), null, dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
+      depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
       extendedInconsistencyMap.put(dep, InconsistenyReason.OTHER);
       
     }

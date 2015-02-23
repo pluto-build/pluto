@@ -47,7 +47,6 @@ public class CompilationUnit extends PersistableEntity {
 	
 	private State state = State.NEW;
 
-	protected Synthesizer syn;
 	protected Stamper defaultStamper;
 	
 	protected Map<CompilationUnit, BuildRequirement<?, ?, ?, ?>> moduleDependencies;
@@ -61,19 +60,15 @@ public class CompilationUnit extends PersistableEntity {
 	// Methods for initialization
 	// **************************
 
-	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Synthesizer syn, Path dep) throws IOException {
-	  return create(cl, stamper, syn, dep, null);
+	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Path dep) throws IOException {
+	  return create(cl, stamper, dep, null);
 	}
 	
-	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Synthesizer syn, Path dep, BuildRequirement<?, E, ?, ?> generatedBy) throws IOException {
+	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Path dep, BuildRequirement<?, E, ?, ?> generatedBy) throws IOException {
 		E e = PersistableEntity.tryReadElseCreate(cl, dep);
 		e.init();
 		e.defaultStamper = stamper;
-		e.syn = syn;
 		e.generatedBy = generatedBy;
-		if (syn != null)
-			syn.markSynthesized(e);
-		
 		return e;
 	}
 
@@ -272,9 +267,6 @@ public class CompilationUnit extends PersistableEntity {
 		return dependencies;
 	}
 
-	public Synthesizer getSynthesizer() {
-		return syn;
-	}
 
 	// ********************************************
 	// Methods for checking compilation consistency
@@ -475,24 +467,6 @@ public class CompilationUnit extends PersistableEntity {
 			moduleDependencies.put(mod, req);
 		}
 
-		boolean hasSyn = in.readBoolean();
-		if (hasSyn) {
-			Map<CompilationUnit, BuildRequirement<?, ?, ?, ?>> modules = new HashMap<>();
-			int modulesCount = in.readInt();
-			for (int i = 0; i < modulesCount; i++) {
-				String clName = (String) in.readObject();
-				Class<? extends CompilationUnit> cl = (Class<? extends CompilationUnit>) getClass().getClassLoader().loadClass(clName);
-				Path path = (Path) in.readObject();
-				CompilationUnit mod = PersistableEntity.read(cl, path);
-				if (mod == null)
-					throw new IOException("Required module cannot be read: " + path);
-				BuildRequirement<?, ?, ?, ?> req = (BuildRequirement<?, ?, ?, ?>) in.readObject();
-				modules.put(mod, req);
-			}
-			Map<Path, Stamp> files = (Map<Path, Stamp>) in.readObject();
-			syn = new Synthesizer(modules, files);
-		}
-		
 		boolean hasGeneratedBy = in.readBoolean();
 		if (hasGeneratedBy) {
 		  this.generatedBy = (BuildRequirement<?, ?, ?, ?>) in.readObject();
@@ -519,17 +493,6 @@ public class CompilationUnit extends PersistableEntity {
 			out.writeObject(entry.getValue());
 		}
 
-		out.writeBoolean(syn != null);
-		if (syn != null) {
-			out.writeInt(syn.generatorModules.size());
-			for (Entry<CompilationUnit, BuildRequirement<?, ?, ?, ?>> e : syn.generatorModules.entrySet()) {
-				out.writeObject(e.getKey().getClass().getCanonicalName());
-				out.writeObject(e.getKey().persistentPath);
-				out.writeObject(e.getValue());
-			}
-
-			out.writeObject(syn.files);
-		}
 		out.writeBoolean(this.generatedBy != null);
 		out.writeObject(generatedBy);
 		
