@@ -15,8 +15,6 @@ import java.util.Queue;
 import java.util.Set;
 
 import org.sugarj.cleardep.build.BuildRequirement;
-import org.sugarj.cleardep.stamp.ModuleStamp;
-import org.sugarj.cleardep.stamp.PersistableEntityModuleStamper;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.cleardep.stamp.Util;
@@ -52,7 +50,7 @@ public class CompilationUnit extends PersistableEntity {
 	protected Synthesizer syn;
 	protected Stamper defaultStamper;
 	
-	protected Map<CompilationUnit, ModuleStamp> moduleDependencies;
+	protected Map<CompilationUnit, BuildRequirement<?, ?, ?, ?>> moduleDependencies;
 	protected Map<RelativePath, Stamp> sourceArtifacts;
 	protected Map<Path, Stamp> externalFileDependencies;
 	protected Map<Path, Stamp> generatedFiles;
@@ -179,13 +177,11 @@ public class CompilationUnit extends PersistableEntity {
       throw new RuntimeException(e);
     }
 	}
-	public void addModuleDependency(CompilationUnit mod) {
-	  addModuleDependency(mod, PersistableEntityModuleStamper.minstance.stampOf(mod));
-	}
-	public void addModuleDependency(CompilationUnit mod, ModuleStamp stamp) {
+	
+	public void addModuleDependency(CompilationUnit mod, BuildRequirement<?, ?, ?, ?> req) {
 	  Objects.requireNonNull(mod);
-	  Objects.requireNonNull(stamp);
-		this.moduleDependencies.put(mod, stamp);
+	  Objects.requireNonNull(req);
+		this.moduleDependencies.put(mod, req);
 	}
 
 	/**
@@ -370,9 +366,9 @@ public class CompilationUnit extends PersistableEntity {
 		return true;
 	}
 
-	private boolean isConsistentModuleDependenciesMap(Map<CompilationUnit, ModuleStamp> unitMap) {
-		for (Entry<CompilationUnit, ModuleStamp> e : unitMap.entrySet())
-		  if (!Util.stampEqual(e.getValue(), e.getKey()))
+	private boolean isConsistentModuleDependenciesMap(Map<CompilationUnit, BuildRequirement<?, ?, ?, ?>> unitMap) {
+		for (Entry<CompilationUnit, BuildRequirement<?, ?, ?, ?>> e : unitMap.entrySet())
+		  if (!e.getKey().getGeneratedBy().equals(e.getValue()))
 		    return false;
 		  
 		return true;
@@ -473,15 +469,15 @@ public class CompilationUnit extends PersistableEntity {
 			Class<? extends CompilationUnit> cl = (Class<? extends CompilationUnit>) getClass().getClassLoader().loadClass(clName);
 			Path path = (Path) in.readObject();
 			CompilationUnit mod = PersistableEntity.read(cl, path);
-			ModuleStamp interfaceHash = (ModuleStamp) in.readObject();
+			BuildRequirement<?, ?, ?, ?> req = (BuildRequirement<?, ?, ?, ?>) in.readObject();
 			if (mod == null)
 				throw new IOException("Required module cannot be read: " + path);
-			moduleDependencies.put(mod, interfaceHash);
+			moduleDependencies.put(mod, req);
 		}
 
 		boolean hasSyn = in.readBoolean();
 		if (hasSyn) {
-			Set<CompilationUnit> modules = new HashSet<CompilationUnit>();
+			Map<CompilationUnit, BuildRequirement<?, ?, ?, ?>> modules = new HashMap<>();
 			int modulesCount = in.readInt();
 			for (int i = 0; i < modulesCount; i++) {
 				String clName = (String) in.readObject();
@@ -490,7 +486,8 @@ public class CompilationUnit extends PersistableEntity {
 				CompilationUnit mod = PersistableEntity.read(cl, path);
 				if (mod == null)
 					throw new IOException("Required module cannot be read: " + path);
-				modules.add(mod);
+				BuildRequirement<?, ?, ?, ?> req = (BuildRequirement<?, ?, ?, ?>) in.readObject();
+				modules.put(mod, req);
 			}
 			Map<Path, Stamp> files = (Map<Path, Stamp>) in.readObject();
 			syn = new Synthesizer(modules, files);
@@ -514,7 +511,7 @@ public class CompilationUnit extends PersistableEntity {
 		out.writeObject(externalFileDependencies = Collections.unmodifiableMap(externalFileDependencies));
 
 		out.writeInt(moduleDependencies.size());
-		for (Entry<CompilationUnit, ModuleStamp> entry : moduleDependencies.entrySet()) {
+		for (Entry<CompilationUnit, BuildRequirement<?, ?, ?, ?>> entry : moduleDependencies.entrySet()) {
 			CompilationUnit mod = entry.getKey();
 			assert mod.isPersisted() : "Required compilation units must be persisted.";
 			out.writeObject(mod.getClass().getCanonicalName());
@@ -525,9 +522,10 @@ public class CompilationUnit extends PersistableEntity {
 		out.writeBoolean(syn != null);
 		if (syn != null) {
 			out.writeInt(syn.generatorModules.size());
-			for (CompilationUnit mod : syn.generatorModules) {
-				out.writeObject(mod.getClass().getCanonicalName());
-				out.writeObject(mod.persistentPath);
+			for (Entry<CompilationUnit, BuildRequirement<?, ?, ?, ?>> e : syn.generatorModules.entrySet()) {
+				out.writeObject(e.getKey().getClass().getCanonicalName());
+				out.writeObject(e.getKey().persistentPath);
+				out.writeObject(e.getValue());
 			}
 
 			out.writeObject(syn.files);

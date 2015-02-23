@@ -8,10 +8,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.sugarj.cleardep.BuildSchedule.ScheduleMode;
 import org.sugarj.cleardep.BuildSchedule.Task;
+import org.sugarj.cleardep.build.BuildRequirement;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.path.RelativePath;
 
@@ -58,11 +60,12 @@ public class BuildScheduleBuilder {
 
     while (!units.isEmpty()) {
       CompilationUnit changedUnit = units.remove(0);
-      Set<CompilationUnit> dependencies = extractor.extractDependencies(changedUnit);
+      Map<CompilationUnit, BuildRequirement<?, ?, ?, ?>> dependencies = extractor.extractDependencies(changedUnit);
       // Find new Compilation units and add them
-      for (CompilationUnit dep : dependencies) {
+      for (Entry<CompilationUnit, BuildRequirement<?, ?, ?, ?>> e : dependencies.entrySet()) {
+        CompilationUnit dep = e.getKey();
         if (!changedUnit.getModuleDependencies().contains(dep)) {
-          changedUnit.addModuleDependency(dep);
+          changedUnit.addModuleDependency(dep, e.getValue());
           // Need to check dep iff rebuild all or if the unit is not persistent
           // or inconsistent
           if (!visitedUnits.contains(dep)) {
@@ -79,7 +82,7 @@ public class BuildScheduleBuilder {
       // Need to copy existing units because they will be modified
       ArrayList<CompilationUnit> allUnits = new ArrayList<CompilationUnit>(changedUnit.getModuleDependencies());
       for (CompilationUnit unit : allUnits) {
-        if (!dependencies.contains(unit)) {
+        if (!dependencies.keySet().contains(unit)) {
           changedUnit.removeModuleDependency(unit);
         }
       }

@@ -211,7 +211,7 @@ public class BuildManager {
       depResult.write();
     } catch (RequiredBuilderFailed e) {
       BuilderResult required = e.getLastAddedBuilder();
-      depResult.addModuleDependency(required.result);
+      depResult.addModuleDependency(required.result, required.builder.getRequirement());
       depResult.setState(CompilationUnit.State.FAILURE);
       depResult.write();
 

@@ -106,7 +106,7 @@ public abstract class PersistableEntity implements Serializable {
     }
   }
   
-  final public static <E extends PersistableEntity> E read(Class<E> clazz, Path p) throws IOException {
+  protected static <E extends PersistableEntity> E read(Class<E> clazz, Path p) throws IOException {
     if (p == null)
       return null;
     
