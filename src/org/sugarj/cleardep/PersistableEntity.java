@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -25,7 +24,7 @@ public abstract class PersistableEntity implements Serializable {
   
   private static final long serialVersionUID = 3725384862203109760L;
 
-  private final static Map<Path, SoftReference<? extends PersistableEntity>> inMemory = new HashMap<>();
+  private final static Map<Path, PersistableEntity> inMemory = new HashMap<>();
   
   
   public PersistableEntity() { /* for deserialization only */ }
@@ -65,13 +64,7 @@ public abstract class PersistableEntity implements Serializable {
   protected abstract void init();
   
   final protected static <E extends PersistableEntity> E create(Class<E> clazz, Path p) throws IOException {
-    E entity;
-    try {
-      entity = read(clazz, p);
-    } catch (IOException e) {
-      e.printStackTrace();
-      entity = null;
-    }
+    E entity = readFromMemoryCache(clazz, p);
     
     if (entity != null) {
       entity.init();
@@ -117,33 +110,26 @@ public abstract class PersistableEntity implements Serializable {
     ObjectInputStream in = null;
     try {
       in = new ObjectInputStream(new FileInputStream(p.getAbsolutePath()));
-      
       long id = in.readLong();
 
       E entity = readFromMemoryCache(clazz, p);
-      long readId = clazz.getField("serialVersionUID").getLong(entity);
-      if (id != readId) {
-        inMemory.remove(entity.persistentPath);
-        return null;
-      }
       
-      if (entity != null && !entity.hasPersistentVersionChanged())
+      if (entity != null && id == clazz.getField("serialVersionUID").getLong(entity) && !entity.hasPersistentVersionChanged())
         return entity;
 
-
-      entity = clazz.newInstance();
+      if (entity == null)
+        entity = clazz.newInstance();
       
       Stamper stamper = (Stamper) in.readObject();
       entity.persistentPath = p;
-      entity.setPersisted(stamper);
       entity.cacheInMemory();
+      entity.setPersisted(stamper);
 
       entity.readEntity(in, stamper);
       return entity;
     } catch (Throwable e) {
       System.err.println("Could not read module's dependency file: " + p + ": " + e);
       e.printStackTrace();
-      inMemory.remove(p);
       FileCommands.delete(p);
       return null;
     } finally {
@@ -171,14 +157,13 @@ public abstract class PersistableEntity implements Serializable {
   }
   
   final protected static <E extends PersistableEntity> E readFromMemoryCache(Class<E> clazz, Path p) {
-    SoftReference<? extends PersistableEntity> ref;
+    PersistableEntity e;
     synchronized (PersistableEntity.class) {
-      ref = inMemory.get(p);
+      e = inMemory.get(p);
     }
-    if (ref == null)
+    if (e == null)
       return null;
     
-    PersistableEntity e = ref.get();
     if (e != null && clazz.isInstance(e))
       return clazz.cast(e);
     return null;
@@ -186,7 +171,7 @@ public abstract class PersistableEntity implements Serializable {
   
   final protected void cacheInMemory() {
     synchronized (PersistableEntity.class) {
-      inMemory.put(persistentPath, new SoftReference<>(this));
+      inMemory.put(persistentPath, this);
     }
   }
   

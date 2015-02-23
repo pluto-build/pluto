@@ -105,13 +105,13 @@ public class BuildManager {
     for (CompilationUnit unit : scc) {
       InconsistenyReason reason = extendedInconsistencyMap.get(unit.getPersistentPath());
       if (reason != NO_REASON) {
-        if (reason == null || reason.compareTo(DEPENDENCIES_ARE_REBUILT) > 0) {
+        if (reason == null || reason.compareTo(DEPENDENCIES_ARE_REBUILT) >= 0) {
           reason = unit.isConsistentShallowReason(this.editedSourceFiles);
         } else {
           reason = NO_REASON;
         }
 
-        if (reason.compareTo(NO_REASON) == 0) {
+        if (reason.compareTo(DEPENDENCIES_ARE_REBUILT) <= 0) {
           for (CompilationUnit dep : unit.getModuleDependencies()) {
             if (!scc.contains(dep) && extendedInconsistencyMap.get(dep.getPersistentPath()) != NO_REASON) {
               reason = DEPENDENCIES_ARE_REBUILT;
@@ -254,22 +254,24 @@ public class BuildManager {
       extendedInconsistencyMap.put(dep, InconsistenyReason.OTHER);
     }
 
-      // No recursion of current unit has changed files
-      if (getInconsistencyReason(dep).compareTo(FILES_NOT_CONSISTENT) >= 0) {
-        return executeBuilder(builder);
-      } else {
-        // incremental rebuild
-        if (rebuildTriggeredBy == null) {
-          rebuildTriggeredBy = builder;
-          Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
-        }
-        try {
-          return scheduleRequire(builder, dep, depResult);
-        } finally {
-          if (rebuildTriggeredBy == builder)
-            Log.log.endTask();
-        }
+    InconsistenyReason reason = getInconsistencyReason(dep);
+    
+    // No recursion of current unit has changed files
+    if (reason.compareTo(FILES_NOT_CONSISTENT) >= 0) {
+      return executeBuilder(builder);
+    } else {
+      // incremental rebuild
+      if (rebuildTriggeredBy == null) {
+        rebuildTriggeredBy = builder;
+        Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
       }
+      try {
+        return scheduleRequire(builder, dep, depResult);
+      } finally {
+        if (rebuildTriggeredBy == builder)
+          Log.log.endTask();
+      }
+    }
 
   }
 }
