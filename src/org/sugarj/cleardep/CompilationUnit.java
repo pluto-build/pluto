@@ -319,7 +319,7 @@ public class CompilationUnit extends PersistableEntity {
 
 	  
 	public static enum InconsistenyReason implements Comparable<InconsistenyReason>{
-	  NO_REASON, DEPENDENCIES_NOT_CONSISTENT, FILES_NOT_CONSISTENT, OTHER, 
+	  NO_REASON, DEPENDENCIES_ARE_REBUILT, FILES_NOT_CONSISTENT, DEPENDENCIES_NOT_CONSISTENT, OTHER, 
 	  
 	}
 	  
@@ -448,7 +448,8 @@ public class CompilationUnit extends PersistableEntity {
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	protected void readEntity(ObjectInputStream in) throws IOException, ClassNotFoundException {
+	protected void readEntity(ObjectInputStream in, Stamper stamper) throws IOException, ClassNotFoundException {
+	  defaultStamper = stamper;
 	  state = (State) in.readObject();
 		sourceArtifacts = (Map<RelativePath, Stamp>) in.readObject();
 		generatedFiles = (Map<Path, Stamp>) in.readObject();

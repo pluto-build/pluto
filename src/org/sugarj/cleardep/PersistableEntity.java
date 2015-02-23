@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
@@ -58,7 +59,7 @@ public abstract class PersistableEntity implements Serializable {
   }
   
   
-  protected abstract void readEntity(ObjectInputStream in) throws IOException, ClassNotFoundException;
+  protected abstract void readEntity(ObjectInputStream in, Stamper stamper) throws IOException, ClassNotFoundException;
   protected abstract void writeEntity(ObjectOutputStream out) throws IOException;
   
   protected abstract void init();
@@ -137,7 +138,7 @@ public abstract class PersistableEntity implements Serializable {
       entity.setPersisted(stamper);
       entity.cacheInMemory();
 
-      entity.readEntity(in);
+      entity.readEntity(in, stamper);
       return entity;
     } catch (Throwable e) {
       System.err.println("Could not read module's dependency file: " + p + ": " + e);
@@ -152,6 +153,7 @@ public abstract class PersistableEntity implements Serializable {
   }
   
   final public void write(Stamper stamper) throws IOException {
+    Objects.requireNonNull(stamper);
     FileCommands.createFile(persistentPath);
     ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(persistentPath.getAbsolutePath()));
 

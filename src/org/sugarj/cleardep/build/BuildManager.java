@@ -1,6 +1,7 @@
 package org.sugarj.cleardep.build;
 
 import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.DEPENDENCIES_NOT_CONSISTENT;
+import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.DEPENDENCIES_ARE_REBUILT;
 import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.FILES_NOT_CONSISTENT;
 import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.NO_REASON;
 
@@ -38,9 +39,9 @@ public class BuildManager {
     this.editedSourceFiles = editedSourceFiles;
   }
 
-  private <E extends CompilationUnit> InconsistenyReason getInconsistencyReason(CompilationUnit unit) throws IOException {
-    Objects.requireNonNull(unit);
-    InconsistenyReason inconsistency = extendedInconsistencyMap.get(unit.getPersistentPath());
+  private <E extends CompilationUnit> InconsistenyReason getInconsistencyReason(Path dep) throws IOException {
+    Objects.requireNonNull(dep);
+    InconsistenyReason inconsistency = extendedInconsistencyMap.get(dep);
     if (inconsistency != null) {
       return inconsistency;
     }
@@ -77,10 +78,10 @@ public class BuildManager {
       InconsistenyReason reason = extendedInconsistencyMap.get(unit.getPersistentPath());
       if (reason == null) {
         reason = unit.isConsistentShallowReason(this.editedSourceFiles);
-        if (reason.compareTo(DEPENDENCIES_NOT_CONSISTENT) < 0) {
+        if (reason.compareTo(DEPENDENCIES_ARE_REBUILT) < 0) {
           for (CompilationUnit dep : unit.getModuleDependencies()) {
             if (!scc.contains(dep) && extendedInconsistencyMap.get(dep.getPersistentPath()) != NO_REASON) {
-              reason = DEPENDENCIES_NOT_CONSISTENT;
+              reason = DEPENDENCIES_ARE_REBUILT;
               break;
             }
           }
@@ -91,8 +92,8 @@ public class BuildManager {
     }
     if (!sccConsistent && scc.size() > 1) {
       for (CompilationUnit unit : scc) {
-        if (extendedInconsistencyMap.get(unit.getPersistentPath()).compareTo(DEPENDENCIES_NOT_CONSISTENT) < 0) {
-          extendedInconsistencyMap.put(unit.getPersistentPath(), DEPENDENCIES_NOT_CONSISTENT);
+        if (extendedInconsistencyMap.get(unit.getPersistentPath()).compareTo(DEPENDENCIES_ARE_REBUILT) < 0) {
+          extendedInconsistencyMap.put(unit.getPersistentPath(), DEPENDENCIES_ARE_REBUILT);
         }
       }
     }
@@ -103,16 +104,16 @@ public class BuildManager {
     for (CompilationUnit unit : scc) {
       InconsistenyReason reason = extendedInconsistencyMap.get(unit.getPersistentPath());
       if (reason != NO_REASON) {
-        if (reason == null || reason.compareTo(DEPENDENCIES_NOT_CONSISTENT) > 0) {
+        if (reason == null || reason.compareTo(DEPENDENCIES_ARE_REBUILT) > 0) {
           reason = unit.isConsistentShallowReason(this.editedSourceFiles);
         } else {
           reason = NO_REASON;
         }
 
-        if (reason.compareTo(DEPENDENCIES_NOT_CONSISTENT) < 0) {
+        if (reason.compareTo(NO_REASON) == 0) {
           for (CompilationUnit dep : unit.getModuleDependencies()) {
             if (!scc.contains(dep) && extendedInconsistencyMap.get(dep.getPersistentPath()) != NO_REASON) {
-              reason = DEPENDENCIES_NOT_CONSISTENT;
+              reason = DEPENDENCIES_ARE_REBUILT;
               break;
             }
           }
@@ -124,25 +125,20 @@ public class BuildManager {
     }
     if (!sccConsistent && scc.size() > 1) {
       for (CompilationUnit unit : scc) {
-        if (extendedInconsistencyMap.get(unit.getPersistentPath()).compareTo(DEPENDENCIES_NOT_CONSISTENT) < 0) {
-          extendedInconsistencyMap.put(unit.getPersistentPath(), DEPENDENCIES_NOT_CONSISTENT);
+        if (extendedInconsistencyMap.get(unit.getPersistentPath()).compareTo(NO_REASON) == 0) {
+          extendedInconsistencyMap.put(unit.getPersistentPath(), DEPENDENCIES_ARE_REBUILT);
         }
       }
     }
   }
 
-  private <T extends Serializable, E extends CompilationUnit> E scheduleRequire(Builder<T, E> builder, E depResult) throws IOException {
+  private <T extends Serializable, E extends CompilationUnit> E scheduleRequire(Builder<T, E> builder, Path dep, E depResult) throws IOException {
     if (builder.manager != this) {
       throw new RuntimeException("Illegal builder using another build manager for this build");
     }
-
-    if (this.isConsistent(depResult)) {
-      if (!depResult.isConsistent(editedSourceFiles)) {
-
-        throw new AssertionError("BuildManager does not guarantee soundness");
-      }
-      return depResult;
-    }
+    
+    if (depResult == null)
+      depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
 
     // TODO query builder for cycle
 
@@ -152,7 +148,7 @@ public class BuildManager {
     for (topMostFileInconsistentScc = sccs.size() - 1; topMostFileInconsistentScc >= 0; topMostFileInconsistentScc--) {
       boolean sccFileInconsistent = false;
       for (CompilationUnit unit : sccs.get(topMostFileInconsistentScc)) {
-        if (getInconsistencyReason(unit).compareTo(FILES_NOT_CONSISTENT) >= 0) {
+        if (getInconsistencyReason(unit.getPersistentPath()).compareTo(FILES_NOT_CONSISTENT) >= 0) {
           BuildRequirement<?, ?, ?, ?> source = unit.getGeneratedBy();
           source.createBuilderAndRequire(this);
           sccFileInconsistent = true;
@@ -167,14 +163,14 @@ public class BuildManager {
     for (int index = topMostFileInconsistentScc + 1; index >= 0 && index < sccs.size(); index++) {
       updateInconsistentCacheForScc(sccs.get(index));
       for (CompilationUnit unit : sccs.get(index)) {
-        if (getInconsistencyReason(unit).compareTo(NO_REASON) > 0) {
+        if (getInconsistencyReason(unit.getPersistentPath()).compareTo(NO_REASON) > 0) {
           BuildRequirement<?, ?, ?, ?> source = unit.getGeneratedBy();
           source.createBuilderAndRequire(this);
         }
       }
     }
 
-    if (getInconsistencyReason(depResult).compareTo(NO_REASON) > 0) {
+    if (getInconsistencyReason(depResult.getPersistentPath()).compareTo(NO_REASON) > 0) {
       throw new AssertionError("BuildManager does not ensure that returned unit is consistent");
     }
     return depResult;
@@ -183,8 +179,8 @@ public class BuildManager {
   protected <T extends Serializable, E extends CompilationUnit> E executeBuilder(Builder<T, E> builder) throws IOException {
 
     Path dep = builder.persistentPath();
-
-
+    E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
+    
     BuildStackEntry entry = new BuildStackEntry(builder.sourceFactory, dep);
 
     if (this.requireCallStack.contains(entry)) {
@@ -192,7 +188,6 @@ public class BuildManager {
     }
     this.requireCallStack.push(entry);
 
-    E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
     String taskDescription = builder.taskDescription();
 
     try {
@@ -248,26 +243,21 @@ public class BuildManager {
     Path dep = builder.persistentPath();
     E depResult = CompilationUnit.read(builder.resultClass(), dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
 
-    boolean consistent = this.isConsistent(depResult);
-
-    if (consistent) {
-      if (!depResult.isConsistent(this.editedSourceFiles)) {
+    if (depResult == null) {
+      extendedInconsistencyMap.put(dep, InconsistenyReason.OTHER);
+    }
+    else if (this.isConsistent(depResult)) {
+      if (!depResult.isConsistent(this.editedSourceFiles))
         throw new AssertionError("BuildManager does not guarantee soundness");
-      }
       return depResult;
     }
     
-    if (depResult == null) {
-      depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
-      extendedInconsistencyMap.put(dep, InconsistenyReason.OTHER);
-      
-    }
-
     // No recursion of current unit has changed files
-    if (getInconsistencyReason(depResult).compareTo(FILES_NOT_CONSISTENT) >= 0) {
+    if (getInconsistencyReason(dep).compareTo(FILES_NOT_CONSISTENT) >= 0) {
       return executeBuilder(builder);
     } else {
-      return scheduleRequire(builder, depResult);
+//      return executeBuilder(builder);
+      return scheduleRequire(builder, dep, depResult);
     }
 
   }
