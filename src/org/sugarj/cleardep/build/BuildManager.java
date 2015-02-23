@@ -1,6 +1,5 @@
 package org.sugarj.cleardep.build;
 
-import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.DEPENDENCIES_NOT_CONSISTENT;
 import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.DEPENDENCIES_ARE_REBUILT;
 import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.FILES_NOT_CONSISTENT;
 import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.NO_REASON;
