@@ -19,7 +19,6 @@ import java.util.Set;
 import org.sugarj.cleardep.CompilationUnit;
 import org.sugarj.cleardep.CompilationUnit.InconsistenyReason;
 import org.sugarj.cleardep.GraphUtils;
-import org.sugarj.cleardep.Mode;
 import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.Log;
@@ -49,12 +48,12 @@ public class BuildManager {
     throw new AssertionError("Caller did not ensures that unit has been cached");
   }
 
-  private <E extends CompilationUnit> boolean isConsistent(Path depPath, Class<E> resultClass, Mode<E> mode) throws IOException {
+  private <E extends CompilationUnit> boolean isConsistent(Path depPath, Class<E> resultClass) throws IOException {
     InconsistenyReason inconsistency = extendedInconsistencyMap.get(depPath);
     if (inconsistency != null) {
       return inconsistency == NO_REASON;
     }
-    fillInconsistentCache(depPath, resultClass, mode);
+    fillInconsistentCache(depPath, resultClass);
     inconsistency = extendedInconsistencyMap.get(depPath);
     if (inconsistency == null) {
       throw new AssertionError("Cache not filled up correctly");
@@ -62,8 +61,8 @@ public class BuildManager {
     return inconsistency == NO_REASON;
   }
 
-  private <E extends CompilationUnit> void fillInconsistentCache(Path path, Class<E> resultClass, Mode<E> mode) throws IOException {
-    CompilationUnit rootUnit = CompilationUnit.read(resultClass, mode, path);
+  private <E extends CompilationUnit> void fillInconsistentCache(Path path, Class<E> resultClass) throws IOException {
+    CompilationUnit rootUnit = CompilationUnit.read(resultClass, path);
 
     if (rootUnit == null) {
       extendedInconsistencyMap.put(path, OTHER);
@@ -141,7 +140,7 @@ public class BuildManager {
     }
   }
 
-  private <T extends Serializable, E extends CompilationUnit> E scheduleRequire(Builder<T, E> builder, Mode<E> mode) throws IOException {
+  private <T extends Serializable, E extends CompilationUnit> E scheduleRequire(Builder<T, E> builder) throws IOException {
     if (builder.manager != this) {
       throw new RuntimeException("Illegal builder using another build manager for this build");
     }
@@ -154,10 +153,10 @@ public class BuildManager {
     // if (depResult != null)
     // return depResult;
 
-    depResult = CompilationUnit.read(builder.resultClass(), mode, dep);
+    depResult = CompilationUnit.read(builder.resultClass(), dep);
 
-    if (this.isConsistent(dep, builder.resultClass(), mode)) {
-      if (!depResult.isConsistent(editedSourceFiles, mode)) {
+    if (this.isConsistent(dep, builder.resultClass())) {
+      if (!depResult.isConsistent(editedSourceFiles)) {
 
         throw new AssertionError("BuildManager does not guarantee soundness");
       }
@@ -200,7 +199,7 @@ public class BuildManager {
     return depResult;
   }
 
-  protected <T extends Serializable, E extends CompilationUnit> E executeBuilder(Builder<T, E> builder, Mode<E> mode) throws IOException {
+  protected <T extends Serializable, E extends CompilationUnit> E executeBuilder(Builder<T, E> builder) throws IOException {
 
     Path dep = builder.persistentPath();
 
@@ -212,7 +211,7 @@ public class BuildManager {
     }
     this.requireCallStack.push(entry);
 
-    E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep, new BuildRequirement<>(builder.sourceFactory, builder.input, mode));
+    E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), null, dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
     String taskDescription = builder.taskDescription();
 
     try {
@@ -248,9 +247,7 @@ public class BuildManager {
       if (taskDescription != null)
         Log.log.endTask();
       BuildStackEntry poppedEntry = requireCallStack.pop();
-      if (poppedEntry != entry) {
-        throw new AssertionError("Got the wrong build stack entry from the requires stack");
-      }
+      assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
     }
 
     extendedInconsistencyMap.put(dep, NO_REASON);
@@ -261,7 +258,7 @@ public class BuildManager {
     return depResult;
   }
 
-  public <T extends Serializable, E extends CompilationUnit> E require(Builder<T, E> builder, Mode<E> mode) throws IOException {
+  public <T extends Serializable, E extends CompilationUnit> E require(Builder<T, E> builder) throws IOException {
 
     if (builder.manager != this) {
       throw new RuntimeException("Illegal builder using another build manager for this build");
@@ -269,31 +266,31 @@ public class BuildManager {
 
     Path dep = builder.persistentPath();
     E depResult;
-    depResult = CompilationUnit.read(builder.resultClass(), mode, dep);
+    depResult = CompilationUnit.read(builder.resultClass(), dep);
     // = CompilationUnit.readConsistent(builder.resultClass(), mode,
     // builder.context.getEditedSourceFiles(), dep);
     // if (depResult != null)
     // return depResult;
 
-    boolean consistent = this.isConsistent(dep, builder.resultClass(), mode);
+    boolean consistent = this.isConsistent(dep, builder.resultClass());
 
     if (consistent) {
 
-      if (!depResult.isConsistent(this.editedSourceFiles, mode)) {
+      if (!depResult.isConsistent(this.editedSourceFiles)) {
         throw new AssertionError("BuildManager does not guarantee soundness");
       }
       return depResult;
     }
     if (depResult == null) {
-      depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), mode, null, dep, new BuildRequirement<>(builder.sourceFactory, builder.input, mode));
+      depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), null, dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
 
     }
 
     // No recursion of current unit has changed files
     if (getInconsistencyReason(depResult).compareTo(FILES_NOT_CONSISTENT) >= 0) {
-      return executeBuilder(builder, mode);
+      return executeBuilder(builder);
     } else {
-      return scheduleRequire(builder, mode);
+      return scheduleRequire(builder);
     }
 
   }

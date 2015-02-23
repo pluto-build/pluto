@@ -5,7 +5,6 @@ import java.io.Serializable;
 import java.util.Objects;
 
 import org.sugarj.cleardep.CompilationUnit;
-import org.sugarj.cleardep.Mode;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.common.path.Path;
 
@@ -55,9 +54,9 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
   B_ extends Builder<T_,E_>,
   F_ extends BuilderFactory<T_, E_, B_>,
   SubT_ extends T_
-  > E_ require(F_ factory, SubT_ input, Mode<E_> mode) throws IOException {
+  > E_ require(F_ factory, SubT_ input) throws IOException {
     Builder<T_,E_> builder = factory.makeBuilder(input, manager);
-    E_ e = manager.require(builder, mode);
+    E_ e = manager.require(builder);
     result.addModuleDependency(e);
     return e;
   }
@@ -68,7 +67,7 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
   B_ extends Builder<T_,E_>, 
   F_ extends BuilderFactory<T_, E_, B_>> E_ require(BuildRequirement<T_, E_, B_, F_> req) throws IOException {
     Builder<T_,E_> builder = req.factory.makeBuilder(req.input, manager);
-    E_ e = manager.require(builder, req.mode);
+    E_ e = manager.require(builder);
     result.addModuleDependency(e);
     return e;
   }

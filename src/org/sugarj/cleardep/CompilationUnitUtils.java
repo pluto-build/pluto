@@ -14,7 +14,7 @@ public class CompilationUnitUtils {
     ModuleVisitor<Void> visitor =new ModuleVisitor<Void>() {
 
       @Override
-      public Void visit(CompilationUnit mod, Mode<?> mode) {
+      public Void visit(CompilationUnit mod) {
         if (predicate.isFullfilled(mod)) {
           results.add(mod);
         }
@@ -37,7 +37,7 @@ public class CompilationUnitUtils {
       }
     };
 
-    startUnit.visit(visitor, null);
+    startUnit.visit(visitor);
 
     return results;
   }

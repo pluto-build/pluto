@@ -268,7 +268,7 @@ public class BuildScheduleBuilder {
 
   boolean needsToBeBuild(CompilationUnit unit) {
     // Calling isConsistent here is really really slow but safe and its a check
-    boolean build = scheduleMode == BuildSchedule.ScheduleMode.REBUILD_ALL || !unit.isConsistent(null, null);
+    boolean build = scheduleMode == BuildSchedule.ScheduleMode.REBUILD_ALL || !unit.isConsistent(null);
     return build;
   }
 

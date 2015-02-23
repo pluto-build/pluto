@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import org.sugarj.cleardep.CompilationUnit;
-import org.sugarj.cleardep.Mode;
+
+import com.cedarsoftware.util.DeepEquals;
 
 public class BuildRequirement<
   T extends Serializable, 
@@ -16,15 +17,28 @@ public class BuildRequirement<
   
   final F factory;
   final T input;
-  final Mode<E> mode;
 
-  public BuildRequirement(F factory, T input, Mode<E> mode) {
+  public BuildRequirement(F factory, T input) {
     this.factory = factory;
     this.input = input;
-    this.mode = mode;
   }
 
   public E createBuilderAndRequire(BuildManager manager) throws IOException {
-    return manager.require(factory.makeBuilder(input, manager), mode);
+    return manager.require(factory.makeBuilder(input, manager));
+  }
+  
+  public boolean equals(Object o) {
+    if (!(o instanceof BuildRequirement<?, ?, ?, ?>))
+      return false;
+    
+    BuildRequirement<?, ?, ?, ?> r = (BuildRequirement<?, ?, ?, ?>) o;
+    
+    if (!factory.getClass().equals(r.factory.getClass()))
+      return false;
+    
+    if (DeepEquals.deepEquals(input, r.input))
+      return false;
+    
+    return true;
   }
 }
