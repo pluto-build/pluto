@@ -13,3 +13,5 @@ Export-Package: org.sugarj.cleardep,
 Require-Bundle: org.eclipse.core.runtime,
  org.sugarj.common
 Eclipse-BuddyPolicy: registered
+Bundle-ClassPath: java-util-1.17.2.jar,
+ .

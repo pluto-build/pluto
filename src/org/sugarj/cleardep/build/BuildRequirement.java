@@ -36,7 +36,7 @@ public class BuildRequirement<
     if (!factory.getClass().equals(r.factory.getClass()))
       return false;
     
-    if (DeepEquals.deepEquals(input, r.input))
+    if (!DeepEquals.deepEquals(input, r.input))
       return false;
     
     return true;

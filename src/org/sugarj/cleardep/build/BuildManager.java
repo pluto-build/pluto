@@ -3,7 +3,6 @@ package org.sugarj.cleardep.build;
 import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.DEPENDENCIES_NOT_CONSISTENT;
 import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.FILES_NOT_CONSISTENT;
 import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.NO_REASON;
-import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.OTHER;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -48,32 +47,24 @@ public class BuildManager {
     throw new AssertionError("Caller did not ensures that unit has been cached");
   }
 
-  private <E extends CompilationUnit> boolean isConsistent(Path depPath, Class<E> resultClass) throws IOException {
-    InconsistenyReason inconsistency = extendedInconsistencyMap.get(depPath);
+  private <E extends CompilationUnit> boolean isConsistent(E depResult) throws IOException {
+    if (depResult == null)
+      return false;
+    
+    InconsistenyReason inconsistency = extendedInconsistencyMap.get(depResult.getPersistentPath());
     if (inconsistency != null) {
       return inconsistency == NO_REASON;
     }
-    fillInconsistentCache(depPath, resultClass);
-    inconsistency = extendedInconsistencyMap.get(depPath);
+    fillInconsistentCache(depResult);
+    inconsistency = extendedInconsistencyMap.get(depResult.getPersistentPath());
     if (inconsistency == null) {
       throw new AssertionError("Cache not filled up correctly");
     }
     return inconsistency == NO_REASON;
   }
 
-  private <E extends CompilationUnit> void fillInconsistentCache(Path path, Class<E> resultClass) throws IOException {
-    CompilationUnit rootUnit = CompilationUnit.read(resultClass, path);
-
-    if (rootUnit == null) {
-      extendedInconsistencyMap.put(path, OTHER);
-    } else {
-      fillInconsistentCache(rootUnit);
-    }
-
-  }
-
-  private void fillInconsistentCache(CompilationUnit root) {
-    List<Set<CompilationUnit>> sccs = GraphUtils.calculateStronglyConnectedComponents(Collections.singleton(root));
+  private <E extends CompilationUnit> void fillInconsistentCache(E rootUnit) throws IOException {
+    List<Set<CompilationUnit>> sccs = GraphUtils.calculateStronglyConnectedComponents(Collections.singleton(rootUnit));
 
     for (final Set<CompilationUnit> scc : sccs) {
       fillInconsistentCacheForScc(scc);
@@ -140,22 +131,12 @@ public class BuildManager {
     }
   }
 
-  private <T extends Serializable, E extends CompilationUnit> E scheduleRequire(Builder<T, E> builder) throws IOException {
+  private <T extends Serializable, E extends CompilationUnit> E scheduleRequire(Builder<T, E> builder, E depResult) throws IOException {
     if (builder.manager != this) {
       throw new RuntimeException("Illegal builder using another build manager for this build");
     }
 
-    Path dep = builder.persistentPath();
-
-    E depResult;
-    // = CompilationUnit.readConsistent(builder.resultClass(), mode,
-    // builder.context.getEditedSourceFiles(), dep);
-    // if (depResult != null)
-    // return depResult;
-
-    depResult = CompilationUnit.read(builder.resultClass(), dep);
-
-    if (this.isConsistent(dep, builder.resultClass())) {
+    if (this.isConsistent(depResult)) {
       if (!depResult.isConsistent(editedSourceFiles)) {
 
         throw new AssertionError("BuildManager does not guarantee soundness");
@@ -265,32 +246,28 @@ public class BuildManager {
     }
 
     Path dep = builder.persistentPath();
-    E depResult;
-    depResult = CompilationUnit.read(builder.resultClass(), dep);
-    // = CompilationUnit.readConsistent(builder.resultClass(), mode,
-    // builder.context.getEditedSourceFiles(), dep);
-    // if (depResult != null)
-    // return depResult;
+    E depResult = CompilationUnit.read(builder.resultClass(), dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
 
-    boolean consistent = this.isConsistent(dep, builder.resultClass());
+    boolean consistent = this.isConsistent(depResult);
 
     if (consistent) {
-
       if (!depResult.isConsistent(this.editedSourceFiles)) {
         throw new AssertionError("BuildManager does not guarantee soundness");
       }
       return depResult;
     }
+    
     if (depResult == null) {
       depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), null, dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
-
+      extendedInconsistencyMap.put(dep, InconsistenyReason.OTHER);
+      
     }
 
     // No recursion of current unit has changed files
     if (getInconsistencyReason(depResult).compareTo(FILES_NOT_CONSISTENT) >= 0) {
       return executeBuilder(builder);
     } else {
-      return scheduleRequire(builder);
+      return scheduleRequire(builder, depResult);
     }
 
   }
