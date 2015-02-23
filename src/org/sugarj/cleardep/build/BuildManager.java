@@ -29,6 +29,8 @@ public class BuildManager {
   private Deque<BuildStackEntry> requireCallStack = new ArrayDeque<>();
 
   private Map<Path, InconsistenyReason> extendedInconsistencyMap = new HashMap<>();
+  
+  private Builder<?,?> rebuildTriggeredBy = null;
 
   public BuildManager() {
     this(null);
@@ -242,21 +244,32 @@ public class BuildManager {
     Path dep = builder.persistentPath();
     E depResult = CompilationUnit.read(builder.resultClass(), dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
 
-    if (depResult == null) {
-      extendedInconsistencyMap.put(dep, InconsistenyReason.OTHER);
-    }
-    else if (this.isConsistent(depResult)) {
+    if (depResult != null && this.isConsistent(depResult)) {
       if (!depResult.isConsistent(this.editedSourceFiles))
         throw new AssertionError("BuildManager does not guarantee soundness");
       return depResult;
     }
     
-    // No recursion of current unit has changed files
-    if (getInconsistencyReason(dep).compareTo(FILES_NOT_CONSISTENT) >= 0) {
-      return executeBuilder(builder);
-    } else {
-//      return executeBuilder(builder);
-      return scheduleRequire(builder, dep, depResult);
+    if (depResult == null) {
+      extendedInconsistencyMap.put(dep, InconsistenyReason.OTHER);
+    }
+
+    if (rebuildTriggeredBy == null) {
+      rebuildTriggeredBy = builder;
+      Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
+    }
+    
+    try {
+      // No recursion of current unit has changed files
+      if (getInconsistencyReason(dep).compareTo(FILES_NOT_CONSISTENT) >= 0) {
+        return executeBuilder(builder);
+      } else {
+  //      return executeBuilder(builder);
+        return scheduleRequire(builder, dep, depResult);
+      }
+    } finally {
+      if (rebuildTriggeredBy == builder)
+        Log.log.endTask();
     }
 
   }
