@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
-import org.sugarj.common.StringCommands;
 import org.sugarj.common.path.Path;
 
 public class XattrPreferencesStrategy implements XattrStrategy {

@@ -49,14 +49,24 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
     }
   }
   
-  protected <T_ extends Serializable, E_ extends CompilationUnit, B_ extends Builder<T_,E_>> E_ require(BuilderFactory<T_, E_, B_> factory, T_ input, Mode<E_> mode) throws IOException {
+  protected <
+  T_ extends Serializable, 
+  E_ extends CompilationUnit, 
+  B_ extends Builder<T_,E_>,
+  F_ extends BuilderFactory<T_, E_, B_>,
+  SubT_ extends T_
+  > E_ require(F_ factory, SubT_ input, Mode<E_> mode) throws IOException {
     Builder<T_,E_> builder = factory.makeBuilder(input, manager);
     E_ e = manager.require(builder, mode);
     result.addModuleDependency(e);
     return e;
   }
   
-  protected <T_ extends Serializable, E_ extends CompilationUnit, B_ extends Builder<T_,E_>, F_ extends BuilderFactory<T_, E_, B_>> E_ require(BuildRequirement<T_, E_, B_, F_> req) throws IOException {
+  protected <
+  T_ extends Serializable, 
+  E_ extends CompilationUnit,
+  B_ extends Builder<T_,E_>, 
+  F_ extends BuilderFactory<T_, E_, B_>> E_ require(BuildRequirement<T_, E_, B_, F_> req) throws IOException {
     Builder<T_,E_> builder = req.factory.makeBuilder(req.input, manager);
     E_ e = manager.require(builder, req.mode);
     result.addModuleDependency(e);
