@@ -254,23 +254,22 @@ public class BuildManager {
       extendedInconsistencyMap.put(dep, InconsistenyReason.OTHER);
     }
 
-    if (rebuildTriggeredBy == null) {
-      rebuildTriggeredBy = builder;
-      Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
-    }
-    
-    try {
       // No recursion of current unit has changed files
       if (getInconsistencyReason(dep).compareTo(FILES_NOT_CONSISTENT) >= 0) {
         return executeBuilder(builder);
       } else {
-  //      return executeBuilder(builder);
-        return scheduleRequire(builder, dep, depResult);
+        // incremental rebuild
+        if (rebuildTriggeredBy == null) {
+          rebuildTriggeredBy = builder;
+          Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
+        }
+        try {
+          return scheduleRequire(builder, dep, depResult);
+        } finally {
+          if (rebuildTriggeredBy == builder)
+            Log.log.endTask();
+        }
       }
-    } finally {
-      if (rebuildTriggeredBy == builder)
-        Log.log.endTask();
-    }
 
   }
 }
