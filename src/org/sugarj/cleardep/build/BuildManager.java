@@ -147,7 +147,8 @@ public class BuildManager {
     for (topMostFileInconsistentScc = sccs.size() - 1; topMostFileInconsistentScc >= 0; topMostFileInconsistentScc--) {
       boolean sccFileInconsistent = false;
       for (CompilationUnit unit : sccs.get(topMostFileInconsistentScc)) {
-        if (getInconsistencyReason(unit.getPersistentPath()).compareTo(FILES_NOT_CONSISTENT) >= 0) {
+        InconsistenyReason reason = getInconsistencyReason(unit.getPersistentPath());
+        if (reason.compareTo(FILES_NOT_CONSISTENT) >= 0) {
           BuildRequirement<?, ?, ?, ?> source = unit.getGeneratedBy();
           source.createBuilderAndRequire(this);
           sccFileInconsistent = true;
@@ -221,11 +222,10 @@ public class BuildManager {
     } finally {
       if (taskDescription != null)
         Log.log.endTask();
+      extendedInconsistencyMap.put(dep, NO_REASON);
       BuildStackEntry poppedEntry = requireCallStack.pop();
       assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
     }
-
-    extendedInconsistencyMap.put(dep, NO_REASON);
 
     if (depResult.getState() == CompilationUnit.State.FAILURE)
       throw new RequiredBuilderFailed(builder, depResult, new IllegalStateException("Builder failed for unknown reason, please confer log."));

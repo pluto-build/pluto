@@ -54,10 +54,6 @@ public class LastModifiedStamper implements Stamper {
         Long ovalue = ((LastModifiedStamp) o).value;
         return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
       }
-      if (o instanceof LastModifiedStamp) {
-        Long ovalue = ((LastModifiedStamp) o).value;
-        return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
-      }
       return false;
     }
     
