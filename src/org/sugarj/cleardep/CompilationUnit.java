@@ -319,7 +319,7 @@ public class CompilationUnit extends PersistableEntity {
 
 	  
 	public static enum InconsistenyReason implements Comparable<InconsistenyReason>{
-	  NO_REASON, DEPENDENCIES_ARE_REBUILT, FILES_NOT_CONSISTENT, DEPENDENCIES_NOT_CONSISTENT, OTHER, 
+	  NO_REASON, DEPENDENCIES_ARE_REBUILT, FILES_NOT_CONSISTENT, DEPENDENCIES_NEED_REBUILT, OTHER, 
 	  
 	}
 	  
@@ -342,7 +342,7 @@ public class CompilationUnit extends PersistableEntity {
 				return InconsistenyReason.FILES_NOT_CONSISTENT;
 
 		if (!isConsistentModuleDependencies())
-		  return InconsistenyReason.DEPENDENCIES_NOT_CONSISTENT;
+		  return InconsistenyReason.DEPENDENCIES_NEED_REBUILT;
 		
 		if (!isConsistentExtend())
 			return InconsistenyReason.OTHER;
