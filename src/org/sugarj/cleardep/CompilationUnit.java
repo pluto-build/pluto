@@ -65,7 +65,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	protected Map<Path, Stamp> externalFileDependencies;
 	protected Map<Path, Stamp> generatedFiles;
 	
-	protected BuildRequirement<?, ?, ?> generatedBy;
+	protected BuildRequirement<?, ?, ?, ?> generatedBy;
 
 	// **************************
 	// Methods for initialization
@@ -76,7 +76,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 	}
 	  
 	
-	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Path dep, BuildRequirement< ?, E, ?> generatedBy) throws IOException {
+	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Mode<E> mode, Synthesizer syn, Path dep, BuildRequirement<?, E, ?, ?> generatedBy) throws IOException {
 		E e = PersistableEntity.tryReadElseCreate(cl, dep);
 		e.init();
 		e.defaultStamper = stamper;
@@ -369,7 +369,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		return generatedFiles.keySet();
 	}
 	
-	public BuildRequirement< ?, ?, ?> getGeneratedBy() {
+	public BuildRequirement<?, ?, ?, ?> getGeneratedBy() {
     return generatedBy;
   }
 
@@ -658,7 +658,7 @@ abstract public class CompilationUnit extends PersistableEntity {
 		
 		boolean hasGeneratedBy = in.readBoolean();
 		if (hasGeneratedBy) {
-		  this.generatedBy = (BuildRequirement<?, ?, ?>) in.readObject();
+		  this.generatedBy = (BuildRequirement<?, ?, ?, ?>) in.readObject();
 		}
 	}
 	

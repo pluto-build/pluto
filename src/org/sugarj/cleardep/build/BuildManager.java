@@ -173,7 +173,7 @@ public class BuildManager {
       boolean sccFileInconsistent = false;
       for (CompilationUnit unit : sccs.get(topMostFileInconsistentScc)) {
         if (getInconsistencyReason(unit).compareTo(FILES_NOT_CONSISTENT) >= 0) {
-          BuildRequirement<?, ?, ?> source = unit.getGeneratedBy();
+          BuildRequirement<?, ?, ?, ?> source = unit.getGeneratedBy();
           source.createBuilderAndRequire(this);
           sccFileInconsistent = true;
         }
@@ -188,7 +188,7 @@ public class BuildManager {
       updateInconsistentCacheForScc(sccs.get(index));
       for (CompilationUnit unit : sccs.get(index)) {
         if (getInconsistencyReason(unit).compareTo(NO_REASON) > 0) {
-          BuildRequirement<?, ?,?> source = unit.getGeneratedBy();
+          BuildRequirement<?, ?, ?, ?> source = unit.getGeneratedBy();
           source.createBuilderAndRequire(this);
         }
       }
