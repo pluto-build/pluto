@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.sugarj.cleardep.CompilationUnit;
 import org.sugarj.cleardep.stamp.CollectionStamper.CollectionStamp;
 import org.sugarj.cleardep.stamp.LastModifiedStamper.LastModifiedStamp;
 import org.sugarj.common.FileCommands;
@@ -13,13 +12,12 @@ import org.sugarj.common.path.Path;
 /**
  * @author Sebastian Erdweg
  */
-public class ContentHashStamper implements Stamper, ModuleStamper {
+public class ContentHashStamper implements Stamper {
 
   private static final long serialVersionUID = 7688772212399111636L;
 
   private ContentHashStamper() {}
   public static final Stamper instance = new ContentHashStamper();
-  public static final ModuleStamper minstance = new ContentHashStamper();
   
   /**
    * @see org.sugarj.cleardep.stamp.Stamper#stampOf(org.sugarj.common.path.Path)
@@ -54,17 +52,7 @@ public class ContentHashStamper implements Stamper, ModuleStamper {
     }
   }
 
-  public ContentHashStamp stampOf(CompilationUnit m) {
-    if (!m.isPersisted())
-      throw new IllegalArgumentException("Cannot compute stamp of non-persisted compilation unit " + m);
-    
-    if (!FileCommands.exists(m.getPersistentPath()))
-      return new ContentHashStamp(0);
-    
-    return fileContentHashStamp(m.getPersistentPath());
-  }
-  
-  public static class ContentHashStamp implements Stamp, ModuleStamp {
+  public static class ContentHashStamp implements Stamp {
 
     private static final long serialVersionUID = 7535020621495360152L;
     
@@ -90,11 +78,6 @@ public class ContentHashStamper implements Stamper, ModuleStamper {
     @Override
     public Stamper getStamper() {
       return ContentHashStamper.instance;
-    }
-    
-    @Override
-    public ModuleStamper getModuleStamper() {
-      return ContentHashStamper.minstance;
     }
     
     @Override
