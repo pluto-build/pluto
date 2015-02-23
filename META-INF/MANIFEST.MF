@@ -12,3 +12,4 @@ Export-Package: org.sugarj.cleardep,
  org.sugarj.cleardep.xattr
 Require-Bundle: org.eclipse.core.runtime,
  org.sugarj.common
+Eclipse-BuddyPolicy: registered
