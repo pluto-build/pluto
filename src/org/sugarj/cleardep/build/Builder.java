@@ -2,6 +2,8 @@ package org.sugarj.cleardep.build;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import org.sugarj.cleardep.CompilationUnit;
@@ -33,7 +35,12 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
    * @return the task description or `null` if no logging is wanted.
    */
   protected abstract String taskDescription();
+  
   protected abstract Path persistentPath();
+  protected List<BuildRequirement<T, E, ? extends Builder<T, E>, ? extends BuilderFactory<T, E, ? extends Builder<T, E>>>> alternativeRequirements() throws IOException {
+    return Collections.emptyList();
+  }
+  
   protected abstract Class<E> resultClass();
   protected abstract Stamper defaultStamper();
   protected abstract void build(E result) throws Throwable;

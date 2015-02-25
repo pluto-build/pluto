@@ -12,24 +12,22 @@ public class RequiredBuilderFailed extends RuntimeException {
 
     public Builder<?, ?> builder;
     public CompilationUnit result;
-    public BuildRequirement<?, ?, ?, ?> buildReq;
-    public BuilderResult(Builder<?, ?> builder, CompilationUnit result, BuildRequirement<?, ?, ?, ?> buildReq) {
+    public BuilderResult(Builder<?, ?> builder, CompilationUnit result) {
       this.builder = builder;
       this.result = result;
-      this.buildReq = buildReq;
     }
   }
   
   private List<BuilderResult> builders;
   
-  public <T> RequiredBuilderFailed(Builder<?, ?> builder, CompilationUnit result, BuildRequirement<?, ?, ?, ?> buildReq, Throwable cause) {
+  public <T> RequiredBuilderFailed(Builder<?, ?> builder, CompilationUnit result, Throwable cause) {
     super(cause);
     builders = new ArrayList<>();
-    builders.add(new BuilderResult(builder, result, buildReq));
+    builders.add(new BuilderResult(builder, result));
   }
   
-  public void addBuilder(Builder<?, ?> builder, CompilationUnit result, BuildRequirement<?, ?, ?, ?> buildReq) {
-    builders.add(new BuilderResult(builder, result, buildReq));
+  public void addBuilder(Builder<?, ?> builder, CompilationUnit result) {
+    builders.add(new BuilderResult(builder, result));
   }
   
   public BuilderResult getLastAddedBuilder() {

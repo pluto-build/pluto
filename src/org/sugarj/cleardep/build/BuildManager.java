@@ -23,6 +23,8 @@ import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 
+import com.cedarsoftware.util.DeepEquals;
+
 public class BuildManager {
 
   private final Map<? extends Path, Stamp> editedSourceFiles;
@@ -133,16 +135,8 @@ public class BuildManager {
     }
   }
 
-  private 
-  < T extends Serializable, 
-    E extends CompilationUnit, 
-    B extends Builder<T, E>, 
-    F extends BuilderFactory<T, E, B>
-    > E scheduleRequire(Builder<T, E> builder, E depResult) throws IOException {
+  private <E extends CompilationUnit> E scheduleRequire(E depResult) throws IOException {
     
-    if (builder.manager != this) {
-      throw new RuntimeException("Illegal builder using another build manager for this build");
-    }
     // TODO query builder for cycle
 
     List<Set<CompilationUnit>> sccs = GraphUtils.calculateStronglyConnectedComponents(Collections.singleton(depResult));
@@ -185,7 +179,7 @@ public class BuildManager {
     E extends CompilationUnit,
     B extends Builder<T, E>,
     F extends BuilderFactory<T, E, B>
-    > E executeBuilder(Builder<T, E> builder, E depResult, BuildRequirement<T, E, ?, ?> buildReq) throws IOException {
+    > E executeBuilder(Builder<T, E> builder, E depResult) throws IOException {
 
     Path dep = depResult.getPersistentPath();
     BuildStackEntry entry = new BuildStackEntry(builder.sourceFactory, dep);
@@ -196,6 +190,7 @@ public class BuildManager {
     this.requireCallStack.push(entry);
 
     String taskDescription = builder.taskDescription();
+    int inputHash = DeepEquals.deepHashCode(builder.input);
 
     try {
       depResult.setState(CompilationUnit.State.IN_PROGESS);
@@ -213,29 +208,37 @@ public class BuildManager {
       depResult.write();
     } catch (RequiredBuilderFailed e) {
       BuilderResult required = e.getLastAddedBuilder();
-      depResult.addModuleDependency(required.result, required.buildReq);
+      depResult.addModuleDependency(required.result, required.result.getGeneratedBy());
       depResult.setState(CompilationUnit.State.FAILURE);
+
+      if (inputHash != DeepEquals.deepHashCode(builder.input))
+        throw new AssertionError("API Violation detected: Builder mutated its input.");
       depResult.write();
 
-      e.addBuilder(builder, depResult, buildReq);
+      e.addBuilder(builder, depResult);
       if (taskDescription != null)
         Log.log.logErr("Required builder failed", Log.CORE);
       throw e;
     } catch (Throwable e) {
       depResult.setState(CompilationUnit.State.FAILURE);
+      
+      if (inputHash != DeepEquals.deepHashCode(builder.input))
+        throw new AssertionError("API Violation detected: Builder mutated its input.");
       depResult.write();
+      
       Log.log.logErr(e.getMessage(), Log.CORE);
-      throw new RequiredBuilderFailed(builder, depResult, buildReq, e);
+      throw new RequiredBuilderFailed(builder, depResult, e);
     } finally {
       if (taskDescription != null)
         Log.log.endTask();
       extendedInconsistencyMap.put(dep, NO_REASON);
       BuildStackEntry poppedEntry = requireCallStack.pop();
-      assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
+      if (poppedEntry != entry) 
+        throw new AssertionError("Got the wrong build stack entry from the requires stack");
     }
 
     if (depResult.getState() == CompilationUnit.State.FAILURE)
-      throw new RequiredBuilderFailed(builder, depResult, buildReq, new IllegalStateException("Builder failed for unknown reason, please confer log."));
+      throw new RequiredBuilderFailed(builder, depResult, new IllegalStateException("Builder failed for unknown reason, please confer log."));
 
     return depResult;
   }
@@ -251,13 +254,23 @@ public class BuildManager {
     
     Path dep = builder.persistentPath();
     E depResult = CompilationUnit.read(builder.resultClass(), dep, buildReq);
-
     if (depResult != null && this.isConsistent(depResult)) {
       if (!depResult.isConsistent(this.editedSourceFiles))
         throw new AssertionError("BuildManager does not guarantee soundness");
       return depResult;
     }
     
+    for (BuildRequirement<T, E, ? extends Builder<T, E>, ? extends BuilderFactory<T, E, ? extends Builder<T, E>>> alternativeReq : builder.alternativeRequirements()) {
+      Builder<T, E> alt = alternativeReq.createBuilder(this);
+      Path altDep = alt.persistentPath();
+      E altDepResult = CompilationUnit.read(alt.resultClass(), altDep, alternativeReq);
+      if (altDepResult != null && this.isConsistent(altDepResult)) {
+        if (!altDepResult.isConsistent(this.editedSourceFiles))
+          throw new AssertionError("BuildManager does not guarantee soundness");
+        return altDepResult;
+      } 
+    }
+
     if (depResult == null) {
       extendedInconsistencyMap.put(dep, InconsistenyReason.OTHER);
     }
@@ -268,7 +281,7 @@ public class BuildManager {
     if (reason.compareTo(FILES_NOT_CONSISTENT) >= 0) {
       
       depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, buildReq);
-      return executeBuilder(builder, depResult, buildReq);
+      return executeBuilder(builder, depResult);
       
     } else {
       // incremental rebuild
@@ -280,7 +293,7 @@ public class BuildManager {
         if (depResult == null)
           depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, buildReq);
 
-        return scheduleRequire(builder, depResult);
+        return scheduleRequire(depResult);
       } finally {
         if (rebuildTriggeredBy == builder)
           Log.log.endTask();
