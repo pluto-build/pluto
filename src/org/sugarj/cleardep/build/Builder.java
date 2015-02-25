@@ -36,10 +36,10 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
   protected abstract Path persistentPath();
   protected abstract Class<E> resultClass();
   protected abstract Stamper defaultStamper();
-  protected abstract void build(E result) throws IOException;
+  protected abstract void build(E result) throws Throwable;
   
   private E result;
-  void triggerBuild(E result) throws IOException {
+  void triggerBuild(E result) throws Throwable {
     this.result = result;
     try {
       build(result);
@@ -66,14 +66,13 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
   E_ extends CompilationUnit,
   B_ extends Builder<T_,E_>, 
   F_ extends BuilderFactory<T_, E_, B_>> E_ require(BuildRequirement<T_, E_, B_, F_> req) throws IOException {
-    Builder<T_,E_> builder = req.factory.makeBuilder(req.input, manager);
-    E_ e = manager.require(builder);
+    E_ e = req.createBuilderAndRequire(manager);
     result.addModuleDependency(e, req);
     return e;
   }
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  BuildRequirement<T, E, Builder<T, E>, BuilderFactory<T, E, Builder<T, E>>> getRequirement() {
+  protected BuildRequirement<T, E, Builder<T, E>, BuilderFactory<T, E, Builder<T, E>>> getRequirement() {
     return new BuildRequirement(sourceFactory, input);
   }
 }

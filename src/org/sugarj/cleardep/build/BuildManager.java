@@ -25,7 +25,7 @@ import org.sugarj.common.path.Path;
 
 public class BuildManager {
 
-  private final Map<Path, Stamp> editedSourceFiles;
+  private final Map<? extends Path, Stamp> editedSourceFiles;
   private Deque<BuildStackEntry> requireCallStack = new ArrayDeque<>();
 
   private Map<Path, InconsistenyReason> extendedInconsistencyMap = new HashMap<>();
@@ -36,7 +36,7 @@ public class BuildManager {
     this(null);
   }
 
-  public BuildManager(Map<Path, Stamp> editedSourceFiles) {
+  public BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
     this.editedSourceFiles = editedSourceFiles;
   }
 

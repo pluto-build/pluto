@@ -60,13 +60,8 @@ public class CompilationUnit extends PersistableEntity {
 	// Methods for initialization
 	// **************************
 
-	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Path dep) throws IOException {
-	  return create(cl, stamper, dep, null);
-	}
-	
 	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Path dep, BuildRequirement<?, E, ?, ?> generatedBy) throws IOException {
 		E e = PersistableEntity.tryReadElseCreate(cl, dep);
-		e.init();
 		e.defaultStamper = stamper;
 		e.generatedBy = generatedBy;
 		return e;

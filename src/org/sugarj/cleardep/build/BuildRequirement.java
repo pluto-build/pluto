@@ -15,8 +15,8 @@ public class BuildRequirement<
 > implements Serializable {
   private static final long serialVersionUID = -1598265221666746521L;
   
-  final F factory;
-  final T input;
+  public final F factory;
+  public final T input;
 
   public BuildRequirement(F factory, T input) {
     this.factory = factory;
@@ -28,17 +28,11 @@ public class BuildRequirement<
   }
   
   public boolean equals(Object o) {
-    if (!(o instanceof BuildRequirement<?, ?, ?, ?>))
-      return false;
-    
-    BuildRequirement<?, ?, ?, ?> r = (BuildRequirement<?, ?, ?, ?>) o;
-    
-    if (!factory.getClass().equals(r.factory.getClass()))
-      return false;
-    
-    if (!DeepEquals.deepEquals(input, r.input))
-      return false;
-    
-    return true;
+    return DeepEquals.deepEquals(this, o);
+  }
+  
+  @Override
+  public int hashCode() {
+    return DeepEquals.deepHashCode(this);
   }
 }
