@@ -61,7 +61,7 @@ public class CompilationUnit extends PersistableEntity {
 	// **************************
 
 	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Path dep, BuildRequirement<?, E, ?, ?> generatedBy) throws IOException {
-		E e = PersistableEntity.tryReadElseCreate(cl, dep);
+		E e = PersistableEntity.create(cl, dep);
 		e.defaultStamper = stamper;
 		e.generatedBy = generatedBy;
 		return e;
