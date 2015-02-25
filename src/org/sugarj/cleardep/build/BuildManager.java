@@ -4,9 +4,7 @@ import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.FILES_NOT_C
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayDeque;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,8 +20,8 @@ import org.sugarj.common.path.Path;
 public class BuildManager {
 
   private final Map<? extends Path, Stamp> editedSourceFiles;
-  private Deque<BuildStackEntry> requireCallStack = new ArrayDeque<>();
   private InconsistencyCache inconsistencyCache;
+  private RequireStack requireStack;
 
   private Builder<?, ?> rebuildTriggeredBy = null;
 
@@ -34,6 +32,7 @@ public class BuildManager {
   public BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
     this.editedSourceFiles = editedSourceFiles;
     this.inconsistencyCache = new InconsistencyCache(editedSourceFiles);
+    this.requireStack = new RequireStack();
   }
 
   private <E extends CompilationUnit> boolean isConsistent(E depResult) throws IOException {
@@ -97,12 +96,8 @@ public class BuildManager {
   protected <T extends Serializable, E extends CompilationUnit, B extends Builder<T, E>, F extends BuilderFactory<T, E, B>> E executeBuilder(Builder<T, E> builder, E depResult, BuildRequirement<T, E, ?, ?> buildReq) throws IOException {
 
     Path dep = depResult.getPersistentPath();
-    BuildStackEntry entry = new BuildStackEntry(builder.sourceFactory, dep);
-
-    if (this.requireCallStack.contains(entry)) {
-      throw new BuildCycleException("Build contains a dependency cycle on " + dep);
-    }
-    this.requireCallStack.push(entry);
+    
+    BuildStackEntry entry = this.requireStack.push(builder.sourceFactory, dep);
 
     String taskDescription = builder.taskDescription();
 
@@ -139,7 +134,7 @@ public class BuildManager {
       if (taskDescription != null)
         Log.log.endTask();
       this.inconsistencyCache.setConsistent(dep);
-      BuildStackEntry poppedEntry = requireCallStack.pop();
+      BuildStackEntry poppedEntry = this.requireStack.pop();
       assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
     }
 
