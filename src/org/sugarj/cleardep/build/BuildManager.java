@@ -133,14 +133,16 @@ public class BuildManager {
     }
   }
 
-  private <T extends Serializable, E extends CompilationUnit> E scheduleRequire(Builder<T, E> builder, Path dep, E depResult) throws IOException {
+  private 
+  < T extends Serializable, 
+    E extends CompilationUnit, 
+    B extends Builder<T, E>, 
+    F extends BuilderFactory<T, E, B>
+    > E scheduleRequire(Builder<T, E> builder, E depResult) throws IOException {
+    
     if (builder.manager != this) {
       throw new RuntimeException("Illegal builder using another build manager for this build");
     }
-    
-    if (depResult == null)
-      depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
-
     // TODO query builder for cycle
 
     List<Set<CompilationUnit>> sccs = GraphUtils.calculateStronglyConnectedComponents(Collections.singleton(depResult));
@@ -152,7 +154,7 @@ public class BuildManager {
         InconsistenyReason reason = getInconsistencyReason(unit.getPersistentPath());
         if (reason.compareTo(FILES_NOT_CONSISTENT) >= 0) {
           BuildRequirement<?, ?, ?, ?> source = unit.getGeneratedBy();
-          source.createBuilderAndRequire(this);
+          this.require(source);
           sccFileInconsistent = true;
         }
       }
@@ -167,7 +169,7 @@ public class BuildManager {
       for (CompilationUnit unit : sccs.get(index)) {
         if (getInconsistencyReason(unit.getPersistentPath()).compareTo(NO_REASON) > 0) {
           BuildRequirement<?, ?, ?, ?> source = unit.getGeneratedBy();
-          source.createBuilderAndRequire(this);
+          this.require(source);
         }
       }
     }
@@ -178,11 +180,14 @@ public class BuildManager {
     return depResult;
   }
 
-  protected <T extends Serializable, E extends CompilationUnit> E executeBuilder(Builder<T, E> builder) throws IOException {
+  protected
+  < T extends Serializable, 
+    E extends CompilationUnit,
+    B extends Builder<T, E>,
+    F extends BuilderFactory<T, E, B>
+    > E executeBuilder(Builder<T, E> builder, E depResult, BuildRequirement<T, E, ?, ?> buildReq) throws IOException {
 
-    Path dep = builder.persistentPath();
-    E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
-    
+    Path dep = depResult.getPersistentPath();
     BuildStackEntry entry = new BuildStackEntry(builder.sourceFactory, dep);
 
     if (this.requireCallStack.contains(entry)) {
@@ -208,11 +213,11 @@ public class BuildManager {
       depResult.write();
     } catch (RequiredBuilderFailed e) {
       BuilderResult required = e.getLastAddedBuilder();
-      depResult.addModuleDependency(required.result, required.builder.getRequirement());
+      depResult.addModuleDependency(required.result, required.buildReq);
       depResult.setState(CompilationUnit.State.FAILURE);
       depResult.write();
 
-      e.addBuilder(builder, depResult);
+      e.addBuilder(builder, depResult, buildReq);
       if (taskDescription != null)
         Log.log.logErr("Required builder failed", Log.CORE);
       throw e;
@@ -220,7 +225,7 @@ public class BuildManager {
       depResult.setState(CompilationUnit.State.FAILURE);
       depResult.write();
       Log.log.logErr(e.getMessage(), Log.CORE);
-      throw new RequiredBuilderFailed(builder, depResult, e);
+      throw new RequiredBuilderFailed(builder, depResult, buildReq, e);
     } finally {
       if (taskDescription != null)
         Log.log.endTask();
@@ -230,19 +235,22 @@ public class BuildManager {
     }
 
     if (depResult.getState() == CompilationUnit.State.FAILURE)
-      throw new RequiredBuilderFailed(builder, depResult, new IllegalStateException("Builder failed for unknown reason, please confer log."));
+      throw new RequiredBuilderFailed(builder, depResult, buildReq, new IllegalStateException("Builder failed for unknown reason, please confer log."));
 
     return depResult;
   }
 
-  public <T extends Serializable, E extends CompilationUnit> E require(Builder<T, E> builder) throws IOException {
+  public 
+  < T extends Serializable, 
+    E extends CompilationUnit, 
+    B extends Builder<T, E>, 
+    F extends BuilderFactory<T, E, B>
+    > E require(BuildRequirement<T, E, B, F> buildReq) throws IOException {
 
-    if (builder.manager != this) {
-      throw new RuntimeException("Illegal builder using another build manager for this build");
-    }
-
+    Builder<T, E> builder = buildReq.createBuilder(this);
+    
     Path dep = builder.persistentPath();
-    E depResult = CompilationUnit.read(builder.resultClass(), dep, new BuildRequirement<>(builder.sourceFactory, builder.input));
+    E depResult = CompilationUnit.read(builder.resultClass(), dep, buildReq);
 
     if (depResult != null && this.isConsistent(depResult)) {
       if (!depResult.isConsistent(this.editedSourceFiles))
@@ -258,7 +266,10 @@ public class BuildManager {
     
     // No recursion of current unit has changed files
     if (reason.compareTo(FILES_NOT_CONSISTENT) >= 0) {
-      return executeBuilder(builder);
+      
+      depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, buildReq);
+      return executeBuilder(builder, depResult, buildReq);
+      
     } else {
       // incremental rebuild
       if (rebuildTriggeredBy == null) {
@@ -266,7 +277,10 @@ public class BuildManager {
         Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
       }
       try {
-        return scheduleRequire(builder, dep, depResult);
+        if (depResult == null)
+          depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, buildReq);
+
+        return scheduleRequire(builder, depResult);
       } finally {
         if (rebuildTriggeredBy == builder)
           Log.log.endTask();

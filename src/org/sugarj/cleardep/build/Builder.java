@@ -55,9 +55,9 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
   F_ extends BuilderFactory<T_, E_, B_>,
   SubT_ extends T_
   > E_ require(F_ factory, SubT_ input) throws IOException {
-    Builder<T_,E_> builder = factory.makeBuilder(input, manager);
-    E_ e = manager.require(builder);
-    result.addModuleDependency(e, builder.getRequirement());
+    BuildRequirement<T_, E_, B_, F_> req = new BuildRequirement<T_, E_, B_, F_>(factory, input);
+    E_ e = manager.require(req);
+    result.addModuleDependency(e, req);
     return e;
   }
   
@@ -66,13 +66,8 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
   E_ extends CompilationUnit,
   B_ extends Builder<T_,E_>, 
   F_ extends BuilderFactory<T_, E_, B_>> E_ require(BuildRequirement<T_, E_, B_, F_> req) throws IOException {
-    E_ e = req.createBuilderAndRequire(manager);
+    E_ e = manager.require(req);
     result.addModuleDependency(e, req);
     return e;
-  }
-
-  @SuppressWarnings({ "unchecked", "rawtypes" })
-  protected BuildRequirement<T, E, Builder<T, E>, BuilderFactory<T, E, Builder<T, E>>> getRequirement() {
-    return new BuildRequirement(sourceFactory, input);
   }
 }

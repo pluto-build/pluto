@@ -69,7 +69,7 @@ public class CompilationUnit extends PersistableEntity {
 
 	final public static <E extends CompilationUnit> E read(Class<E> clazz, Path dep, BuildRequirement<?, E, ?, ?> generatedBy) throws IOException {
 	  E e = read(clazz, dep);
-	  if (e != null && e.generatedBy.equals(generatedBy))
+	  if (e != null && e.generatedBy.deepEquals(generatedBy))
 	    return e;
     return null;
   }

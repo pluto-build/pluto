@@ -1,6 +1,5 @@
 package org.sugarj.cleardep.build;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 import org.sugarj.cleardep.CompilationUnit;
@@ -23,8 +22,8 @@ public class BuildRequirement<
     this.input = input;
   }
 
-  public E createBuilderAndRequire(BuildManager manager) throws IOException {
-    return manager.require(factory.makeBuilder(input, manager));
+  public Builder<T, E> createBuilder(BuildManager manager) {
+    return factory.makeBuilder(input, manager);
   }
   
   public boolean deepEquals(Object o) {

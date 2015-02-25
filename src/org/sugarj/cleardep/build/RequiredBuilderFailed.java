@@ -10,27 +10,26 @@ public class RequiredBuilderFailed extends RuntimeException {
 
   public static class BuilderResult {
 
-    public Builder<?, CompilationUnit> builder;
+    public Builder<?, ?> builder;
     public CompilationUnit result;
-    public BuilderResult(Builder<?, CompilationUnit> builder, CompilationUnit result) {
+    public BuildRequirement<?, ?, ?, ?> buildReq;
+    public BuilderResult(Builder<?, ?> builder, CompilationUnit result, BuildRequirement<?, ?, ?, ?> buildReq) {
       this.builder = builder;
       this.result = result;
+      this.buildReq = buildReq;
     }
   }
   
   private List<BuilderResult> builders;
   
-  @SuppressWarnings("unchecked")
-
-  public <T> RequiredBuilderFailed(Builder<?, ?> builder, CompilationUnit result, Throwable cause) {
+  public <T> RequiredBuilderFailed(Builder<?, ?> builder, CompilationUnit result, BuildRequirement<?, ?, ?, ?> buildReq, Throwable cause) {
     super(cause);
     builders = new ArrayList<>();
-    builders.add(new BuilderResult((Builder<?, CompilationUnit>) builder, result));
+    builders.add(new BuilderResult(builder, result, buildReq));
   }
   
-  @SuppressWarnings("unchecked")
-  public void addBuilder(Builder<?, ?> builder, CompilationUnit result) {
-    builders.add(new BuilderResult((Builder<?, CompilationUnit>) builder, result));
+  public void addBuilder(Builder<?, ?> builder, CompilationUnit result, BuildRequirement<?, ?, ?, ?> buildReq) {
+    builders.add(new BuilderResult(builder, result, buildReq));
   }
   
   public BuilderResult getLastAddedBuilder() {
