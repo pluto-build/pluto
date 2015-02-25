@@ -27,12 +27,11 @@ public class BuildRequirement<
     return manager.require(factory.makeBuilder(input, manager));
   }
   
-  public boolean equals(Object o) {
+  public boolean deepEquals(Object o) {
     return DeepEquals.deepEquals(this, o);
   }
   
-  @Override
-  public int hashCode() {
+  public int deepHashCode() {
     return DeepEquals.deepHashCode(this);
   }
 }

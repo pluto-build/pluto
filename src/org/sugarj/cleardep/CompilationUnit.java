@@ -355,7 +355,7 @@ public class CompilationUnit extends PersistableEntity {
 
 	private boolean isConsistentModuleDependenciesMap(Map<CompilationUnit, BuildRequirement<?, ?, ?, ?>> unitMap) {
 		for (Entry<CompilationUnit, BuildRequirement<?, ?, ?, ?>> e : unitMap.entrySet())
-		  if (!e.getKey().getGeneratedBy().equals(e.getValue()))
+		  if (!e.getKey().getGeneratedBy().deepEquals(e.getValue()))
 		    return false;
 		  
 		return true;
