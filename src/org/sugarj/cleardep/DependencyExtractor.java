@@ -1,11 +1,9 @@
 package org.sugarj.cleardep;
 
-import java.util.Map;
-
-import org.sugarj.cleardep.build.BuildRequirement;
+import java.util.Set;
 
 public interface DependencyExtractor {
   
-  public Map<CompilationUnit, BuildRequirement<?, ?, ?, ?>> extractDependencies(CompilationUnit unit);
+  public Set<CompilationUnit> extractDependencies(CompilationUnit unit);
 
 }

@@ -208,7 +208,7 @@ public class BuildManager {
       depResult.write();
     } catch (RequiredBuilderFailed e) {
       BuilderResult required = e.getLastAddedBuilder();
-      depResult.addModuleDependency(required.result, required.result.getGeneratedBy());
+      depResult.addModuleDependency(required.result);
       depResult.setState(CompilationUnit.State.FAILURE);
 
       if (inputHash != DeepEquals.deepHashCode(builder.input))
@@ -260,17 +260,6 @@ public class BuildManager {
       return depResult;
     }
     
-    for (BuildRequirement<T, E, ? extends Builder<T, E>, ? extends BuilderFactory<T, E, ? extends Builder<T, E>>> alternativeReq : builder.alternativeRequirements()) {
-      Builder<T, E> alt = alternativeReq.createBuilder(this);
-      Path altDep = alt.persistentPath();
-      E altDepResult = CompilationUnit.read(alt.resultClass(), altDep, alternativeReq);
-      if (altDepResult != null && this.isConsistent(altDepResult)) {
-        if (!altDepResult.isConsistent(this.editedSourceFiles))
-          throw new AssertionError("BuildManager does not guarantee soundness");
-        return altDepResult;
-      } 
-    }
-
     if (depResult == null) {
       extendedInconsistencyMap.put(dep, InconsistenyReason.OTHER);
     }

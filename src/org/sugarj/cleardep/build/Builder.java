@@ -2,8 +2,6 @@ package org.sugarj.cleardep.build;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 
 import org.sugarj.cleardep.CompilationUnit;
@@ -35,12 +33,7 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
    * @return the task description or `null` if no logging is wanted.
    */
   protected abstract String taskDescription();
-  
   protected abstract Path persistentPath();
-  protected List<BuildRequirement<T, E, ? extends Builder<T, E>, ? extends BuilderFactory<T, E, ? extends Builder<T, E>>>> alternativeRequirements() throws IOException {
-    return Collections.emptyList();
-  }
-  
   protected abstract Class<E> resultClass();
   protected abstract Stamper defaultStamper();
   protected abstract void build(E result) throws Throwable;
@@ -64,7 +57,7 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
   > E_ require(F_ factory, SubT_ input) throws IOException {
     BuildRequirement<T_, E_, B_, F_> req = new BuildRequirement<T_, E_, B_, F_>(factory, input);
     E_ e = manager.require(req);
-    result.addModuleDependency(e, req);
+    result.addModuleDependency(e);
     return e;
   }
   
@@ -74,7 +67,7 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
   B_ extends Builder<T_,E_>, 
   F_ extends BuilderFactory<T_, E_, B_>> E_ require(BuildRequirement<T_, E_, B_, F_> req) throws IOException {
     E_ e = manager.require(req);
-    result.addModuleDependency(e, req);
+    result.addModuleDependency(e);
     return e;
   }
 }
