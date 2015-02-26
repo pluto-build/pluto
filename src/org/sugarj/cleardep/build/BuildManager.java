@@ -156,10 +156,6 @@ public class BuildManager {
     return depResult;
   }
 
-  public <T extends Serializable, E extends CompilationUnit, B extends Builder<T, E>, F extends BuilderFactory<T, E, B>> E require(F factory, T input) throws IOException {
-    return require(new BuildRequirement<T, E, B, F>(factory, input));
-  }
-
   public <T extends Serializable, E extends CompilationUnit, B extends Builder<T, E>, F extends BuilderFactory<T, E, B>> E require(BuildRequirement<T, E, B, F> buildReq) throws IOException {
 
     Builder<T, E> builder = buildReq.createBuilder(this);
