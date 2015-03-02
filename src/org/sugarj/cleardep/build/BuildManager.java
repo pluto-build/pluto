@@ -128,8 +128,6 @@ public class BuildManager {
         }
         else if (req instanceof BuildRequirement) {
           BuildRequirement breq = (BuildRequirement) req;
-          if (!breq.isConsistent())
-            return executeBuilder(builder, dep, buildReq);
           require(breq.req);
         }
       }
