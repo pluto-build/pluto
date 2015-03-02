@@ -2,6 +2,7 @@ package org.sugarj.cleardep.build;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -40,7 +41,7 @@ public abstract class Builder<T extends Serializable, E extends BuildUnit> {
   protected abstract Stamper defaultStamper();
   protected abstract void build(E result) throws Throwable;
   
-  protected boolean buildCycle(List<Pair<BuildUnit,BuildRequest<?, ?, ?, ?>>> cycle) {
+  protected boolean buildCycle(List<Pair<BuildUnit,BuildRequest<?, ?, ?, ?>>> cycle) throws Throwable{
     return false;
   }
   
@@ -62,6 +63,18 @@ public abstract class Builder<T extends Serializable, E extends BuildUnit> {
   SubT_ extends T_
   > E_ require(F_ factory, SubT_ input) throws IOException {
     BuildRequest<T_, E_, B_, F_> req = new BuildRequest<T_, E_, B_, F_>(factory, input);
+    E_ e = manager.require(req);
+    result.requires(e);
+    return e;
+  }
+  
+  protected <
+  T_ extends Serializable, 
+  E_ extends BuildUnit, 
+  B_ extends CompileCycleAtOnceBuilder<T_,E_>,
+  F_ extends BuilderFactory<ArrayList<T_>, E_, B_>
+  > E_ requireCyclicable(F_ factory, T_ input) throws IOException {
+    BuildRequest<ArrayList< T_>, E_, B_, F_> req = new BuildRequest<ArrayList<T_>, E_, B_, F_>(factory, CompileCycleAtOnceBuilder.singletonArrayList(input));
     E_ e = manager.require(req);
     result.requires(e);
     return e;

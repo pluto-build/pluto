@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CyclicBarrier;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
@@ -39,7 +40,7 @@ public class BuildManager {
     this.consistentUnits = new HashSet<>();
   }
 
-  protected boolean executeCycle(List<Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle) {
+  protected boolean executeCycle(List<Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle) throws Throwable {
     for (Pair<BuildUnit, BuildRequest<?, ?, ?, ?>> req : cycle) {
       if (req.b.createBuilder(this).buildCycle(cycle)) {
         return true;
@@ -65,41 +66,40 @@ public class BuildManager {
 
       // call the actual builder
 
-      builder.triggerBuild(depResult);
-      // build(depResult, input);
+      try {
+        builder.triggerBuild(depResult);
+        if (!depResult.isFinished())
+          depResult.setState(BuildUnit.State.SUCCESS);
+        // build(depResult, input);
+      } catch (BuildCycleException e) {
 
-      if (!depResult.isFinished())
-        depResult.setState(BuildUnit.State.SUCCESS);
-      depResult.write();
-    } catch (BuildCycleException e) {
-      
-      if (e.isUnitForstInvokedOn(dep, buildReq.factory)) {
-        if (!e.isLastCallAborted()) {
-          e.setLastCallAborted(true);
-          throw e;
+        if (e.isUnitForstInvokedOn(dep, buildReq.factory)) {
+          if (!e.isLastCallAborted()) {
+            e.setLastCallAborted(true);
+            throw e;
+          } else {
+            e.addCycleComponent(new Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>(depResult, buildReq));
+            // Need to handle the cycle here
+            List<Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle = new ArrayList<>(e.getCycleComponents().size());
+            boolean cycleCompiled = executeCycle(cycle);
+            if (!cycleCompiled) {
+              // Cycle cannot be handled
+              throw new RequiredBuilderFailed(builder, depResult, e);
+            }
+            // Do not throw anything here because cycle is completed
+            // throw e;
+          }
         } else {
           e.addCycleComponent(new Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>(depResult, buildReq));
-          // Need to handle the cycle here
-          List<Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle = new ArrayList<>(e.getCycleComponents().size());
-          if (!executeCycle(cycle)) {
-            throw new RequiredBuilderFailed(builder, depResult, e);
-          }
-          // Do not throw anything here because cycle is completed
-          //throw e;
+          throw e;
         }
-      } else {
-        e.addCycleComponent(new Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>(depResult, buildReq));
-        throw e;
+
       }
 
     } catch (RequiredBuilderFailed e) {
       BuilderResult required = e.getLastAddedBuilder();
       depResult.requires(required.result);
       depResult.setState(BuildUnit.State.FAILURE);
-
-      if (inputHash != DeepEquals.deepHashCode(builder.input))
-        throw new AssertionError("API Violation detected: Builder mutated its input.");
-      depResult.write();
 
       e.addBuilder(builder, depResult);
       if (taskDescription != null)
@@ -108,13 +108,14 @@ public class BuildManager {
     } catch (Throwable e) {
       depResult.setState(BuildUnit.State.FAILURE);
 
+      Log.log.logErr(e.getMessage(), Log.CORE);
+      throw new RequiredBuilderFailed(builder, depResult, e);
+    } finally {
+
       if (inputHash != DeepEquals.deepHashCode(builder.input))
         throw new AssertionError("API Violation detected: Builder mutated its input.");
       depResult.write();
 
-      Log.log.logErr(e.getMessage(), Log.CORE);
-      throw new RequiredBuilderFailed(builder, depResult, e);
-    } finally {
       if (taskDescription != null)
         Log.log.endTask();
       this.consistentUnits.add(assertConsistency(depResult));
