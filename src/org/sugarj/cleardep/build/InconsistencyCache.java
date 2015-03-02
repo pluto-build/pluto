@@ -12,8 +12,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.sugarj.cleardep.BuildUnit;
-import org.sugarj.cleardep.GraphUtils;
 import org.sugarj.cleardep.BuildUnit.InconsistenyReason;
+import org.sugarj.cleardep.GraphUtils;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.path.Path;
 
@@ -51,22 +51,22 @@ public class InconsistencyCache {
     return getInconsistencyReasonSure(dep) == InconsistenyReason.NO_REASON;
   }
   
-  protected <E extends BuildUnit> void fillFor(E rootUnit) throws IOException {
-    List<Set<BuildUnit>> sccs = GraphUtils.calculateStronglyConnectedComponents(Collections.singleton(rootUnit));
+  protected void fillFor(BuildUnit<?> rootUnit) throws IOException {
+    List<Set<BuildUnit<?>>> sccs = GraphUtils.calculateStronglyConnectedComponents(Collections.singleton(rootUnit));
 
-    for (final Set<BuildUnit> scc : sccs) {
+    for (final Set<BuildUnit<?>> scc : sccs) {
       fillInconsistentCacheForScc(scc);
     }
   }
 
-  protected void fillInconsistentCacheForScc(final Set<BuildUnit> scc) {
+  protected void fillInconsistentCacheForScc(final Set<BuildUnit<?>> scc) {
     boolean sccConsistent = true;
-    for (BuildUnit unit : scc) {
+    for (BuildUnit<?> unit : scc) {
       InconsistenyReason reason = extendedInconsistencyMap.get(unit.getPersistentPath());
       if (reason == null) {
         reason = unit.isConsistentShallowReason(this.editedSourceFiles);
         if (reason.compareTo(DEPENDENCIES_INCONSISTENT) < 0) {
-          for (BuildUnit dep : unit.getModuleDependencies()) {
+          for (BuildUnit<?> dep : unit.getModuleDependencies()) {
             if (!scc.contains(dep) && extendedInconsistencyMap.get(dep.getPersistentPath()) != NO_REASON) {
               reason = DEPENDENCIES_INCONSISTENT;
               break;
@@ -78,7 +78,7 @@ public class InconsistencyCache {
       extendedInconsistencyMap.put(unit.getPersistentPath(), reason);
     }
     if (!sccConsistent && scc.size() > 1) {
-      for (BuildUnit unit : scc) {
+      for (BuildUnit<?> unit : scc) {
         if (extendedInconsistencyMap.get(unit.getPersistentPath()).compareTo(DEPENDENCIES_INCONSISTENT) < 0) {
           extendedInconsistencyMap.put(unit.getPersistentPath(), DEPENDENCIES_INCONSISTENT);
         }
@@ -87,9 +87,9 @@ public class InconsistencyCache {
   }
   
 
-  protected void updateCacheForScc(final Set<BuildUnit> scc) {
+  protected void updateCacheForScc(final Set<BuildUnit<?>> scc) {
     boolean sccConsistent = true;
-    for (BuildUnit unit : scc) {
+    for (BuildUnit<?> unit : scc) {
       InconsistenyReason reason = extendedInconsistencyMap.get(unit.getPersistentPath());
       if (reason != NO_REASON) {
         if (reason == null || reason.compareTo(DEPENDENCIES_INCONSISTENT) >= 0) {
@@ -99,7 +99,7 @@ public class InconsistencyCache {
         }
 
         if (reason.compareTo(DEPENDENCIES_INCONSISTENT) <= 0) {
-          for (BuildUnit dep : unit.getModuleDependencies()) {
+          for (BuildUnit<?> dep : unit.getModuleDependencies()) {
             if (!scc.contains(dep) && extendedInconsistencyMap.get(dep.getPersistentPath()) != NO_REASON) {
               reason = DEPENDENCIES_INCONSISTENT;
               break;
@@ -112,7 +112,7 @@ public class InconsistencyCache {
       }
     }
     if (!sccConsistent && scc.size() > 1) {
-      for (BuildUnit unit : scc) {
+      for (BuildUnit<?> unit : scc) {
         if (extendedInconsistencyMap.get(unit.getPersistentPath()).compareTo(NO_REASON) == 0) {
           extendedInconsistencyMap.put(unit.getPersistentPath(), DEPENDENCIES_INCONSISTENT);
         }

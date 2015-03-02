@@ -8,13 +8,13 @@ import org.sugarj.common.util.Predicate;
 
 public class BuildUnitUtils {
 
-  public static Set<BuildUnit> findUnitsWithMatch(final Predicate<? super BuildUnit> predicate, BuildUnit startUnit, boolean reverse) {
-    final Set<BuildUnit> results = new HashSet<>();
+  public static Set<BuildUnit<?>> findUnitsWithMatch(final Predicate<BuildUnit<?>> predicate, BuildUnit<?> startUnit, boolean reverse) {
+    final Set<BuildUnit<?>> results = new HashSet<>();
 
     ModuleVisitor<Void> visitor =new ModuleVisitor<Void>() {
 
       @Override
-      public Void visit(BuildUnit mod) {
+      public Void visit(BuildUnit<?> mod) {
         if (predicate.isFullfilled(mod)) {
           results.add(mod);
         }
@@ -42,22 +42,22 @@ public class BuildUnitUtils {
     return results;
   }
 
-  public static Set<BuildUnit> findUnitsWithChangedSourceFiles(BuildUnit root) {
-    return findUnitsWithMatch(new Predicate<BuildUnit>() {
+  public static Set<BuildUnit<?>> findUnitsWithChangedSourceFiles(BuildUnit<?> root) {
+    return findUnitsWithMatch(new Predicate<BuildUnit<?>>() {
 
       @Override
-      public boolean isFullfilled(BuildUnit t) {
+      public boolean isFullfilled(BuildUnit<?> t) {
         return !t.isPersisted() || !t.isConsistentWithSourceArtifacts(null);
       }
 
     }, root, false);
   }
   
-  public static Set<BuildUnit> findInconsistentUnits(BuildUnit root) {
-	    return findUnitsWithMatch(new Predicate<BuildUnit>() {
+  public static Set<BuildUnit<?>> findInconsistentUnits(BuildUnit<?> root) {
+	    return findUnitsWithMatch(new Predicate<BuildUnit<?>>() {
 
 	      @Override
-	      public boolean isFullfilled(BuildUnit t) {
+	      public boolean isFullfilled(BuildUnit<?> t) {
 	        return !t.isPersisted() || !t.isConsistentShallow(null);
 	      }
 
@@ -65,11 +65,11 @@ public class BuildUnitUtils {
 	  }
 
   
-  public static Set<BuildUnit> findAllUnits(BuildUnit root) {
-    return findUnitsWithMatch(new Predicate<BuildUnit>() {
+  public static Set<BuildUnit<?>> findAllUnits(BuildUnit<?> root) {
+    return findUnitsWithMatch(new Predicate<BuildUnit<?>>() {
 
       @Override
-      public boolean isFullfilled(BuildUnit t) {
+      public boolean isFullfilled(BuildUnit<?> t) {
         return true;
       }
     }, root, false);

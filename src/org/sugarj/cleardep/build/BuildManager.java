@@ -24,7 +24,7 @@ public class BuildManager {
 
   private BuildRequest<?, ?, ?, ?> rebuildTriggeredBy = null;
 
-  private Set<BuildUnit> consistentUnits;
+  private Set<BuildUnit<?>> consistentUnits;
   
   public BuildManager() {
     this(null);
@@ -36,20 +36,19 @@ public class BuildManager {
     this.consistentUnits = new HashSet<>();
   }
 
-  protected
-  < T extends Serializable, 
-    E extends BuildUnit,
-    B extends Builder<T, E>,
-    F extends BuilderFactory<T, E, B>
-    > E executeBuilder(Builder<T, E> builder, Path dep, BuildRequest<T, E, B, F> buildReq) throws IOException {
+  protected <
+  In extends Serializable, 
+  Out extends Serializable, 
+  B extends Builder<In, Out>, 
+  F extends BuilderFactory<In, Out, B>
+    > BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
-    E depResult = BuildUnit.create(builder.resultClass(), builder.defaultStamper(), dep, buildReq);
-    
+    BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq, builder.defaultStamper());
 
     String taskDescription = builder.taskDescription();
     int inputHash = DeepEquals.deepHashCode(builder.input);
 
-    BuildStackEntry entry = this.requireStack.push(builder.sourceFactory, dep);
+    BuildStackEntry entry = this.requireStack.push(buildReq.factory, dep);
     try {
       depResult.setState(BuildUnit.State.IN_PROGESS);
 
@@ -58,7 +57,8 @@ public class BuildManager {
 
       // call the actual builder
 
-      builder.triggerBuild(depResult);
+      Out out = builder.triggerBuild(depResult, this);
+      depResult.setBuildResult(out);
       // build(depResult, input);
 
       if (!depResult.isFinished())
@@ -100,16 +100,21 @@ public class BuildManager {
     return depResult;
   }
 
-  public <T extends Serializable, E extends BuildUnit, B extends Builder<T, E>, F extends BuilderFactory<T, E, B>> E require(BuildRequest<T, E, B, F> buildReq) throws IOException {
+  public <
+  In extends Serializable, 
+  Out extends Serializable, 
+  B extends Builder<In, Out>, 
+  F extends BuilderFactory<In, Out, B>
+  > BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
     if (rebuildTriggeredBy == null) {
       rebuildTriggeredBy = buildReq;
       Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
     }
     
     try {
-      Builder<T, E> builder = buildReq.createBuilder(this);
+      Builder<In, Out> builder = buildReq.createBuilder();
       Path dep = builder.persistentPath();
-      E depResult = BuildUnit.read(builder.resultClass(), dep, buildReq);
+      BuildUnit<Out> depResult = BuildUnit.read(dep, buildReq);
   
       if (depResult == null)
         return executeBuilder(builder, dep, buildReq);
@@ -127,7 +132,7 @@ public class BuildManager {
             return executeBuilder(builder, dep, buildReq);
         }
         else if (req instanceof BuildRequirement) {
-          BuildRequirement breq = (BuildRequirement) req;
+          BuildRequirement<?> breq = (BuildRequirement<?>) req;
           require(breq.req);
         }
       }
@@ -140,7 +145,7 @@ public class BuildManager {
     }
   }
   
-  private <E extends BuildUnit> E assertConsistency(E depResult) {
+  private <Out extends Serializable> BuildUnit<Out> assertConsistency(BuildUnit<Out> depResult) {
 //    if (!depResult.isConsistent(null))
 //      throw new AssertionError("Build manager does not guarantee soundness");
     return depResult;

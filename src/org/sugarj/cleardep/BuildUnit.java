@@ -3,6 +3,7 @@ package org.sugarj.cleardep;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,7 +31,7 @@ import org.sugarj.common.path.Path;
  * 
  * @author Sebastian Erdweg
  */
-public class BuildUnit extends PersistableEntity {
+final public class BuildUnit<Out extends Serializable> extends PersistableEntity {
 
   public static final long serialVersionUID = -2821414386853890682L;
 
@@ -53,24 +54,28 @@ public class BuildUnit extends PersistableEntity {
 	protected List<Requirement> requirements;
 	protected Set<FileRequirement> generatedFiles;
 
-	protected transient Set<BuildUnit> requiredUnits;
+	protected Out buildResult;
+
+	protected transient Set<BuildUnit<?>> requiredUnits;
 	protected transient Set<Path> requiredFiles;
 	
-	protected BuildRequest<?, ?, ?, ?> generatedBy;
+	protected BuildRequest<?, Out, ?, ?> generatedBy;
 	
 	// **************************
 	// Methods for initialization
 	// **************************
 
-	public static <E extends BuildUnit> E create(Class<E> cl, Stamper stamper, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
-		E e = PersistableEntity.create(cl, dep);
+	public static <Out extends Serializable> BuildUnit<Out> create(Path dep, BuildRequest<?, Out, ?, ?> generatedBy, Stamper stamper) throws IOException {
+		@SuppressWarnings("unchecked")
+    BuildUnit<Out> e = PersistableEntity.create(BuildUnit.class, dep);
 		e.defaultStamper = stamper;
 		e.generatedBy = generatedBy;
 		return e;
 	}
 
-	final public static <E extends BuildUnit> E read(Class<E> clazz, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
-	  E e = read(clazz, dep);
+	final public static <Out extends Serializable> BuildUnit<Out> read(Path dep, BuildRequest<?, Out, ?, ?> generatedBy) throws IOException {
+	  @SuppressWarnings("unchecked")
+	  BuildUnit<Out> e = PersistableEntity.read(BuildUnit.class, dep);
 	  if (e != null && e.generatedBy.deepEquals(generatedBy)) {
 	    e.generatedBy = generatedBy;
 	    return e;
@@ -83,8 +88,8 @@ public class BuildUnit extends PersistableEntity {
 	 * 
 	 * @return null if no consistent compilation unit is available.
 	 */
-  public static <E extends BuildUnit> E readConsistent(Class<E> clazz, Map<? extends Path, Stamp> editedSourceFiles, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
-	  E e = read(clazz, dep, generatedBy);
+  public static <Out extends Serializable> BuildUnit<Out> readConsistent(Path dep, BuildRequest<?, Out, ?, ?> generatedBy, Map<? extends Path, Stamp> editedSourceFiles) throws IOException {
+	  BuildUnit<Out> e = read(dep, generatedBy);
 	  if (e != null && e.isConsistent(editedSourceFiles))
 	    return e;
 	  return null;
@@ -124,7 +129,7 @@ public class BuildUnit extends PersistableEntity {
         
         boolean foundDep = visit(new ModuleVisitor<Boolean>() {
           @Override
-          public Boolean visit(BuildUnit mod) {
+          public Boolean visit(BuildUnit<?> mod) {
             return dep.equals(mod.getPersistentPath());
           }
 
@@ -166,9 +171,9 @@ public class BuildUnit extends PersistableEntity {
     }
 	}
 	
-	public void requires(BuildUnit mod) {
+	public <Out_ extends Serializable> void requires(BuildUnit<Out_> mod) {
 	  Objects.requireNonNull(mod);
-	  requirements.add(new BuildRequirement(mod, mod.getGeneratedBy()));
+	  requirements.add(new BuildRequirement<Out_>(mod, mod.getGeneratedBy()));
 	  requiredUnits.add(mod);
 	}
 
@@ -178,7 +183,7 @@ public class BuildUnit extends PersistableEntity {
 	 * @see GraphUtils#repairGraph(Set)
 	 */
 	@Deprecated
-	protected void removeModuleDependency(BuildUnit mod) {
+	protected void removeModuleDependency(BuildUnit<?> mod) {
 		this.requiredUnits.remove(mod);
 	}
 
@@ -187,14 +192,14 @@ public class BuildUnit extends PersistableEntity {
 	// Methods for querying dependencies
 	// *********************************
 
-	public boolean dependsOn(BuildUnit other) {
+	public boolean dependsOn(BuildUnit<?> other) {
 		return getModuleDependencies().contains(other) ;
 	}
 
-	public boolean dependsOnTransitively(final BuildUnit other) {
+	public boolean dependsOnTransitively(final BuildUnit<?> other) {
 	  return visit(new ModuleVisitor<Boolean>() {
       @Override
-      public Boolean visit(BuildUnit mod) {
+      public Boolean visit(BuildUnit<?> mod) {
         return mod.equals(other);
       }
 
@@ -219,7 +224,7 @@ public class BuildUnit extends PersistableEntity {
 		return requiredFiles;
 	}
 
-	public Set<BuildUnit> getModuleDependencies() {
+	public Set<BuildUnit<?>> getModuleDependencies() {
 		return requiredUnits;
 	}
 
@@ -238,10 +243,18 @@ public class BuildUnit extends PersistableEntity {
     return requirements;
   }
 	
-	public BuildRequest<?, ?, ?, ?> getGeneratedBy() {
+	public BuildRequest<?, Out, ?, ?> getGeneratedBy() {
     return generatedBy;
   }
+	
+	public Out getBuildResult() {
+    return buildResult;
+  }
 
+	public void setBuildResult(Out out) {
+    this.buildResult = out;
+  }
+	
 //	public Set<Path> getCircularFileDependencies() throws IOException {
 //		Set<Path> dependencies = new HashSet<Path>();
 //		Set<CompilationUnit> visited = new HashSet<>();
@@ -353,7 +366,7 @@ public class BuildUnit extends PersistableEntity {
 		for (Requirement req : requirements)
 		  if (req instanceof FileRequirement && !((FileRequirement) req).isConsistent())
 		    return InconsistenyReason.FILES_NOT_CONSISTENT;
-		  else if (req instanceof BuildRequirement && !((BuildRequirement) req).isConsistent())
+		  else if (req instanceof BuildRequirement && !((BuildRequirement<?>) req).isConsistent())
 		    return InconsistenyReason.DEPENDENCIES_INCONSISTENT;
 		
 		if (!isConsistentExtend())
@@ -365,7 +378,7 @@ public class BuildUnit extends PersistableEntity {
 	public boolean isConsistent(final Map<? extends Path, Stamp> editedSourceFiles) {
 		ModuleVisitor<Boolean> isConsistentVisitor = new ModuleVisitor<Boolean>() {
 			@Override
-			public Boolean visit(BuildUnit mod) {
+			public Boolean visit(BuildUnit<?> mod) {
 				return mod.isConsistentShallow(editedSourceFiles);
 			}
 
@@ -392,7 +405,7 @@ public class BuildUnit extends PersistableEntity {
 	// *************************************
 
 	public static interface ModuleVisitor<T> {
-		public T visit(BuildUnit mod);
+		public T visit(BuildUnit<?> mod);
 
 		public T combine(T t1, T t2);
 
@@ -409,21 +422,21 @@ public class BuildUnit extends PersistableEntity {
 	 * graph, then m1 is visited before m2.
 	 */
 	public <T> T visit(ModuleVisitor<T> visitor) {
-	  Queue<BuildUnit> queue = new ArrayDeque<>();
+	  Queue<BuildUnit<?>> queue = new ArrayDeque<>();
 	  queue.add(this);
 	  
-	  Set<BuildUnit> seenUnits = new HashSet<>();
+	  Set<BuildUnit<?>> seenUnits = new HashSet<>();
     seenUnits.add(this);
 	  
 	  T result = visitor.init();
 	  while(!queue.isEmpty()) {
-	    BuildUnit toVisit = queue.poll();
+	    BuildUnit<?> toVisit = queue.poll();
       T newResult = visitor.visit(toVisit);
       result = visitor.combine(result, newResult);
       if (visitor.cancel(result))
         break;
       
-      for (BuildUnit dep : toVisit.getModuleDependencies()) {
+      for (BuildUnit<?> dep : toVisit.getModuleDependencies()) {
         if (!seenUnits.contains(dep)) {
           queue.add(dep);
           seenUnits.add(dep);
@@ -450,7 +463,8 @@ public class BuildUnit extends PersistableEntity {
 	  state = (State) in.readObject();
 	  requirements = (List<Requirement>) in.readObject();
 	  generatedFiles = (Set<FileRequirement>) in.readObject();
-	  generatedBy = (BuildRequest<?, ?, ?, ?>) in.readObject();
+	  generatedBy = (BuildRequest<?, Out, ?, ?>) in.readObject();
+	  buildResult = (Out) in.readObject();
 	  
 	  requiredFiles = new HashSet<>();
 	  requiredUnits = new HashSet<>();
@@ -459,7 +473,7 @@ public class BuildUnit extends PersistableEntity {
 	    if (req instanceof FileRequirement)
 	      requiredFiles.add(((FileRequirement) req).path);
 	    else if (req instanceof BuildRequirement)
-	      requiredUnits.add(((BuildRequirement) req).unit);
+	      requiredUnits.add(((BuildRequirement<?>) req).unit);
 	}
 	
 	public void write() throws IOException {
@@ -472,5 +486,6 @@ public class BuildUnit extends PersistableEntity {
 	  out.writeObject(requirements = Collections.unmodifiableList(requirements));
 		out.writeObject(generatedFiles = Collections.unmodifiableSet(generatedFiles));
 		out.writeObject(generatedBy);
+		out.writeObject(buildResult);
 	}
 }

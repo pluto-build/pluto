@@ -26,7 +26,7 @@ public class GraphUtils {
    *          the compilations units to start searching with
    * @return a list of the SCCs in inverse topological order
    */
-  public static List<Set<BuildUnit>> calculateStronglyConnectedComponents(Iterable<? extends BuildUnit> rootUnits) {
+  public static List<Set<BuildUnit<?>>> calculateStronglyConnectedComponents(Iterable<? extends BuildUnit<?>> rootUnits) {
     return new TarjanAlgorithm().calculateStronglyConnectedUnits(rootUnits);
   }
 
@@ -35,25 +35,25 @@ public class GraphUtils {
     private int index;
     // Maps for assigning index and low links values to the vertices
     // (compilation units)
-    private Map<BuildUnit, Integer> unitIndices;
-    private Map<BuildUnit, Integer> unitLowLinks;
+    private Map<BuildUnit<?>, Integer> unitIndices;
+    private Map<BuildUnit<?>, Integer> unitLowLinks;
 
     // Result list
-    private List<Set<BuildUnit>> stronglyConnectedComponents;
+    private List<Set<BuildUnit<?>>> stronglyConnectedComponents;
 
     // The stack: keep units in deque for order an in a set for tests whether
     // the stack contains a unit
     // this is necessary to have O(1) tests
-    private Deque<BuildUnit> stack;
-    private Set<BuildUnit> stackUnits;
+    private Deque<BuildUnit<?>> stack;
+    private Set<BuildUnit<?>> stackUnits;
 
-    private void stackPush(BuildUnit unit) {
+    private void stackPush(BuildUnit<?> unit) {
       this.stack.push(unit);
       this.stackUnits.add(unit);
     }
 
-    private BuildUnit stackPop() {
-      BuildUnit u = this.stack.pop();
+    private BuildUnit<?> stackPop() {
+      BuildUnit<?> u = this.stack.pop();
       // It is safe just to remove u from the set because the algorithm only
       // pushes each node once on the stack
       // so there are no duplicates
@@ -61,22 +61,22 @@ public class GraphUtils {
       return u;
     }
 
-    private boolean stackContains(BuildUnit u) {
+    private boolean stackContains(BuildUnit<?> u) {
       return this.stackUnits.contains(u);
     }
 
     // For pseudo code see e.g. here
     // https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
 
-    public List<Set<BuildUnit>> calculateStronglyConnectedUnits(Iterable<? extends BuildUnit> units) {
+    public List<Set<BuildUnit<?>>> calculateStronglyConnectedUnits(Iterable<? extends BuildUnit<?>> units) {
       this.index = 0;
       this.stack = new LinkedList<>();
-      this.stackUnits = new HashSet<BuildUnit>();
-      this.unitIndices = new HashMap<BuildUnit, Integer>();
-      this.unitLowLinks = new HashMap<BuildUnit, Integer>();
+      this.stackUnits = new HashSet<BuildUnit<?>>();
+      this.unitIndices = new HashMap<BuildUnit<?>, Integer>();
+      this.unitLowLinks = new HashMap<BuildUnit<?>, Integer>();
       this.stronglyConnectedComponents = new LinkedList<>();
 
-      for (BuildUnit unit : units) {
+      for (BuildUnit<?> unit : units) {
         if (!this.unitIndices.containsKey(unit)) {
           this.findStrongConnectedComponent(unit);
         }
@@ -84,14 +84,14 @@ public class GraphUtils {
       return this.stronglyConnectedComponents;
     }
 
-    private void findStrongConnectedComponent(BuildUnit unit) {
+    private void findStrongConnectedComponent(BuildUnit<?> unit) {
       this.unitIndices.put(unit, this.index);
       this.unitLowLinks.put(unit, this.index);
       this.index++;
 
       this.stackPush(unit);
 
-      for (BuildUnit dep : unit.getModuleDependencies()) {
+      for (BuildUnit<?> dep : unit.getModuleDependencies()) {
         if (this.unitIndices.containsKey(dep)) {
           if (this.stackContains(dep)) {
             this.unitLowLinks.put(unit, Math.min(this.unitLowLinks.get(unit), this.unitIndices.get(dep)));
@@ -103,8 +103,8 @@ public class GraphUtils {
       }
 
       if (this.unitLowLinks.get(unit) == this.unitIndices.get(unit)) {
-        Set<BuildUnit> component = new HashSet<>();
-        BuildUnit u;
+        Set<BuildUnit<?>> component = new HashSet<>();
+        BuildUnit<?> u;
         do {
           u = this.stackPop();
           component.add(u);
@@ -124,25 +124,25 @@ public class GraphUtils {
    * @return the sorted units in topological order, that means, a unit u1 before
    *         a unit u2 in the list does not depend on u2 in the spanning DAG
    */
-  public static List<BuildUnit> sortTopologicalFrom(BuildUnit root) {
+  public static List<BuildUnit<?>> sortTopologicalFrom(BuildUnit<?> root) {
     Objects.requireNonNull(root);
-    LinkedList<BuildUnit> sorting = new LinkedList<>();
+    LinkedList<BuildUnit<?>> sorting = new LinkedList<>();
 
-    Map<BuildUnit, Boolean> visitedUnits = new HashMap<>();
-    Deque<Pair<BuildUnit, Integer>> stack = new ArrayDeque<>();
+    Map<BuildUnit<?>, Boolean> visitedUnits = new HashMap<>();
+    Deque<Pair<? extends BuildUnit<?>, Integer>> stack = new ArrayDeque<>();
     stack.push(Pair.create(root, 1));
 
     final Boolean NEW = null;
     final Boolean PENDING = Boolean.FALSE;
     final Boolean SORTED = Boolean.TRUE;
     while (!stack.isEmpty()) {
-      Pair<BuildUnit, Integer> p = stack.peek();
+      Pair<? extends BuildUnit<?>, Integer> p = stack.peek();
       Boolean status = visitedUnits.get(p.a);
       if (status == NEW) {
         // First visit of p.a
         visitedUnits.put(p.a, PENDING);
         boolean depAdded = false;
-        for (BuildUnit dep : p.a.getModuleDependencies()) {
+        for (BuildUnit<?> dep : p.a.getModuleDependencies()) {
           Boolean depstatus = visitedUnits.get(dep);
           if (depstatus == NEW) {
             stack.push(Pair.create(dep, 1));
@@ -184,7 +184,7 @@ public class GraphUtils {
 
   }
 
-  private static boolean validateTopolocialSorting(List<BuildUnit> units) {
+  private static boolean validateTopolocialSorting(List<BuildUnit<?>> units) {
     for (int i = 0; i < units.size() - 1; i++) {
       for (int j = i + 1; j < units.size(); j++) {
         if (units.get(i).dependsOnTransitively(units.get(j))) {
