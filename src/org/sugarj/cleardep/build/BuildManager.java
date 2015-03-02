@@ -20,10 +20,9 @@ import com.cedarsoftware.util.DeepEquals;
 public class BuildManager {
 
   private final Map<? extends Path, Stamp> editedSourceFiles;
-//  private InconsistencyCache inconsistencyCache;
   private RequireStack requireStack;
 
-//  private Builder<?, ?> rebuildTriggeredBy = null;
+  private BuildRequirement<?, ?, ?, ?> rebuildTriggeredBy = null;
 
   private Set<CompilationUnit> consistentUnits;
   
@@ -33,65 +32,9 @@ public class BuildManager {
 
   public BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
     this.editedSourceFiles = editedSourceFiles;
-//    this.inconsistencyCache = new InconsistencyCache(editedSourceFiles);
     this.requireStack = new RequireStack();
     this.consistentUnits = new HashSet<>();
   }
-
-//  private <E extends CompilationUnit> boolean isConsistent(E depResult) throws IOException {
-//    if (depResult == null)
-//      return false;
-//
-//    Path depPath = depResult.getPersistentPath();
-//
-//    // If the unit is consistent in the cache stop here
-//    if (this.inconsistencyCache.isConsistentTry(depPath))
-//      return true;
-//
-//    // Otherwise fill the cache for this unit
-//    this.inconsistencyCache.fillFor(depResult);
-//    // Now we know that there is a cache entry
-//    return this.inconsistencyCache.isConsistentSure(depPath);
-//  }
-//
-//  private <E extends CompilationUnit> E scheduleRequire(E depResult) throws IOException {
-//    
-//    // TODO query builder for cycle
-//
-//    List<Set<CompilationUnit>> sccs = GraphUtils.calculateStronglyConnectedComponents(Collections.singleton(depResult));
-//    // Find the top scc
-//    int topMostFileInconsistentScc;
-//    for (topMostFileInconsistentScc = sccs.size() - 1; topMostFileInconsistentScc >= 0; topMostFileInconsistentScc--) {
-//      boolean sccFileInconsistent = false;
-//      for (CompilationUnit unit : sccs.get(topMostFileInconsistentScc)) {
-//        InconsistenyReason reason = this.inconsistencyCache.getInconsistencyReasonSure(unit.getPersistentPath());
-//        if (reason.compareTo(FILES_NOT_CONSISTENT) >= 0) {
-//          BuildRequirement<?, ?, ?, ?> source = unit.getGeneratedBy();
-//          this.require(source);
-//          sccFileInconsistent = true;
-//        }
-//      }
-//      if (sccFileInconsistent) {
-//        break;
-//      }
-//    }
-//
-//    // Now we need to check all the units above
-//    for (int index = topMostFileInconsistentScc + 1; index >= 0 && index < sccs.size(); index++) {
-//      this.inconsistencyCache.updateCacheForScc(sccs.get(index));
-//      for (CompilationUnit unit : sccs.get(index)) {
-//        if (!this.inconsistencyCache.isConsistentSure(unit.getPersistentPath())) {
-//          BuildRequirement<?, ?, ?, ?> source = unit.getGeneratedBy();
-//          this.require(source);
-//        }
-//      }
-//    }
-//
-//    if (!this.inconsistencyCache.isConsistentSure(depResult.getPersistentPath())) {
-//      throw new AssertionError("BuildManager does not ensure that returned unit is consistent");
-//    }
-//    return depResult;
-//  }
 
   protected
   < T extends Serializable, 
@@ -146,7 +89,7 @@ public class BuildManager {
     } finally {
       if (taskDescription != null)
         Log.log.endTask();
-      this.consistentUnits.add(depResult);
+      this.consistentUnits.add(assertConsistency(depResult));
       BuildStackEntry poppedEntry = this.requireStack.pop();
       assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
     }
@@ -158,36 +101,48 @@ public class BuildManager {
   }
 
   public <T extends Serializable, E extends CompilationUnit, B extends Builder<T, E>, F extends BuilderFactory<T, E, B>> E require(BuildRequirement<T, E, B, F> buildReq) throws IOException {
-
-    Builder<T, E> builder = buildReq.createBuilder(this);
-    Path dep = builder.persistentPath();
-    E depResult = CompilationUnit.read(builder.resultClass(), dep, buildReq);
-
-    if (depResult == null)
-      return executeBuilder(builder, dep, buildReq);
+    if (rebuildTriggeredBy == null) {
+      rebuildTriggeredBy = buildReq;
+      Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
+    }
     
-    if (consistentUnits.contains(depResult)) {
-      if (!depResult.isConsistent(null))
-        throw new AssertionError("Build manager does not guarantee soundness");
+    try {
+      Builder<T, E> builder = buildReq.createBuilder(this);
+      Path dep = builder.persistentPath();
+      E depResult = CompilationUnit.read(builder.resultClass(), dep, buildReq);
+  
+      if (depResult == null)
+        return executeBuilder(builder, dep, buildReq);
+      
+      if (consistentUnits.contains(depResult))
+        return assertConsistency(depResult);
+      
+      if (!depResult.isConsistentNonrequirements())
+        return executeBuilder(builder, dep, buildReq);
+      
+      for (Requirement req : depResult.getRequirements()) {
+        if (req instanceof FileRequirement) {
+          FileRequirement freq = (FileRequirement) req;
+          if (!freq.isConsistent())
+            return executeBuilder(builder, dep, buildReq);
+        }
+        else if (req instanceof BuildRequirement<?, ?, ?, ?>) {
+          BuildRequirement<?, ?, ?, ?> breq = (BuildRequirement<?, ?, ?, ?>) req;
+          require(breq);
+        }
+      }
+     
+      consistentUnits.add(assertConsistency(depResult));
       return depResult;
+    } finally {
+      if (rebuildTriggeredBy == buildReq)
+        Log.log.endTask();
     }
-    
-    if (!depResult.isConsistentNonrequirements())
-      return executeBuilder(builder, dep, buildReq);
-    
-    for (Requirement req : depResult.getRequirements()) {
-      if (req instanceof FileRequirement) {
-        FileRequirement freq = (FileRequirement) req;
-        if (!freq.isConsistent())
-          return executeBuilder(builder, dep, buildReq);
-      }
-      else if (req instanceof BuildRequirement<?, ?, ?, ?>) {
-        BuildRequirement<?, ?, ?, ?> breq = (BuildRequirement<?, ?, ?, ?>) req;
-        require(breq);
-      }
-    }
-   
-    consistentUnits.add(depResult);
+  }
+  
+  private <E extends CompilationUnit> E assertConsistency(E depResult) {
+//    if (!depResult.isConsistent(null))
+//      throw new AssertionError("Build manager does not guarantee soundness");
     return depResult;
   }
 }

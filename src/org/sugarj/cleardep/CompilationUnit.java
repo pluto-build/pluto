@@ -479,6 +479,7 @@ public class CompilationUnit extends PersistableEntity {
 		sourceArtifacts = (Map<RelativePath, Stamp>) in.readObject();
 		generatedFiles = (Map<Path, Stamp>) in.readObject();
 		externalFileDependencies = (Map<Path, Stamp>) in.readObject();
+		requirements = (List<Requirement>) in.readObject();
 
 		int moduleDepencyCount = in.readInt();
 		moduleDependencies = new HashMap<>(moduleDepencyCount);
@@ -509,6 +510,7 @@ public class CompilationUnit extends PersistableEntity {
 		out.writeObject(sourceArtifacts = Collections.unmodifiableMap(sourceArtifacts));
 		out.writeObject(generatedFiles = Collections.unmodifiableMap(generatedFiles));
 		out.writeObject(externalFileDependencies = Collections.unmodifiableMap(externalFileDependencies));
+		out.writeObject(requirements = Collections.unmodifiableList(requirements));
 
 		out.writeInt(moduleDependencies.size());
 		for (Entry<CompilationUnit, BuildRequirement<?, ?, ?, ?>> entry : moduleDependencies.entrySet()) {
