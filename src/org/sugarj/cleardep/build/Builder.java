@@ -2,11 +2,13 @@ package org.sugarj.cleardep.build;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 
 import org.sugarj.cleardep.CompilationUnit;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.common.path.Path;
+import org.sugarj.common.util.Pair;
 
 public abstract class Builder<T extends Serializable, E extends CompilationUnit> {
   protected final BuildManager manager;
@@ -37,6 +39,10 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
   protected abstract Class<E> resultClass();
   protected abstract Stamper defaultStamper();
   protected abstract void build(E result) throws Throwable;
+  
+  protected boolean buildCycle(List<Pair<CompilationUnit,BuildRequirement<?, ?, ?, ?>>> cycle) {
+    return false;
+  }
   
   private E result;
   void triggerBuild(E result) throws Throwable {

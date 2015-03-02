@@ -4,6 +4,7 @@ import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.FILES_NOT_C
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
+import org.sugarj.common.util.Pair;
 
 public class BuildManager {
 
@@ -92,12 +94,21 @@ public class BuildManager {
     }
     return depResult;
   }
+  
+  protected boolean executeCycle(List<Pair<CompilationUnit, BuildRequirement<?, ?, ?, ?>>> cycle) {
+    for (Pair<CompilationUnit, BuildRequirement<?, ?, ?, ?>> req : cycle) {
+      if (req.b.createBuilder(this).buildCycle(cycle)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   protected <T extends Serializable, E extends CompilationUnit, B extends Builder<T, E>, F extends BuilderFactory<T, E, B>> E executeBuilder(Builder<T, E> builder, E depResult, BuildRequirement<T, E, ?, ?> buildReq) throws IOException {
 
     Path dep = depResult.getPersistentPath();
-    
-    BuildStackEntry entry = this.requireStack.push(builder.sourceFactory, dep);
+
+    BuildStackEntry entry = this.requireStack.push(buildReq, dep);
 
     String taskDescription = builder.taskDescription();
 
@@ -115,7 +126,27 @@ public class BuildManager {
       if (!depResult.isFinished())
         depResult.setState(CompilationUnit.State.SUCCESS);
       depResult.write();
+    } catch (BuildCycleException e) {
+      if (e.isUnitForstInvokedOn(dep, buildReq.factory)) {
+        if (!e.isLastCallAborted()) {
+          e.setLastCallAborted(true);
+          throw e;
+        } else {
+          e.addCycleComponent(new Pair<CompilationUnit, BuildRequirement<?,?,?,?>>(depResult, buildReq));
+          // Need to handle the cycle here
+          List<Pair<CompilationUnit, BuildRequirement<?, ?, ?, ?>>> cycle = new ArrayList<>(e.getCycleComponents().size());
+          if (!executeCycle(cycle)) {
+            throw new RequiredBuilderFailed(builder, depResult, buildReq, e);
+          }
+          // Do not throw anything here because cycle is completed
+        }
+      } else {
+        e.addCycleComponent(new Pair<CompilationUnit, BuildRequirement<?,?,?,?>>(depResult, buildReq));
+        throw e;
+      }
+    
     } catch (RequiredBuilderFailed e) {
+
       BuilderResult required = e.getLastAddedBuilder();
       depResult.addModuleDependency(required.result, required.buildReq);
       depResult.setState(CompilationUnit.State.FAILURE);
