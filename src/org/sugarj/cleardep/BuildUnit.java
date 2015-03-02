@@ -24,14 +24,13 @@ import org.sugarj.cleardep.xattr.Xattr;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
-import org.sugarj.common.path.RelativePath;
 
 /**
  * Dependency management for modules.
  * 
  * @author Sebastian Erdweg
  */
-public class CompilationUnit extends PersistableEntity {
+public class BuildUnit extends PersistableEntity {
 
   public static final long serialVersionUID = -2821414386853890682L;
 
@@ -45,7 +44,7 @@ public class CompilationUnit extends PersistableEntity {
 	  }
 	}
 
-	public CompilationUnit() { /* for deserialization only */ }
+	public BuildUnit() { /* for deserialization only */ }
 	
 	private State state = State.NEW;
 
@@ -54,7 +53,7 @@ public class CompilationUnit extends PersistableEntity {
 	protected List<Requirement> requirements;
 	protected Set<FileRequirement> generatedFiles;
 
-	protected transient Set<CompilationUnit> requiredUnits;
+	protected transient Set<BuildUnit> requiredUnits;
 	protected transient Set<Path> requiredFiles;
 	
 	protected BuildRequest<?, ?, ?, ?> generatedBy;
@@ -63,14 +62,14 @@ public class CompilationUnit extends PersistableEntity {
 	// Methods for initialization
 	// **************************
 
-	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
+	public static <E extends BuildUnit> E create(Class<E> cl, Stamper stamper, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
 		E e = PersistableEntity.create(cl, dep);
 		e.defaultStamper = stamper;
 		e.generatedBy = generatedBy;
 		return e;
 	}
 
-	final public static <E extends CompilationUnit> E read(Class<E> clazz, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
+	final public static <E extends BuildUnit> E read(Class<E> clazz, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
 	  E e = read(clazz, dep);
 	  if (e != null && e.generatedBy.deepEquals(generatedBy)) {
 	    e.generatedBy = generatedBy;
@@ -84,7 +83,7 @@ public class CompilationUnit extends PersistableEntity {
 	 * 
 	 * @return null if no consistent compilation unit is available.
 	 */
-  public static <E extends CompilationUnit> E readConsistent(Class<E> clazz, Map<? extends Path, Stamp> editedSourceFiles, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
+  public static <E extends BuildUnit> E readConsistent(Class<E> clazz, Map<? extends Path, Stamp> editedSourceFiles, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
 	  E e = read(clazz, dep, generatedBy);
 	  if (e != null && e.isConsistent(editedSourceFiles))
 	    return e;
@@ -106,21 +105,11 @@ public class CompilationUnit extends PersistableEntity {
 	// Methods for adding dependencies
 	// *******************************
 
-	public void addSourceArtifact(RelativePath file) {
-		addSourceArtifact(file, defaultStamper.stampOf(file));
+  public void requires(Path file) {
+		requires(file, defaultStamper.stampOf(file));
 	}
 
-	public void addSourceArtifact(RelativePath file, Stamp stampOfFile) {
-		requirements.add(new FileRequirement(file, stampOfFile));
-		requiredFiles.add(file);
-		checkUnitDependency(file);
-	}
-	
-  public void addExternalFileDependency(Path file) {
-		addExternalFileDependency(file, defaultStamper.stampOf(file));
-	}
-
-	public void addExternalFileDependency(Path file, Stamp stampOfFile) {
+	public void requires(Path file, Stamp stampOfFile) {
 		requirements.add(new FileRequirement(file, stampOfFile));
 		requiredFiles.add(file);
 		checkUnitDependency(file);
@@ -135,7 +124,7 @@ public class CompilationUnit extends PersistableEntity {
         
         boolean foundDep = visit(new ModuleVisitor<Boolean>() {
           @Override
-          public Boolean visit(CompilationUnit mod) {
+          public Boolean visit(BuildUnit mod) {
             return dep.equals(mod.getPersistentPath());
           }
 
@@ -163,11 +152,11 @@ public class CompilationUnit extends PersistableEntity {
 	  }
   }
 
-  public void addGeneratedFile(Path file) {
-		addGeneratedFile(file, defaultStamper.stampOf(file));
+  public void generates(Path file) {
+		generates(file, defaultStamper.stampOf(file));
 	}
 
-	public void addGeneratedFile(Path file, Stamp stampOfFile) {
+	public void generates(Path file, Stamp stampOfFile) {
 		generatedFiles.add(new FileRequirement(file, stampOfFile));
 		try {
 		  if (FileCommands.exists(file)) 
@@ -177,7 +166,7 @@ public class CompilationUnit extends PersistableEntity {
     }
 	}
 	
-	public void addModuleDependency(CompilationUnit mod) {
+	public void requires(BuildUnit mod) {
 	  Objects.requireNonNull(mod);
 	  requirements.add(new BuildRequirement(mod, mod.getGeneratedBy()));
 	  requiredUnits.add(mod);
@@ -189,7 +178,7 @@ public class CompilationUnit extends PersistableEntity {
 	 * @see GraphUtils#repairGraph(Set)
 	 */
 	@Deprecated
-	protected void removeModuleDependency(CompilationUnit mod) {
+	protected void removeModuleDependency(BuildUnit mod) {
 		this.requiredUnits.remove(mod);
 	}
 
@@ -198,14 +187,14 @@ public class CompilationUnit extends PersistableEntity {
 	// Methods for querying dependencies
 	// *********************************
 
-	public boolean dependsOn(CompilationUnit other) {
+	public boolean dependsOn(BuildUnit other) {
 		return getModuleDependencies().contains(other) ;
 	}
 
-	public boolean dependsOnTransitively(final CompilationUnit other) {
+	public boolean dependsOnTransitively(final BuildUnit other) {
 	  return visit(new ModuleVisitor<Boolean>() {
       @Override
-      public Boolean visit(CompilationUnit mod) {
+      public Boolean visit(BuildUnit mod) {
         return mod.equals(other);
       }
 
@@ -230,7 +219,7 @@ public class CompilationUnit extends PersistableEntity {
 		return requiredFiles;
 	}
 
-	public Set<CompilationUnit> getModuleDependencies() {
+	public Set<BuildUnit> getModuleDependencies() {
 		return requiredUnits;
 	}
 
@@ -376,7 +365,7 @@ public class CompilationUnit extends PersistableEntity {
 	public boolean isConsistent(final Map<? extends Path, Stamp> editedSourceFiles) {
 		ModuleVisitor<Boolean> isConsistentVisitor = new ModuleVisitor<Boolean>() {
 			@Override
-			public Boolean visit(CompilationUnit mod) {
+			public Boolean visit(BuildUnit mod) {
 				return mod.isConsistentShallow(editedSourceFiles);
 			}
 
@@ -403,7 +392,7 @@ public class CompilationUnit extends PersistableEntity {
 	// *************************************
 
 	public static interface ModuleVisitor<T> {
-		public T visit(CompilationUnit mod);
+		public T visit(BuildUnit mod);
 
 		public T combine(T t1, T t2);
 
@@ -420,21 +409,21 @@ public class CompilationUnit extends PersistableEntity {
 	 * graph, then m1 is visited before m2.
 	 */
 	public <T> T visit(ModuleVisitor<T> visitor) {
-	  Queue<CompilationUnit> queue = new ArrayDeque<>();
+	  Queue<BuildUnit> queue = new ArrayDeque<>();
 	  queue.add(this);
 	  
-	  Set<CompilationUnit> seenUnits = new HashSet<>();
+	  Set<BuildUnit> seenUnits = new HashSet<>();
     seenUnits.add(this);
 	  
 	  T result = visitor.init();
 	  while(!queue.isEmpty()) {
-	    CompilationUnit toVisit = queue.poll();
+	    BuildUnit toVisit = queue.poll();
       T newResult = visitor.visit(toVisit);
       result = visitor.combine(result, newResult);
       if (visitor.cancel(result))
         break;
       
-      for (CompilationUnit dep : toVisit.getModuleDependencies()) {
+      for (BuildUnit dep : toVisit.getModuleDependencies()) {
         if (!seenUnits.contains(dep)) {
           queue.add(dep);
           seenUnits.add(dep);

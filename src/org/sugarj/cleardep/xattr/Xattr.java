@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.sugarj.cleardep.CompilationUnit;
+import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.common.path.AbsolutePath;
 import org.sugarj.common.path.Path;
 
@@ -42,7 +42,7 @@ public class Xattr {
     this.strategy = strategy;
   }
  
-  public void setGenBy(Path p, CompilationUnit unit) throws IOException {
+  public void setGenBy(Path p, BuildUnit unit) throws IOException {
     strategy.setXattr(p, "genBy", unit.getPersistentPath().getAbsolutePath());
   }
   

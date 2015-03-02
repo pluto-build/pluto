@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.sugarj.cleardep.CompilationUnit;
+import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.dependency.FileRequirement;
@@ -24,7 +24,7 @@ public class BuildManager {
 
   private BuildRequest<?, ?, ?, ?> rebuildTriggeredBy = null;
 
-  private Set<CompilationUnit> consistentUnits;
+  private Set<BuildUnit> consistentUnits;
   
   public BuildManager() {
     this(null);
@@ -38,12 +38,12 @@ public class BuildManager {
 
   protected
   < T extends Serializable, 
-    E extends CompilationUnit,
+    E extends BuildUnit,
     B extends Builder<T, E>,
     F extends BuilderFactory<T, E, B>
     > E executeBuilder(Builder<T, E> builder, Path dep, BuildRequest<T, E, B, F> buildReq) throws IOException {
 
-    E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, buildReq);
+    E depResult = BuildUnit.create(builder.resultClass(), builder.defaultStamper(), dep, buildReq);
     
 
     String taskDescription = builder.taskDescription();
@@ -51,7 +51,7 @@ public class BuildManager {
 
     BuildStackEntry entry = this.requireStack.push(builder.sourceFactory, dep);
     try {
-      depResult.setState(CompilationUnit.State.IN_PROGESS);
+      depResult.setState(BuildUnit.State.IN_PROGESS);
 
       if (taskDescription != null)
         Log.log.beginTask(taskDescription, Log.CORE);
@@ -62,12 +62,12 @@ public class BuildManager {
       // build(depResult, input);
 
       if (!depResult.isFinished())
-        depResult.setState(CompilationUnit.State.SUCCESS);
+        depResult.setState(BuildUnit.State.SUCCESS);
       depResult.write();
     } catch (RequiredBuilderFailed e) {
       BuilderResult required = e.getLastAddedBuilder();
-      depResult.addModuleDependency(required.result);
-      depResult.setState(CompilationUnit.State.FAILURE);
+      depResult.requires(required.result);
+      depResult.setState(BuildUnit.State.FAILURE);
 
       if (inputHash != DeepEquals.deepHashCode(builder.input))
         throw new AssertionError("API Violation detected: Builder mutated its input.");
@@ -78,7 +78,7 @@ public class BuildManager {
         Log.log.logErr("Required builder failed", Log.CORE);
       throw e;
     } catch (Throwable e) {
-      depResult.setState(CompilationUnit.State.FAILURE);
+      depResult.setState(BuildUnit.State.FAILURE);
       
       if (inputHash != DeepEquals.deepHashCode(builder.input))
         throw new AssertionError("API Violation detected: Builder mutated its input.");
@@ -94,13 +94,13 @@ public class BuildManager {
       assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
     }
 
-    if (depResult.getState() == CompilationUnit.State.FAILURE)
+    if (depResult.getState() == BuildUnit.State.FAILURE)
       throw new RequiredBuilderFailed(builder, depResult, new IllegalStateException("Builder failed for unknown reason, please confer log."));
 
     return depResult;
   }
 
-  public <T extends Serializable, E extends CompilationUnit, B extends Builder<T, E>, F extends BuilderFactory<T, E, B>> E require(BuildRequest<T, E, B, F> buildReq) throws IOException {
+  public <T extends Serializable, E extends BuildUnit, B extends Builder<T, E>, F extends BuilderFactory<T, E, B>> E require(BuildRequest<T, E, B, F> buildReq) throws IOException {
     if (rebuildTriggeredBy == null) {
       rebuildTriggeredBy = buildReq;
       Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
@@ -109,7 +109,7 @@ public class BuildManager {
     try {
       Builder<T, E> builder = buildReq.createBuilder(this);
       Path dep = builder.persistentPath();
-      E depResult = CompilationUnit.read(builder.resultClass(), dep, buildReq);
+      E depResult = BuildUnit.read(builder.resultClass(), dep, buildReq);
   
       if (depResult == null)
         return executeBuilder(builder, dep, buildReq);
@@ -142,7 +142,7 @@ public class BuildManager {
     }
   }
   
-  private <E extends CompilationUnit> E assertConsistency(E depResult) {
+  private <E extends BuildUnit> E assertConsistency(E depResult) {
 //    if (!depResult.isConsistent(null))
 //      throw new AssertionError("Build manager does not guarantee soundness");
     return depResult;

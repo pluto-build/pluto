@@ -2,13 +2,13 @@ package org.sugarj.cleardep.build;
 
 import java.io.Serializable;
 
-import org.sugarj.cleardep.CompilationUnit;
+import org.sugarj.cleardep.BuildUnit;
 
 import com.cedarsoftware.util.DeepEquals;
 
 public class BuildRequest<
   T extends Serializable, 
-  E extends CompilationUnit, 
+  E extends BuildUnit, 
   B extends Builder<T, E>,
   F extends BuilderFactory<T, E, B>
 > implements Serializable {
