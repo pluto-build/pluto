@@ -51,68 +51,77 @@ public class BuildManager {
 
   protected <T extends Serializable, E extends BuildUnit, B extends Builder<T, E>, F extends BuilderFactory<T, E, B>> E executeBuilder(Builder<T, E> builder, Path dep, BuildRequest<T, E, B, F> buildReq) throws IOException {
 
-    E depResult = BuildUnit.create(builder.resultClass(), builder.defaultStamper(), dep, buildReq);
-
     String taskDescription = builder.taskDescription();
-    int inputHash = DeepEquals.deepHashCode(builder.input);
-    BuildStackEntry entry = null;
-    try {
-      try {
-      entry = this.requireStack.push(buildReq, dep);
+    if (taskDescription != null)
+      Log.log.beginTask(taskDescription, Log.CORE);
 
+    // First step: cycle detection
+    BuildStackEntry entry = null;
+
+    try {
+      entry = this.requireStack.push(buildReq, dep);
+    } catch (BuildCycleException e) {
+      // Here is a cycle, abort without doing anything to Build Units because we
+      // want to use the
+      // BuildUnit which resulted from the first call on the dep path
+      if (taskDescription != null) {
+        Log.log.log("Aborted because of detected cycle", Log.CORE);
+        Log.log.endTask();
+      }
+      throw e;
+    }
+
+    E depResult = BuildUnit.create(builder.resultClass(), builder.defaultStamper(), dep, buildReq);
+    int inputHash = DeepEquals.deepHashCode(builder.input);
+
+    try {
       depResult.setState(BuildUnit.State.IN_PROGESS);
 
-      if (taskDescription != null)
-        Log.log.beginTask(taskDescription, Log.CORE);
-
       // call the actual builder
-
-     
+      try {
         builder.triggerBuild(depResult);
         if (!depResult.isFinished())
           depResult.setState(BuildUnit.State.SUCCESS);
         // build(depResult, input);
       } catch (BuildCycleException e) {
-        if (e.isUnitForstInvokedOn(dep, buildReq.factory)) {
-          if (!e.isLastCallAborted()) {
-           
-            throw e;
-          } else {
-            Log.log.log("Try to compile cycle", Log.CORE);
-            
-            e.addCycleComponent(new Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>(depResult, buildReq));
-            // Need to handle the cycle here
-            List<Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle = e.getCycleComponents();
-            boolean cycleCompiled = executeCycle(cycle);
-            if (!cycleCompiled) {
-              Log.log.logErr("Unable to find builder which can compile the cycle", Log.CORE);
-              // Cycle cannot be handled
-              throw new RequiredBuilderFailed(builder, depResult, e);
-            }
-            // Do not throw anything here because cycle is completed
-            // throw e;
-          }
-        } else {
+        // Calling the builder was interrupted by a detected build cycle
+        // Check if this require is the begin of the cycle
+        if (e.isUnitFirstInvokedOn(dep, buildReq.factory)) {
+          Log.log.log("Try to compile cycle", Log.CORE);
           e.addCycleComponent(new Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>(depResult, buildReq));
+
+          // Get the cycle and try to compile it
+          List<Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle = e.getCycleComponents();
+          boolean cycleCompiled = executeCycle(cycle);
+          if (!cycleCompiled) {
+            Log.log.logErr("Unable to find builder which can compile the cycle", Log.CORE);
+            // Cycle cannot be handled
+            throw new RequiredBuilderFailed(builder, depResult, e);
+          }
+          // Do not throw anything here because cycle is completed successfully.
+        } else {
           throw e;
         }
-
       }
 
-    }  catch (BuildCycleException e) {
-      Log.log.log("Aborted because of detected cycle", Log.CORE);
-      if (e.isUnitForstInvokedOn(dep, buildReq.factory)) {
-        if (!e.isLastCallAborted()) {
-          e.setLastCallAborted(true);
-          throw e;
-        } else {
-          throw new AssertionError("should not get there");
-        }
+    } catch (BuildCycleException e) {
+      // This is the exception which has been rethrown above, but we cannot
+      // handle it
+      // here because compiling the cycle needs to be in the major try block
+      // where normal
+      // units are compiled too
+      if (e.isUnitFirstInvokedOn(dep, buildReq.factory)) {
+        // here we should never get because this case in handled in the inner
+        // try
+        throw new AssertionError("should not get there");
       } else {
+        // Collect all components of the cycle while their the compilation
+        if (taskDescription != null)
+          Log.log.log("Aborted because of detected cycle", Log.CORE);
         e.addCycleComponent(new Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>(depResult, buildReq));
         throw e;
       }
-    }catch (RequiredBuilderFailed e) {
+    } catch (RequiredBuilderFailed e) {
       BuilderResult required = e.getLastAddedBuilder();
       depResult.requires(required.result);
       depResult.setState(BuildUnit.State.FAILURE);

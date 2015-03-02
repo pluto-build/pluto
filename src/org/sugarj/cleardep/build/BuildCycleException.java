@@ -20,7 +20,6 @@ public class BuildCycleException extends RuntimeException {
    */
   private final BuildStackEntry cycleCause;
   private final List<Pair<BuildUnit, BuildRequest<?,?,?,?>>> cycleComponents;
-  private boolean lastCallAborted = false;
   
   public BuildCycleException(String message, BuildStackEntry cycleCause) {
     super(message);
@@ -37,16 +36,10 @@ public class BuildCycleException extends RuntimeException {
     cycleComponents.add(0, component);
   }
   
-  public boolean isUnitForstInvokedOn(Path path, BuilderFactory<?, ?, ?> factory) {
+  public boolean isUnitFirstInvokedOn(Path path, BuilderFactory<?, ?, ?> factory) {
     return cycleCause.getPersistencePath().equals(path) && cycleCause.getRequest().factory.equals(factory);
   }
   
-  public void setLastCallAborted(boolean lastCallAborted) {
-    this.lastCallAborted = lastCallAborted;
-  }
   
-  public boolean isLastCallAborted() {
-    return lastCallAborted;
-  }
 
 }
