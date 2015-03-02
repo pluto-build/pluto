@@ -3,17 +3,17 @@ package org.sugarj.cleardep.build;
 import org.sugarj.common.path.Path;
 
 class BuildStackEntry {
-  private final BuildRequirement<?, ?, ?, ?> req;
+  private final BuildRequest<?, ?, ?, ?> req;
   private final Path persistencePath;
   
   
-  public BuildStackEntry(BuildRequirement<?, ?, ?,?> req, Path persistencePath) {
+  public BuildStackEntry(BuildRequest<?, ?, ?,?> req, Path persistencePath) {
     super();
     this.req = req;
     this.persistencePath = persistencePath;
   }
   
-  public BuildRequirement<?, ?, ?, ?> getRequirement() {
+  public BuildRequest<?, ?, ?, ?> getRequest() {
     return req;
   }
   public Path getPersistencePath() {

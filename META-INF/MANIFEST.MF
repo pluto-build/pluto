@@ -8,10 +8,11 @@ Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Export-Package: org.sugarj.cleardep,
  org.sugarj.cleardep.build,
+ org.sugarj.cleardep.dependency,
  org.sugarj.cleardep.stamp,
  org.sugarj.cleardep.xattr
 Require-Bundle: org.eclipse.core.runtime,
  org.sugarj.common
-Eclipse-BuddyPolicy: registered
+Eclipse-BuddyPolicy: dependent
 Bundle-ClassPath: java-util-1.17.2.jar,
  .

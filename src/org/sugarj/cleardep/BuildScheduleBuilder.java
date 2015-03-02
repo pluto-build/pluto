@@ -8,26 +8,24 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import org.sugarj.cleardep.BuildSchedule.ScheduleMode;
 import org.sugarj.cleardep.BuildSchedule.Task;
-import org.sugarj.cleardep.build.BuildRequirement;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.path.RelativePath;
 
 public class BuildScheduleBuilder {
 
-  private Set<CompilationUnit> unitsToCompile;
+  private Set<BuildUnit> unitsToCompile;
   private ScheduleMode scheduleMode;
 
-  public BuildScheduleBuilder(Set<CompilationUnit> unitsToCompile, ScheduleMode mode) {
+  public BuildScheduleBuilder(Set<BuildUnit> unitsToCompile, ScheduleMode mode) {
     this.scheduleMode = mode;
     this.unitsToCompile = unitsToCompile;
   }
 
-  private boolean needToCheckDependencies(CompilationUnit dep) {
+  private boolean needToCheckDependencies(BuildUnit dep) {
     return this.scheduleMode == ScheduleMode.REBUILD_ALL || !dep.isPersisted() || !dep.isConsistentShallow(null);
   }
 
@@ -36,18 +34,18 @@ public class BuildScheduleBuilder {
     // We need only units with changed source files, then dependencies may have
     // changed
     // Actually the units do not need to be consistent to e.g. generated files
-    Set<CompilationUnit> changedUnits = new HashSet<>();
-    for (CompilationUnit unit : this.unitsToCompile) {
-      changedUnits.addAll(CompilationUnitUtils.findUnitsWithChangedSourceFiles(unit));
+    Set<BuildUnit> changedUnits = new HashSet<>();
+    for (BuildUnit unit : this.unitsToCompile) {
+      changedUnits.addAll(BuildUnitUtils.findUnitsWithChangedSourceFiles(unit));
     }
 
     // Set for cycle detection and fast contains check
-    Set<CompilationUnit> visitedUnits = new HashSet<>();
+    Set<BuildUnit> visitedUnits = new HashSet<>();
     // Queue of units which have to be processed
-    List<CompilationUnit> units = new LinkedList<>(changedUnits);
+    List<BuildUnit> units = new LinkedList<>(changedUnits);
 
     // Filter out root units which are consistent -> no need to check them
-    for (CompilationUnit unit : this.unitsToCompile) {
+    for (BuildUnit unit : this.unitsToCompile) {
       if (needToCheckDependencies(unit)) {
         units.add(unit);
       }
@@ -59,13 +57,12 @@ public class BuildScheduleBuilder {
 
 
     while (!units.isEmpty()) {
-      CompilationUnit changedUnit = units.remove(0);
-      Map<CompilationUnit, BuildRequirement<?, ?, ?, ?>> dependencies = extractor.extractDependencies(changedUnit);
+      BuildUnit changedUnit = units.remove(0);
+      Set<BuildUnit> dependencies = extractor.extractDependencies(changedUnit);
       // Find new Compilation units and add them
-      for (Entry<CompilationUnit, BuildRequirement<?, ?, ?, ?>> e : dependencies.entrySet()) {
-        CompilationUnit dep = e.getKey();
+      for (BuildUnit dep : dependencies) {
         if (!changedUnit.getModuleDependencies().contains(dep)) {
-          changedUnit.addModuleDependency(dep, e.getValue());
+          changedUnit.requires(dep);
           // Need to check dep iff rebuild all or if the unit is not persistent
           // or inconsistent
           if (!visitedUnits.contains(dep)) {
@@ -80,9 +77,9 @@ public class BuildScheduleBuilder {
       }
       // Remove compilation units which are not needed anymore
       // Need to copy existing units because they will be modified
-      ArrayList<CompilationUnit> allUnits = new ArrayList<CompilationUnit>(changedUnit.getModuleDependencies());
-      for (CompilationUnit unit : allUnits) {
-        if (!dependencies.keySet().contains(unit)) {
+      ArrayList<BuildUnit> allUnits = new ArrayList<BuildUnit>(changedUnit.getModuleDependencies());
+      for (BuildUnit unit : allUnits) {
+        if (!dependencies.contains(unit)) {
           changedUnit.removeModuleDependency(unit);
         }
       }
@@ -115,23 +112,23 @@ public class BuildScheduleBuilder {
     BuildSchedule schedule = new BuildSchedule();
 
     // Calculate strongly connected components: O(E+V)
-    List<Set<CompilationUnit>> sccs = GraphUtils.calculateStronglyConnectedComponents(this.unitsToCompile);
+    List<Set<BuildUnit>> sccs = GraphUtils.calculateStronglyConnectedComponents(this.unitsToCompile);
 
     // Create tasks on fill map to find tasks for units: O(V)
-    Map<CompilationUnit, Task> tasksForUnit = new HashMap<>();
+    Map<BuildUnit, Task> tasksForUnit = new HashMap<>();
     List<Task> buildTasks = new ArrayList<>(sccs.size());
-    for (Set<CompilationUnit> scc : sccs) {
+    for (Set<BuildUnit> scc : sccs) {
       Task t = new Task(scc);
       buildTasks.add(t);
-      for (CompilationUnit u : t.getUnitsToCompile()) {
+      for (BuildUnit u : t.getUnitsToCompile()) {
         tasksForUnit.put(u, t);
       }
     }
 
     // Calculate dependencies between tasks (sccs): O(E+V)
     for (Task t : buildTasks) {
-      for (CompilationUnit u : t.getUnitsToCompile()) {
-        for (CompilationUnit dep : u.getModuleDependencies()) {
+      for (BuildUnit u : t.getUnitsToCompile()) {
+        for (BuildUnit dep : u.getModuleDependencies()) {
           Task depTask = tasksForUnit.get(dep);
           if (depTask != t) {
             t.addRequiredTask(depTask);
@@ -150,13 +147,13 @@ public class BuildScheduleBuilder {
       // Here we need all inconsistent (shallowly) units, because we need to
       // recompile them
       // Deep inconsistence will be calculated more efficiently
-      Set<CompilationUnit> changedUnits = new HashSet<>();
-      for (CompilationUnit unit : this.unitsToCompile) {
-        changedUnits.addAll(CompilationUnitUtils.findInconsistentUnits(unit));
+      Set<BuildUnit> changedUnits = new HashSet<>();
+      for (BuildUnit unit : this.unitsToCompile) {
+        changedUnits.addAll(BuildUnitUtils.findInconsistentUnits(unit));
       }
       // All tasks which changed units are inconsistent
       Set<Task> inconsistentTasks = new HashSet<>();
-      for (CompilationUnit u : changedUnits) {
+      for (BuildUnit u : changedUnits) {
         inconsistentTasks.add(tasksForUnit.get(u));
       }
       // All transitivly reachable too
@@ -203,8 +200,8 @@ public class BuildScheduleBuilder {
 
   }
 
-  private Set<CompilationUnit> calculateReachableUnits(Task task) {
-    Set<CompilationUnit> reachableUnits = new HashSet<>();
+  private Set<BuildUnit> calculateReachableUnits(Task task) {
+    Set<BuildUnit> reachableUnits = new HashSet<>();
     Deque<Task> taskStack = new LinkedList<>();
     Set<Task> seenTasks = new HashSet<>();
     taskStack.addAll(task.requiredTasks);
@@ -238,9 +235,9 @@ public class BuildScheduleBuilder {
     return reachableUnits;
   }
 
-  private boolean validateDependenciesOfTask(Task task, Set<CompilationUnit> singleUnits) {
-    Set<CompilationUnit> reachableUnits = this.calculateReachableUnits(task);
-    for (CompilationUnit unit : singleUnits != null ? singleUnits : task.unitsToCompile) {
+  private boolean validateDependenciesOfTask(Task task, Set<BuildUnit> singleUnits) {
+    Set<BuildUnit> reachableUnits = this.calculateReachableUnits(task);
+    for (BuildUnit unit : singleUnits != null ? singleUnits : task.unitsToCompile) {
       if (!validateDeps("BuildSchedule", unit, reachableUnits)) {
         return false;
       }
@@ -258,8 +255,8 @@ public class BuildScheduleBuilder {
     return true;
   }
 
-  boolean validateDeps(String prefix, CompilationUnit unit, Set<CompilationUnit> allDeps) {
-    for (CompilationUnit dep : unit.getModuleDependencies()) {
+  boolean validateDeps(String prefix, BuildUnit unit, Set<BuildUnit> allDeps) {
+    for (BuildUnit dep : unit.getModuleDependencies()) {
       if (needsToBeBuild(dep) && !allDeps.contains(dep)) {
         if (prefix != null)
           System.err.println(prefix + ": Schedule violates dependency: " + unit + " on " + dep);
@@ -269,21 +266,21 @@ public class BuildScheduleBuilder {
     return true;
   }
 
-  boolean needsToBeBuild(CompilationUnit unit) {
+  boolean needsToBeBuild(BuildUnit unit) {
     // Calling isConsistent here is really really slow but safe and its a check
     boolean build = scheduleMode == BuildSchedule.ScheduleMode.REBUILD_ALL || !unit.isConsistent(null);
     return build;
   }
 
-  public static boolean validateDepGraphCycleFree(Set<CompilationUnit> startUnits) {
-    Set<CompilationUnit> unmarkedUnits = new HashSet<>();
-    Set<CompilationUnit> tempMarkedUnits = new HashSet<>();
-    for (CompilationUnit unit : startUnits) {
-      unmarkedUnits.addAll(CompilationUnitUtils.findAllUnits(unit));
+  public static boolean validateDepGraphCycleFree(Set<BuildUnit> startUnits) {
+    Set<BuildUnit> unmarkedUnits = new HashSet<>();
+    Set<BuildUnit> tempMarkedUnits = new HashSet<>();
+    for (BuildUnit unit : startUnits) {
+      unmarkedUnits.addAll(BuildUnitUtils.findAllUnits(unit));
     }
 
     while (!unmarkedUnits.isEmpty()) {
-      CompilationUnit unit = unmarkedUnits.iterator().next();
+      BuildUnit unit = unmarkedUnits.iterator().next();
       if (!visit(unit, unmarkedUnits, tempMarkedUnits)) {
         return false;
       }
@@ -292,13 +289,13 @@ public class BuildScheduleBuilder {
 
   }
 
-  private static boolean visit(CompilationUnit u, Set<CompilationUnit> unmarkedUnits, Set<CompilationUnit> tempMarkedUnits) {
+  private static boolean visit(BuildUnit u, Set<BuildUnit> unmarkedUnits, Set<BuildUnit> tempMarkedUnits) {
     if (tempMarkedUnits.contains(u)) {
       return false; // Found a cycle
     }
     if (unmarkedUnits.contains(u)) {
       tempMarkedUnits.add(u);
-      for (CompilationUnit dep : u.getModuleDependencies()) {
+      for (BuildUnit dep : u.getModuleDependencies()) {
         if (!visit(dep, unmarkedUnits, tempMarkedUnits)) {
           return false;
         }
@@ -310,18 +307,18 @@ public class BuildScheduleBuilder {
   }
 
   private boolean validateFlattenSchedule(List<Task> flatSchedule) {
-    Set<CompilationUnit> collectedUnits = new HashSet<>();
+    Set<BuildUnit> collectedUnits = new HashSet<>();
     for (int i = 0; i < flatSchedule.size(); i++) {
       Task currentTask = flatSchedule.get(i);
       // Find duplicates
-      for (CompilationUnit unit : currentTask.unitsToCompile) {
+      for (BuildUnit unit : currentTask.unitsToCompile) {
         if (collectedUnits.contains(unit)) {
           throw new AssertionError("Task contained twice: " + unit);
         }
       }
       collectedUnits.addAll(currentTask.unitsToCompile);
 
-      for (CompilationUnit unit : currentTask.unitsToCompile) {
+      for (BuildUnit unit : currentTask.unitsToCompile) {
         validateDeps("Flattened Schedule", unit, collectedUnits);
 
       }

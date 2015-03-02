@@ -9,11 +9,12 @@ public class RequireStack {
 
   private Deque<BuildStackEntry> requireCallStack = new ArrayDeque<>();
 
-  protected BuildStackEntry push(BuildRequirement<?, ?, ?, ?> req, Path dep) {
+  protected BuildStackEntry push(BuildRequest<?, ?, ?, ?> req, Path dep) {
     BuildStackEntry entry = new BuildStackEntry(req, dep);
 
     if (this.requireCallStack.contains(entry)) {
-    
+      // Do this to have the cycle on the stack!
+      this.requireCallStack.push(entry);
       throw new BuildCycleException("Build contains a dependency cycle on " + dep, entry);
     }
     this.requireCallStack.push(entry);
