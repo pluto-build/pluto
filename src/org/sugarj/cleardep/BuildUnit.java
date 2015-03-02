@@ -69,7 +69,7 @@ public class BuildUnit extends PersistableEntity {
 		return e;
 	}
 	
-	final public static <E extends CompilationUnit> E readUnchecked(Class<E> clazz, Path dep) throws IOException {
+	final public static <E extends BuildUnit> E readUnchecked(Class<E> clazz, Path dep) throws IOException {
 	  E e = read(clazz, dep);
 	  return e;
 	}

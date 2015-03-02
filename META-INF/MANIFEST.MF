@@ -6,6 +6,7 @@ Bundle-Version: 1.2.0.qualifier
 Bundle-Activator: org.sugarj.common.Activator
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Eclipse-RegisterBuddy: org.strategoxt.imp.runtime, org.sugarj.cleardep.buildjava
 Export-Package: org.sugarj.cleardep,
  org.sugarj.cleardep.build,
  org.sugarj.cleardep.dependency,

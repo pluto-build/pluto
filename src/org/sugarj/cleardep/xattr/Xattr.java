@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.sugarj.cleardep.BuildUnit;
+import org.sugarj.common.FileCommands;
 import org.sugarj.common.path.AbsolutePath;
 import org.sugarj.common.path.Path;
 
@@ -48,7 +49,7 @@ public class Xattr {
   
   public Path getGenBy(Path p) throws IOException {
     String val = strategy.getXattr(p, "genBy");
-    if (val == null)
+    if (val == null || !FileCommands.exists(new AbsolutePath(val)))
       return null;
     return new AbsolutePath(val);
   }
