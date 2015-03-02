@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -99,6 +100,7 @@ public class CompilationUnit extends PersistableEntity {
 		externalFileDependencies = new HashMap<>();
 		generatedFiles = new HashMap<>();
 		state = State.INITIALIZED;
+		requirements = new ArrayList<>();
 	}
 
 	// *******************************
@@ -188,7 +190,6 @@ public class CompilationUnit extends PersistableEntity {
 	 * @see GraphUtils#repairGraph(Set)
 	 */
 	protected void removeModuleDependency(CompilationUnit mod) {
-		// Just remove from both maps because mod is exactly in one
 		this.moduleDependencies.remove(mod);
 	}
 
@@ -243,6 +244,10 @@ public class CompilationUnit extends PersistableEntity {
 	
 	public BuildRequirement<?, ?, ?, ?> getGeneratedBy() {
     return generatedBy;
+  }
+	
+	public List<Requirement> getRequirements() {
+    return requirements;
   }
 
 	public Set<Path> getCircularFileDependencies() throws IOException {
@@ -324,6 +329,23 @@ public class CompilationUnit extends PersistableEntity {
 	public static enum InconsistenyReason implements Comparable<InconsistenyReason>{
 	  NO_REASON, DEPENDENCIES_INCONSISTENT, FILES_NOT_CONSISTENT, OTHER, 
 	  
+	}
+	
+	public boolean isConsistentNonrequirements() {
+	  if (hasPersistentVersionChanged())
+      return false;
+    
+    if (!isFinished())
+      return false;
+
+    for (Entry<Path, Stamp> e : generatedFiles.entrySet())
+      if (!Util.stampEqual(e.getValue(), e.getKey()))
+        return false;
+
+    if (!isConsistentExtend())
+      return false;
+
+    return true;
 	}
 	  
 	public InconsistenyReason isConsistentShallowReason(Map<? extends Path, Stamp> editedSourceFiles) {
