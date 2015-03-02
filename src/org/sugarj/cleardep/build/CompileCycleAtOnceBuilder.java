@@ -43,12 +43,15 @@ public abstract class CompileCycleAtOnceBuilder<T extends Serializable, E extend
     ArrayList<T> inputs = new ArrayList<>(cycle.size());
     for (Pair<BuildUnit, BuildRequest<?, ?, ?, ?>> unitPairs : cycle) {
       if (unitPairs.b.factory != this.sourceFactory) {
+        System.out.println("Not the same factory");
         return false;
       }
       if (!(unitPairs.b.input instanceof ArrayList<?>)) {
+        System.out.println("No array list input");
         return false;
       }
-      if (!this.resultClass().equals(unitPairs.a)) {
+      if (!this.resultClass().equals(unitPairs.a.getClass())) {
+        System.out.println("Wrong result class");
         return false;
       }
       inputs.addAll((ArrayList<T>) unitPairs.b.input);

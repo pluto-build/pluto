@@ -57,6 +57,7 @@ public class BuildManager {
     int inputHash = DeepEquals.deepHashCode(builder.input);
     BuildStackEntry entry = null;
     try {
+      try {
       entry = this.requireStack.push(buildReq, dep);
 
       depResult.setState(BuildUnit.State.IN_PROGESS);
@@ -66,23 +67,25 @@ public class BuildManager {
 
       // call the actual builder
 
-      try {
+     
         builder.triggerBuild(depResult);
         if (!depResult.isFinished())
           depResult.setState(BuildUnit.State.SUCCESS);
         // build(depResult, input);
       } catch (BuildCycleException e) {
-
         if (e.isUnitForstInvokedOn(dep, buildReq.factory)) {
           if (!e.isLastCallAborted()) {
-            e.setLastCallAborted(true);
+           
             throw e;
           } else {
+            Log.log.log("Try to compile cycle", Log.CORE);
+            
             e.addCycleComponent(new Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>(depResult, buildReq));
             // Need to handle the cycle here
-            List<Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle = new ArrayList<>(e.getCycleComponents().size());
+            List<Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle = e.getCycleComponents();
             boolean cycleCompiled = executeCycle(cycle);
             if (!cycleCompiled) {
+              Log.log.logErr("Unable to find builder which can compile the cycle", Log.CORE);
               // Cycle cannot be handled
               throw new RequiredBuilderFailed(builder, depResult, e);
             }
@@ -96,7 +99,20 @@ public class BuildManager {
 
       }
 
-    } catch (RequiredBuilderFailed e) {
+    }  catch (BuildCycleException e) {
+      Log.log.log("Aborted because of detected cycle", Log.CORE);
+      if (e.isUnitForstInvokedOn(dep, buildReq.factory)) {
+        if (!e.isLastCallAborted()) {
+          e.setLastCallAborted(true);
+          throw e;
+        } else {
+          throw new AssertionError("should not get there");
+        }
+      } else {
+        e.addCycleComponent(new Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>(depResult, buildReq));
+        throw e;
+      }
+    }catch (RequiredBuilderFailed e) {
       BuilderResult required = e.getLastAddedBuilder();
       depResult.requires(required.result);
       depResult.setState(BuildUnit.State.FAILURE);
