@@ -37,11 +37,10 @@ public abstract class CompileCycleAtOnceBuilder<T extends Serializable, E extend
       return this.cyclePersistencePath(input);
     }
   }
-
+  
   @Override
-  protected boolean buildCycle(List<Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle) throws Throwable{
-    ArrayList<T> inputs = new ArrayList<>(cycle.size());
-    for (Pair<BuildUnit, BuildRequest<?, ?, ?, ?>> unitPairs : cycle) {
+  protected boolean canBuildCycle(List<Pair<? extends BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle) {
+    for (Pair<?extends BuildUnit, BuildRequest<?, ?, ?, ?>> unitPairs : cycle) {
       if (unitPairs.b.factory != this.sourceFactory) {
         System.out.println("Not the same factory");
         return false;
@@ -54,11 +53,18 @@ public abstract class CompileCycleAtOnceBuilder<T extends Serializable, E extend
         System.out.println("Wrong result class");
         return false;
       }
+    }
+    return true;
+  }
+
+  @Override
+  protected void buildCycle(List<Pair<? extends BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle) throws Throwable{
+    ArrayList<T> inputs = new ArrayList<>(cycle.size());
+    for (Pair<? extends BuildUnit, BuildRequest<?, ?, ?, ?>> unitPairs : cycle) {
       inputs.addAll((ArrayList<T>) unitPairs.b.input);
     }
     BuildRequest<ArrayList<T>, E, ? extends Builder<ArrayList<T>, E>, ?>  cycleRequirement = new BuildRequest<>(this.sourceFactory, inputs);
     manager.require(cycleRequirement);
-    return true;
   }
   
   @Override

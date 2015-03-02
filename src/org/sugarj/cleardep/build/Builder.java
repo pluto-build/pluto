@@ -41,8 +41,16 @@ public abstract class Builder<T extends Serializable, E extends BuildUnit> {
   protected abstract Stamper defaultStamper();
   protected abstract void build(E result) throws Throwable;
   
-  protected boolean buildCycle(List<Pair<BuildUnit,BuildRequest<?, ?, ?, ?>>> cycle) throws Throwable{
+  protected boolean canBuildCycle(List<Pair<? extends BuildUnit,BuildRequest<?, ?, ?, ?>>> cycle){
     return false;
+  }
+  
+  protected void buildCycle(List<Pair<? extends BuildUnit,BuildRequest<?, ?, ?, ?>>> cycle) throws Throwable{
+    throw new UnsupportedOperationException("Unable to build cycle");
+  }
+  
+  protected String cyclicTaskDescription(List<Pair<? extends BuildUnit,BuildRequest<?, ?, ?, ?>>> cycle) {
+    return null;
   }
   
   private E result;

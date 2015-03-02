@@ -40,13 +40,14 @@ public class BuildManager {
     this.consistentUnits = new HashSet<>();
   }
 
-  protected boolean executeCycle(List<Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle) throws Throwable {
-    for (Pair<BuildUnit, BuildRequest<?, ?, ?, ?>> req : cycle) {
-      if (req.b.createBuilder(this).buildCycle(cycle)) {
-        return true;
+  protected Builder<?, ?> getCyclicBuilder(List<Pair<? extends BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle) {
+    for (Pair<? extends BuildUnit, BuildRequest<?, ?, ?, ?>> req : cycle) {
+      Builder<?, ?> tmp = req.b.createBuilder(this);
+      if (tmp.canBuildCycle(cycle)) {
+        return tmp;
       }
     }
-    return false;
+    return null;
   }
 
   protected <T extends Serializable, E extends BuildUnit, B extends Builder<T, E>, F extends BuilderFactory<T, E, B>> E executeBuilder(Builder<T, E> builder, Path dep, BuildRequest<T, E, B, F> buildReq) throws IOException {
@@ -84,20 +85,22 @@ public class BuildManager {
           depResult.setState(BuildUnit.State.SUCCESS);
         // build(depResult, input);
       } catch (BuildCycleException e) {
-        // Calling the builder was interrupted by a detected build cycle
-        // Check if this require is the begin of the cycle
         if (e.isUnitFirstInvokedOn(dep, buildReq.factory)) {
-          Log.log.log("Try to compile cycle", Log.CORE);
+          if (taskDescription != null)
+            Log.log.endTask();
+          taskDescription = "Try to compile cycle";
+          Log.log.beginTask(taskDescription, Log.CORE);
           e.addCycleComponent(new Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>(depResult, buildReq));
 
           // Get the cycle and try to compile it
-          List<Pair<BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle = e.getCycleComponents();
-          boolean cycleCompiled = executeCycle(cycle);
-          if (!cycleCompiled) {
+          List<Pair<? extends BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle = e.getCycleComponents();
+          Builder<?, ?> cycleBuilder = getCyclicBuilder(cycle);
+          if (cycleBuilder == null) {
             Log.log.logErr("Unable to find builder which can compile the cycle", Log.CORE);
             // Cycle cannot be handled
             throw new RequiredBuilderFailed(builder, depResult, e);
           }
+          cycleBuilder.buildCycle(cycle);
           // Do not throw anything here because cycle is completed successfully.
         } else {
           throw e;
