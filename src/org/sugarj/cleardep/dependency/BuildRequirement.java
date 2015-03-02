@@ -1,11 +1,10 @@
 package org.sugarj.cleardep.dependency;
 
-import java.io.Serializable;
-
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.BuildRequest;
+import org.sugarj.cleardep.output.BuildOutput;
 
-public class BuildRequirement<Out extends Serializable> implements Requirement {
+public class BuildRequirement<Out extends BuildOutput> implements Requirement {
   private static final long serialVersionUID = 6148973732378610648L;
 
   public final BuildUnit<Out> unit;

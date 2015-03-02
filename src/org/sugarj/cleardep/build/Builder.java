@@ -5,11 +5,12 @@ import java.io.Serializable;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.State;
+import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.common.path.Path;
 
-public abstract class Builder<In extends Serializable, Out extends Serializable> {
+public abstract class Builder<In extends Serializable, Out extends BuildOutput> {
   protected final In input;
   
   public Builder(In input) {
@@ -47,7 +48,7 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
   
   protected <
   In_ extends Serializable, 
-  Out_ extends Serializable, 
+  Out_ extends BuildOutput, 
   B_ extends Builder<In_,Out_>,
   F_ extends BuilderFactory<In_, Out_, B_>,
   SubIn_ extends In_
@@ -60,7 +61,7 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
   
   protected <
   In_ extends Serializable, 
-  Out_ extends Serializable, 
+  Out_ extends BuildOutput, 
   B_ extends Builder<In_,Out_>,
   F_ extends BuilderFactory<In_, Out_, B_>
   > Out_ require(BuildRequest<In_, Out_, B_, F_> req) throws IOException {

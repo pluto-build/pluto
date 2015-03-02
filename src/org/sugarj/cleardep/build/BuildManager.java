@@ -11,6 +11,7 @@ import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.dependency.FileRequirement;
 import org.sugarj.cleardep.dependency.Requirement;
+import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
@@ -38,7 +39,7 @@ public class BuildManager {
 
   protected <
   In extends Serializable, 
-  Out extends Serializable, 
+  Out extends BuildOutput, 
   B extends Builder<In, Out>, 
   F extends BuilderFactory<In, Out, B>
     > BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
@@ -102,7 +103,7 @@ public class BuildManager {
 
   public <
   In extends Serializable, 
-  Out extends Serializable, 
+  Out extends BuildOutput, 
   B extends Builder<In, Out>, 
   F extends BuilderFactory<In, Out, B>
   > BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
@@ -145,7 +146,7 @@ public class BuildManager {
     }
   }
   
-  private <Out extends Serializable> BuildUnit<Out> assertConsistency(BuildUnit<Out> depResult) {
+  private <Out extends BuildOutput> BuildUnit<Out> assertConsistency(BuildUnit<Out> depResult) {
 //    if (!depResult.isConsistent(null))
 //      throw new AssertionError("Build manager does not guarantee soundness");
     return depResult;
