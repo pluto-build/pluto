@@ -4,6 +4,7 @@ import static org.sugarj.cleardep.CompilationUnit.InconsistenyReason.FILES_NOT_C
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +15,10 @@ import org.sugarj.cleardep.CompilationUnit.InconsistenyReason;
 import org.sugarj.cleardep.GraphUtils;
 import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
 import org.sugarj.cleardep.stamp.Stamp;
+import org.sugarj.cleardep.xattr.Xattr;
+import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
+import org.sugarj.common.path.AbsolutePath;
 import org.sugarj.common.path.Path;
 
 import com.cedarsoftware.util.DeepEquals;
@@ -92,6 +96,26 @@ public class BuildManager {
     return depResult;
   }
 
+  private <T extends Serializable, E extends CompilationUnit> void setUpMetaDependency(Builder<T, E> builder, E depResult) throws IOException {
+    if (depResult != null) {
+      // require the meta builder...
+      URL res = builder.getClass().getResource(builder.getClass().getSimpleName() + ".class");
+      Path builderClass = new AbsolutePath(res.getFile());
+      Path depFile = Xattr.getDefault().getGenBy(builderClass);
+      if (!FileCommands.exists(depFile)) {
+        Log.log.logErr("Warning: Builder was not built using meta builder. Consistency for builder changes are not tracked...", Log.DETAIL);
+      } else {
+        CompilationUnit metaBuilder = CompilationUnit.readUnchecked(CompilationUnit.class, depFile);
+
+        depResult.addModuleDependency(metaBuilder);
+        depResult.addExternalFileDependency(builderClass);
+        for (Path p: metaBuilder.getExternalFileDependencies()) {
+          depResult.addExternalFileDependency(p);
+        }
+      }
+    }
+  }
+  
   protected
   < T extends Serializable, 
     E extends CompilationUnit,
@@ -112,6 +136,8 @@ public class BuildManager {
       if (taskDescription != null)
         Log.log.beginTask(taskDescription, Log.CORE);
 
+      setUpMetaDependency(builder, depResult);
+      
       // call the actual builder
 
       builder.triggerBuild(depResult);
@@ -162,12 +188,13 @@ public class BuildManager {
 
     Path dep = builder.persistentPath();
     E depResult = CompilationUnit.read(builder.resultClass(), dep, buildReq);
-
+    
     if (depResult == null) {
       this.inconsistencyCache.set(dep, InconsistenyReason.OTHER);
     } else if (this.isConsistent(depResult)) {
       if (!depResult.isConsistent(this.editedSourceFiles))
         throw new AssertionError("BuildManager does not guarantee soundness");
+      
       return depResult;
     }
 

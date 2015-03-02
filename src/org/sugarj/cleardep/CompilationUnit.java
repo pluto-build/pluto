@@ -66,6 +66,11 @@ public class CompilationUnit extends PersistableEntity {
 		e.generatedBy = generatedBy;
 		return e;
 	}
+	
+	final public static <E extends CompilationUnit> E readUnchecked(Class<E> clazz, Path dep) throws IOException {
+	  E e = read(clazz, dep);
+	  return e;
+	}
 
 	final public static <E extends CompilationUnit> E read(Class<E> clazz, Path dep, BuildRequirement<?, E, ?, ?> generatedBy) throws IOException {
 	  E e = read(clazz, dep);
