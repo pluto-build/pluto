@@ -8,13 +8,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
-import org.sugarj.cleardep.build.BuildRequirement;
+import org.sugarj.cleardep.dependency.BuildRequirement;
+import org.sugarj.cleardep.dependency.FileRequirement;
+import org.sugarj.cleardep.dependency.Requirement;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.cleardep.stamp.Util;
@@ -53,6 +56,7 @@ public class CompilationUnit extends PersistableEntity {
 	protected Map<RelativePath, Stamp> sourceArtifacts;
 	protected Map<Path, Stamp> externalFileDependencies;
 	protected Map<Path, Stamp> generatedFiles;
+	protected List<Requirement> requirements;
 	
 	protected BuildRequirement<?, ?, ?, ?> generatedBy;
 
@@ -107,6 +111,7 @@ public class CompilationUnit extends PersistableEntity {
 
 	public void addSourceArtifact(RelativePath file, Stamp stampOfFile) {
 		sourceArtifacts.put(file, stampOfFile);
+		requirements.add(new FileRequirement(file, stampOfFile));
 		checkUnitDependency(file);
 	}
 	
@@ -116,6 +121,7 @@ public class CompilationUnit extends PersistableEntity {
 
 	public void addExternalFileDependency(Path file, Stamp stampOfFile) {
 		externalFileDependencies.put(file, stampOfFile);
+		requirements.add(new FileRequirement(file, stampOfFile));
 		checkUnitDependency(file);
 	}
 	
@@ -172,6 +178,7 @@ public class CompilationUnit extends PersistableEntity {
 	
 	public void addModuleDependency(CompilationUnit mod) {
 	  Objects.requireNonNull(mod);
+	  requirements.add(mod.getGeneratedBy());
 		this.moduleDependencies.put(mod, mod.getGeneratedBy());
 	}
 

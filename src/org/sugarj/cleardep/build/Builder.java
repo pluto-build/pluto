@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 import org.sugarj.cleardep.CompilationUnit;
+import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.common.path.Path;
 
@@ -69,5 +70,11 @@ public abstract class Builder<T extends Serializable, E extends CompilationUnit>
     E_ e = manager.require(req);
     result.addModuleDependency(e);
     return e;
+  }
+  
+  protected void require(BuildRequirement<?, ?, ?, ?>[] reqs) throws IOException {
+    if (reqs != null)
+      for (BuildRequirement<?, ?, ?, ?> req : reqs)
+        require(req);
   }
 }

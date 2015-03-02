@@ -13,6 +13,7 @@ import org.sugarj.cleardep.CompilationUnit;
 import org.sugarj.cleardep.CompilationUnit.InconsistenyReason;
 import org.sugarj.cleardep.GraphUtils;
 import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
+import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
