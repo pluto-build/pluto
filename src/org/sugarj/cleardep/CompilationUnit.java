@@ -6,16 +6,14 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
+import org.sugarj.cleardep.build.BuildRequest;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.dependency.FileRequirement;
 import org.sugarj.cleardep.dependency.Requirement;
@@ -53,26 +51,26 @@ public class CompilationUnit extends PersistableEntity {
 
 	protected Stamper defaultStamper;
 	
-	protected Map<CompilationUnit, BuildRequirement<?, ?, ?, ?>> moduleDependencies;
-	protected Map<RelativePath, Stamp> sourceArtifacts;
-	protected Map<Path, Stamp> externalFileDependencies;
-	protected Map<Path, Stamp> generatedFiles;
 	protected List<Requirement> requirements;
-	
-	protected BuildRequirement<?, ?, ?, ?> generatedBy;
+	protected Set<FileRequirement> generatedFiles;
 
+	protected transient Set<CompilationUnit> requiredUnits;
+	protected transient Set<Path> requiredFiles;
+	
+	protected BuildRequest<?, ?, ?, ?> generatedBy;
+	
 	// **************************
 	// Methods for initialization
 	// **************************
 
-	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Path dep, BuildRequirement<?, E, ?, ?> generatedBy) throws IOException {
+	public static <E extends CompilationUnit> E create(Class<E> cl, Stamper stamper, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
 		E e = PersistableEntity.create(cl, dep);
 		e.defaultStamper = stamper;
 		e.generatedBy = generatedBy;
 		return e;
 	}
 
-	final public static <E extends CompilationUnit> E read(Class<E> clazz, Path dep, BuildRequirement<?, E, ?, ?> generatedBy) throws IOException {
+	final public static <E extends CompilationUnit> E read(Class<E> clazz, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
 	  E e = read(clazz, dep);
 	  if (e != null && e.generatedBy.deepEquals(generatedBy)) {
 	    e.generatedBy = generatedBy;
@@ -86,7 +84,7 @@ public class CompilationUnit extends PersistableEntity {
 	 * 
 	 * @return null if no consistent compilation unit is available.
 	 */
-  public static <E extends CompilationUnit> E readConsistent(Class<E> clazz, Map<? extends Path, Stamp> editedSourceFiles, Path dep, BuildRequirement<?, E, ?, ?> generatedBy) throws IOException {
+  public static <E extends CompilationUnit> E readConsistent(Class<E> clazz, Map<? extends Path, Stamp> editedSourceFiles, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
 	  E e = read(clazz, dep, generatedBy);
 	  if (e != null && e.isConsistent(editedSourceFiles))
 	    return e;
@@ -95,12 +93,13 @@ public class CompilationUnit extends PersistableEntity {
 
 	@Override
 	protected void init() {
-		sourceArtifacts = new HashMap<>();
-		moduleDependencies = new HashMap<>();
-		externalFileDependencies = new HashMap<>();
-		generatedFiles = new HashMap<>();
+	  requirements = new ArrayList<>();
+	  generatedFiles = new HashSet<>();
+	  
+	  requiredUnits = new HashSet<>();
+		requiredFiles = new HashSet<>();
+
 		state = State.INITIALIZED;
-		requirements = new ArrayList<>();
 	}
 
 	// *******************************
@@ -112,8 +111,8 @@ public class CompilationUnit extends PersistableEntity {
 	}
 
 	public void addSourceArtifact(RelativePath file, Stamp stampOfFile) {
-		sourceArtifacts.put(file, stampOfFile);
 		requirements.add(new FileRequirement(file, stampOfFile));
+		requiredFiles.add(file);
 		checkUnitDependency(file);
 	}
 	
@@ -122,8 +121,8 @@ public class CompilationUnit extends PersistableEntity {
 	}
 
 	public void addExternalFileDependency(Path file, Stamp stampOfFile) {
-		externalFileDependencies.put(file, stampOfFile);
 		requirements.add(new FileRequirement(file, stampOfFile));
+		requiredFiles.add(file);
 		checkUnitDependency(file);
 	}
 	
@@ -169,7 +168,7 @@ public class CompilationUnit extends PersistableEntity {
 	}
 
 	public void addGeneratedFile(Path file, Stamp stampOfFile) {
-		generatedFiles.put(file, stampOfFile);
+		generatedFiles.add(new FileRequirement(file, stampOfFile));
 		try {
 		  if (FileCommands.exists(file)) 
 		    xattr.setGenBy(file, this);
@@ -180,17 +179,18 @@ public class CompilationUnit extends PersistableEntity {
 	
 	public void addModuleDependency(CompilationUnit mod) {
 	  Objects.requireNonNull(mod);
-	  requirements.add(mod.getGeneratedBy());
-		this.moduleDependencies.put(mod, mod.getGeneratedBy());
+	  requirements.add(new BuildRequirement(mod, mod.getGeneratedBy()));
+	  requiredUnits.add(mod);
 	}
 
 	/**
-	
+	 * @deprecated Probably doesn't work any longer.
 	 * @param mod
 	 * @see GraphUtils#repairGraph(Set)
 	 */
+	@Deprecated
 	protected void removeModuleDependency(CompilationUnit mod) {
-		this.moduleDependencies.remove(mod);
+		this.requiredUnits.remove(mod);
 	}
 
 
@@ -226,54 +226,57 @@ public class CompilationUnit extends PersistableEntity {
     });
 	}
 
-	public Set<RelativePath> getSourceArtifacts() {
-		return sourceArtifacts.keySet();
+	public Set<Path> getSourceArtifacts() {
+		return requiredFiles;
 	}
 
 	public Set<CompilationUnit> getModuleDependencies() {
-		return moduleDependencies.keySet();
+		return requiredUnits;
 	}
 
 	public Set<Path> getExternalFileDependencies() {
-		return externalFileDependencies.keySet();
+		return requiredFiles;
 	}
 
 	public Set<Path> getGeneratedFiles() {
-		return generatedFiles.keySet();
+	  Set<Path> set = new HashSet<>();
+	  for (FileRequirement freq : generatedFiles)
+	    set.add(freq.path);
+		return set;
 	}
-	
-	public BuildRequirement<?, ?, ?, ?> getGeneratedBy() {
-    return generatedBy;
-  }
 	
 	public List<Requirement> getRequirements() {
     return requirements;
   }
+	
+	public BuildRequest<?, ?, ?, ?> getGeneratedBy() {
+    return generatedBy;
+  }
 
-	public Set<Path> getCircularFileDependencies() throws IOException {
-		Set<Path> dependencies = new HashSet<Path>();
-		Set<CompilationUnit> visited = new HashSet<>();
-		LinkedList<CompilationUnit> queue = new LinkedList<>();
-		queue.add(this);
-
-		while (!queue.isEmpty()) {
-			CompilationUnit res = queue.pop();
-			visited.add(res);
-
-			for (Path p : res.generatedFiles.keySet())
-				if (!dependencies.contains(p) && FileCommands.exists(p))
-					dependencies.add(p);
-			for (Path p : res.externalFileDependencies.keySet())
-				if (!dependencies.contains(p) && FileCommands.exists(p))
-					dependencies.add(p);
-
-			for (CompilationUnit nextDep : res.getModuleDependencies())
-				if (!visited.contains(nextDep) && !queue.contains(nextDep))
-					queue.addFirst(nextDep);
-		}
-
-		return dependencies;
-	}
+//	public Set<Path> getCircularFileDependencies() throws IOException {
+//		Set<Path> dependencies = new HashSet<Path>();
+//		Set<CompilationUnit> visited = new HashSet<>();
+//		LinkedList<CompilationUnit> queue = new LinkedList<>();
+//		queue.add(this);
+//
+//		while (!queue.isEmpty()) {
+//			CompilationUnit res = queue.pop();
+//			visited.add(res);
+//
+//			for (Path p : res.generatedFiles.keySet())
+//				if (!dependencies.contains(p) && FileCommands.exists(p))
+//					dependencies.add(p);
+//			for (Path p : res.requiredFiles.keySet())
+//				if (!dependencies.contains(p) && FileCommands.exists(p))
+//					dependencies.add(p);
+//
+//			for (CompilationUnit nextDep : res.getModuleDependencies())
+//				if (!visited.contains(nextDep) && !queue.contains(nextDep))
+//					queue.addFirst(nextDep);
+//		}
+//
+//		return dependencies;
+//	}
 
 
 	// ********************************************
@@ -305,17 +308,16 @@ public class CompilationUnit extends PersistableEntity {
 	}
 
 	protected boolean isConsistentWithSourceArtifacts(Map<? extends Path, Stamp> editedSourceFiles) {
-//		if (sourceArtifacts.isEmpty())
-//			return false;
-
 		boolean hasEdits = editedSourceFiles != null;
-		for (Entry<RelativePath, Stamp> e : sourceArtifacts.entrySet()) {
-		  Stamp editStamp = hasEdits ? editedSourceFiles.get(e.getKey()) : null;
-			if (editStamp != null && !editStamp.equals(e.getValue())) {
-				return false;
-			} else if (editStamp == null && !Util.stampEqual(e.getValue(), e.getKey())) {
-				return false;
-			}
+		for (Requirement req : requirements) 
+		  if (req instanceof FileRequirement) {
+		    FileRequirement freq = (FileRequirement) req;
+  		  Stamp editStamp = hasEdits ? editedSourceFiles.get(freq.path) : null;
+  			if (editStamp != null && !editStamp.equals(freq.stamp)) {
+  				return false;
+  			} else if (editStamp == null && !Util.stampEqual(freq.stamp, freq.path)) {
+  				return false;
+  			}
 		}
 
 		return true;
@@ -338,8 +340,8 @@ public class CompilationUnit extends PersistableEntity {
     if (!isFinished())
       return false;
 
-    for (Entry<Path, Stamp> e : generatedFiles.entrySet())
-      if (!Util.stampEqual(e.getValue(), e.getKey()))
+    for (FileRequirement freq : generatedFiles)
+      if (!freq.isConsistent())
         return false;
 
     if (!isConsistentExtend())
@@ -355,40 +357,20 @@ public class CompilationUnit extends PersistableEntity {
 		if (!isFinished())
       return InconsistenyReason.OTHER;
 
-		if (!isConsistentWithSourceArtifacts(editedSourceFiles))
-			return InconsistenyReason.FILES_NOT_CONSISTENT;
+		for (FileRequirement freq : generatedFiles)
+      if (!freq.isConsistent())
+    		return InconsistenyReason.FILES_NOT_CONSISTENT;
 
-		for (Entry<Path, Stamp> e : generatedFiles.entrySet())
-			if (!Util.stampEqual(e.getValue(), e.getKey()))
-				return InconsistenyReason.FILES_NOT_CONSISTENT;
-
-		for (Entry<Path, Stamp> e : externalFileDependencies.entrySet())
-			if (!Util.stampEqual(e.getValue(), e.getKey()))
-				return InconsistenyReason.FILES_NOT_CONSISTENT;
-
-		if (!isConsistentModuleDependencies())
-		  return InconsistenyReason.DEPENDENCIES_INCONSISTENT;
+		for (Requirement req : requirements)
+		  if (req instanceof FileRequirement && !((FileRequirement) req).isConsistent())
+		    return InconsistenyReason.FILES_NOT_CONSISTENT;
+		  else if (req instanceof BuildRequirement && !((BuildRequirement) req).isConsistent())
+		    return InconsistenyReason.DEPENDENCIES_INCONSISTENT;
 		
 		if (!isConsistentExtend())
 			return InconsistenyReason.OTHER;
 
 		return InconsistenyReason.NO_REASON;
-	}
-
-	public boolean isConsistentModuleDependencies() {
-		if (!this.isConsistentModuleDependenciesMap(this.moduleDependencies)) {
-			return false;
-		}
-//		return this.isConsistentModuleDependenciesMap(this.circularModuleDependencies);
-		return true;
-	}
-
-	private boolean isConsistentModuleDependenciesMap(Map<CompilationUnit, BuildRequirement<?, ?, ?, ?>> unitMap) {
-		for (Entry<CompilationUnit, BuildRequirement<?, ?, ?, ?>> e : unitMap.entrySet())
-		  if (!e.getKey().getGeneratedBy().deepEquals(e.getValue()))
-		    return false;
-		  
-		return true;
 	}
 
 	public boolean isConsistent(final Map<? extends Path, Stamp> editedSourceFiles) {
@@ -475,29 +457,20 @@ public class CompilationUnit extends PersistableEntity {
 	@SuppressWarnings("unchecked")
 	protected void readEntity(ObjectInputStream in, Stamper stamper) throws IOException, ClassNotFoundException {
 	  defaultStamper = stamper;
+	  
 	  state = (State) in.readObject();
-		sourceArtifacts = (Map<RelativePath, Stamp>) in.readObject();
-		generatedFiles = (Map<Path, Stamp>) in.readObject();
-		externalFileDependencies = (Map<Path, Stamp>) in.readObject();
-		requirements = (List<Requirement>) in.readObject();
-
-		int moduleDepencyCount = in.readInt();
-		moduleDependencies = new HashMap<>(moduleDepencyCount);
-		for (int i = 0; i < moduleDepencyCount; i++) {
-			String clName = (String) in.readObject();
-			Class<? extends CompilationUnit> cl = (Class<? extends CompilationUnit>) getClass().getClassLoader().loadClass(clName);
-			Path path = (Path) in.readObject();
-			CompilationUnit mod = PersistableEntity.read(cl, path);
-			BuildRequirement<?, ?, ?, ?> req = (BuildRequirement<?, ?, ?, ?>) in.readObject();
-			if (mod == null)
-				throw new IOException("Required module cannot be read: " + path);
-			moduleDependencies.put(mod, req);
-		}
-
-		boolean hasGeneratedBy = in.readBoolean();
-		if (hasGeneratedBy) {
-		  this.generatedBy = (BuildRequirement<?, ?, ?, ?>) in.readObject();
-		}
+	  requirements = (List<Requirement>) in.readObject();
+	  generatedFiles = (Set<FileRequirement>) in.readObject();
+	  generatedBy = (BuildRequest<?, ?, ?, ?>) in.readObject();
+	  
+	  requiredFiles = new HashSet<>();
+	  requiredUnits = new HashSet<>();
+	  
+	  for (Requirement req : requirements)
+	    if (req instanceof FileRequirement)
+	      requiredFiles.add(((FileRequirement) req).path);
+	    else if (req instanceof BuildRequirement)
+	      requiredUnits.add(((BuildRequirement) req).unit);
 	}
 	
 	public void write() throws IOException {
@@ -507,21 +480,8 @@ public class CompilationUnit extends PersistableEntity {
 	@Override
 	protected void writeEntity(ObjectOutputStream out) throws IOException {
 	  out.writeObject(state);
-		out.writeObject(sourceArtifacts = Collections.unmodifiableMap(sourceArtifacts));
-		out.writeObject(generatedFiles = Collections.unmodifiableMap(generatedFiles));
-		out.writeObject(externalFileDependencies = Collections.unmodifiableMap(externalFileDependencies));
-		out.writeObject(requirements = Collections.unmodifiableList(requirements));
-
-		out.writeInt(moduleDependencies.size());
-		for (Entry<CompilationUnit, BuildRequirement<?, ?, ?, ?>> entry : moduleDependencies.entrySet()) {
-			CompilationUnit mod = entry.getKey();
-			assert mod.isPersisted() : "Required compilation units must be persisted.";
-			out.writeObject(mod.getClass().getCanonicalName());
-			out.writeObject(mod.persistentPath);
-			out.writeObject(entry.getValue());
-		}
-
-		out.writeBoolean(this.generatedBy != null);
+	  out.writeObject(requirements = Collections.unmodifiableList(requirements));
+		out.writeObject(generatedFiles = Collections.unmodifiableSet(generatedFiles));
 		out.writeObject(generatedBy);
 	}
 }

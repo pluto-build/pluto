@@ -7,6 +7,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.sugarj.cleardep.stamp.Stamp;
+import org.sugarj.common.FileCommands;
+import org.sugarj.common.path.Path;
 import org.sugarj.common.path.RelativePath;
 
 public class BuildSchedule {
@@ -112,8 +114,8 @@ public class BuildSchedule {
       }
       String s = "Task_" + id + "_(" + reqs + ")[";
       for (CompilationUnit u : this.unitsToCompile)
-        for (RelativePath p : u.getSourceArtifacts())
-          s += p.getRelativePath() + ", ";
+        for (Path p : u.getSourceArtifacts())
+          s += FileCommands.tryGetRelativePath(p) + ", ";
       s += "]";
       return s;
     }

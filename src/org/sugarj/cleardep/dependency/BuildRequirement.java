@@ -1,44 +1,26 @@
 package org.sugarj.cleardep.dependency;
 
-import java.io.Serializable;
-
 import org.sugarj.cleardep.CompilationUnit;
-import org.sugarj.cleardep.build.BuildManager;
-import org.sugarj.cleardep.build.Builder;
-import org.sugarj.cleardep.build.BuilderFactory;
+import org.sugarj.cleardep.build.BuildRequest;
 
-import com.cedarsoftware.util.DeepEquals;
+public class BuildRequirement implements Requirement {
+  private static final long serialVersionUID = 6148973732378610648L;
 
-public class BuildRequirement<
-  T extends Serializable, 
-  E extends CompilationUnit, 
-  B extends Builder<T, E>,
-  F extends BuilderFactory<T, E, B>
-> implements Serializable, Requirement {
-  private static final long serialVersionUID = -1598265221666746521L;
+  public final CompilationUnit unit;
+  public final BuildRequest<?, ?, ?, ?> req;
   
-  public final F factory;
-  public final T input;
-
-  public BuildRequirement(F factory, T input) {
-    this.factory = factory;
-    this.input = input;
-  }
-
-  public Builder<T, E> createBuilder(BuildManager manager) {
-    return factory.makeBuilder(input, manager);
+  public BuildRequirement(CompilationUnit unit, BuildRequest<?, ?, ?, ?> req) {
+    this.unit = unit;
+    this.req = req;
   }
   
-  public boolean deepEquals(Object o) {
-    return DeepEquals.deepEquals(this, o);
-  }
-  
-  public int deepHashCode() {
-    return DeepEquals.deepHashCode(this);
+  @Override
+  public boolean isConsistent() {
+    return unit.getGeneratedBy().deepEquals(req);
   }
   
   @Override
   public String toString() {
-    return "BuildReq(" + factory.getClass().getName() + ")";
+    return req.toString();
   }
 }

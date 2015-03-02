@@ -22,7 +22,7 @@ public class BuildManager {
   private final Map<? extends Path, Stamp> editedSourceFiles;
   private RequireStack requireStack;
 
-  private BuildRequirement<?, ?, ?, ?> rebuildTriggeredBy = null;
+  private BuildRequest<?, ?, ?, ?> rebuildTriggeredBy = null;
 
   private Set<CompilationUnit> consistentUnits;
   
@@ -41,7 +41,7 @@ public class BuildManager {
     E extends CompilationUnit,
     B extends Builder<T, E>,
     F extends BuilderFactory<T, E, B>
-    > E executeBuilder(Builder<T, E> builder, Path dep, BuildRequirement<T, E, B, F> buildReq) throws IOException {
+    > E executeBuilder(Builder<T, E> builder, Path dep, BuildRequest<T, E, B, F> buildReq) throws IOException {
 
     E depResult = CompilationUnit.create(builder.resultClass(), builder.defaultStamper(), dep, buildReq);
     
@@ -100,7 +100,7 @@ public class BuildManager {
     return depResult;
   }
 
-  public <T extends Serializable, E extends CompilationUnit, B extends Builder<T, E>, F extends BuilderFactory<T, E, B>> E require(BuildRequirement<T, E, B, F> buildReq) throws IOException {
+  public <T extends Serializable, E extends CompilationUnit, B extends Builder<T, E>, F extends BuilderFactory<T, E, B>> E require(BuildRequest<T, E, B, F> buildReq) throws IOException {
     if (rebuildTriggeredBy == null) {
       rebuildTriggeredBy = buildReq;
       Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
@@ -126,9 +126,11 @@ public class BuildManager {
           if (!freq.isConsistent())
             return executeBuilder(builder, dep, buildReq);
         }
-        else if (req instanceof BuildRequirement<?, ?, ?, ?>) {
-          BuildRequirement<?, ?, ?, ?> breq = (BuildRequirement<?, ?, ?, ?>) req;
-          require(breq);
+        else if (req instanceof BuildRequirement) {
+          BuildRequirement breq = (BuildRequirement) req;
+          if (!breq.isConsistent())
+            return executeBuilder(builder, dep, buildReq);
+          require(breq.req);
         }
       }
      
