@@ -65,29 +65,30 @@ public abstract class CompileCycleAtOnceBuilder<T extends Serializable, Out exte
       inputs.addAll((ArrayList<T>) unitPairs.b.input);
     }
     BuildRequest<ArrayList<T>, Out, ? extends Builder<ArrayList<T>, Out>, ?>  cycleRequirement = new BuildRequest<>(this.sourceFactory, inputs);
-    manager.require(cycleRequirement);
+    require(cycleRequirement);
   }
   
   @Override
-  protected void build(E result) throws Throwable {
+  protected Out build(BuildUnit<Out> result) throws Throwable {
     if (this.input.size() == 1) {
-      buildSingleton(result);
+      return buildSingleton(result);
     } else {
       for (T cyclicInput : this.input) {
-        E cyclicUnit = BuildUnit.create(singletonPersistencePath(cyclicInput), new BuildRequest<>(this.sourceFactory, singletonArrayList(cyclicInput)), defaultStamper());
+        BuildUnit<Out> cyclicUnit = BuildUnit.create(singletonPersistencePath(cyclicInput), new BuildRequest<>(this.sourceFactory, singletonArrayList(cyclicInput)), defaultStamper());
         cyclicUnit.dependsOn(result);
         result.dependsOn(cyclicUnit);
         cyclicUnit.setState(State.finished(true));
         cyclicUnit.write();
       }
-      buildCycle(result);
+     return  buildCycle(result);
     }
   }
   
-  protected void buildSingleton(E result) throws Throwable{
-    this.buildCycle(result);
+  protected Out buildSingleton(BuildUnit<Out> result) throws Throwable{
+    return this.buildCycle(result);
   }
   
-  protected abstract void buildCycle(E result) throws Throwable;
+  protected abstract Out buildCycle(BuildUnit<Out> result) throws Throwable;
+  
 
 }
