@@ -27,10 +27,10 @@ public class LastModifiedStamper implements Stamper {
     
     if (p.getFile().isDirectory()) {
       Map<Path, Stamp> stamps = new HashMap<>();
-      stamps.put(p, stampOf(p));
+      stamps.put(p, new ValueStamp<>(this, p.getFile().lastModified()));
       
       for (Path sub : FileCommands.listFilesRecursive(p))
-        stamps.put(sub, stampOf(sub));
+        stamps.put(sub, new ValueStamp<>(this, sub.getFile().lastModified()));
       
       return new ValueStamp<>(this, stamps);
     }
