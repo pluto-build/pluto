@@ -56,8 +56,8 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 
 	protected Out buildResult;
 
-	protected transient Set<BuildUnit<?>> requiredUnits;
-	protected transient Set<Path> requiredFiles;
+	private transient Set<BuildUnit<?>> requiredUnits;
+	private transient Set<Path> requiredFiles;
 	
 	protected BuildRequest<?, Out, ?, ?> generatedBy;
 	
@@ -70,6 +70,8 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
     BuildUnit<Out> e = PersistableEntity.create(BuildUnit.class, dep);
 		e.defaultStamper = stamper;
 		e.generatedBy = generatedBy;
+		if (e.getModuleDependencies() == null)
+      System.out.println(e);
 		return e;
 	}
 
@@ -78,6 +80,8 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	  BuildUnit<Out> e = PersistableEntity.read(BuildUnit.class, dep);
 	  if (e != null && e.generatedBy.deepEquals(generatedBy)) {
 	    e.generatedBy = generatedBy;
+	    if (e.getModuleDependencies() == null)
+	      System.out.println(e);
 	    return e;
 	  }
     return null;
@@ -90,8 +94,11 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	 */
   public static <Out extends BuildOutput> BuildUnit<Out> readConsistent(Path dep, BuildRequest<?, Out, ?, ?> generatedBy, Map<? extends Path, Stamp> editedSourceFiles) throws IOException {
 	  BuildUnit<Out> e = read(dep, generatedBy);
-	  if (e != null && e.isConsistent(editedSourceFiles))
+	  if (e != null && e.isConsistent(editedSourceFiles)) {
+	    if (e.getModuleDependencies() == null)
+        System.out.println(e);
 	    return e;
+	  }
 	  return null;
   }
 
@@ -225,11 +232,23 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	}
 
 	public Set<BuildUnit<?>> getModuleDependencies() {
+	  if (requiredUnits == null) {
+	    requiredUnits = new HashSet<>();
+	    for (Requirement req : requirements)
+	      if (req instanceof BuildRequirement)
+	        requiredUnits.add(((BuildRequirement<?>) req).unit);
+	  }
 		return requiredUnits;
 	}
 
 	public Set<Path> getExternalFileDependencies() {
-		return requiredFiles;
+	  if (requiredFiles == null) {
+      requiredFiles = new HashSet<>();
+      for (Requirement req : requirements)
+        if (req instanceof FileRequirement)
+          requiredFiles.add(((FileRequirement) req).path);
+    }
+	  return requiredFiles;
 	}
 
 	public Set<Path> getGeneratedFiles() {
@@ -435,6 +454,8 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
       for (BuildUnit<?> dep : toVisit.getModuleDependencies()) {
         if (!seenUnits.contains(dep)) {
           queue.add(dep);
+          if (dep.getModuleDependencies() == null)
+            System.out.println(dep);
           seenUnits.add(dep);
         }
       }
@@ -461,15 +482,6 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	  generatedFiles = (Set<FileRequirement>) in.readObject();
 	  generatedBy = (BuildRequest<?, Out, ?, ?>) in.readObject();
 	  buildResult = (Out) in.readObject();
-	  
-	  requiredFiles = new HashSet<>();
-	  requiredUnits = new HashSet<>();
-	  
-	  for (Requirement req : requirements)
-	    if (req instanceof FileRequirement)
-	      requiredFiles.add(((FileRequirement) req).path);
-	    else if (req instanceof BuildRequirement)
-	      requiredUnits.add(((BuildRequirement<?>) req).unit);
 	}
 	
 	public void write() throws IOException {
