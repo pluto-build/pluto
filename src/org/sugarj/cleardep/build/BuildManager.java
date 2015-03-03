@@ -72,7 +72,7 @@ public class BuildManager {
   F extends BuilderFactory<In, Out, B>
     > BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
-    BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq, builder.defaultStamper());
+    BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
     int inputHash = DeepEquals.deepHashCode(builder.input);
 
     String taskDescription = builder.taskDescription();

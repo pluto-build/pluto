@@ -18,8 +18,8 @@ import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.dependency.FileRequirement;
 import org.sugarj.cleardep.dependency.Requirement;
 import org.sugarj.cleardep.output.BuildOutput;
+import org.sugarj.cleardep.stamp.LastModifiedStamper;
 import org.sugarj.cleardep.stamp.Stamp;
-import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.cleardep.stamp.Util;
 import org.sugarj.cleardep.xattr.Xattr;
 import org.sugarj.common.FileCommands;
@@ -49,8 +49,6 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	
 	private State state = State.NEW;
 
-	protected Stamper defaultStamper;
-	
 	protected List<Requirement> requirements;
 	protected Set<FileRequirement> generatedFiles;
 
@@ -65,10 +63,9 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	// Methods for initialization
 	// **************************
 
-	public static <Out extends BuildOutput> BuildUnit<Out> create(Path dep, BuildRequest<?, Out, ?, ?> generatedBy, Stamper stamper) throws IOException {
+	public static <Out extends BuildOutput> BuildUnit<Out> create(Path dep, BuildRequest<?, Out, ?, ?> generatedBy) throws IOException {
 		@SuppressWarnings("unchecked")
     BuildUnit<Out> e = PersistableEntity.create(BuildUnit.class, dep);
-		e.defaultStamper = stamper;
 		e.generatedBy = generatedBy;
 		return e;
 	}
@@ -110,10 +107,6 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	// *******************************
 	// Methods for adding dependencies
 	// *******************************
-
-  public void requires(Path file) {
-		requires(file, defaultStamper.stampOf(file));
-	}
 
 	public void requires(Path file, Stamp stampOfFile) {
 		requirements.add(new FileRequirement(file, stampOfFile));
@@ -157,10 +150,6 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
       }
 	  }
   }
-
-  public void generates(Path file) {
-		generates(file, defaultStamper.stampOf(file));
-	}
 
 	public void generates(Path file, Stamp stampOfFile) {
 		generatedFiles.add(new FileRequirement(file, stampOfFile));
@@ -468,9 +457,7 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	protected void readEntity(ObjectInputStream in, Stamper stamper) throws IOException, ClassNotFoundException {
-	  defaultStamper = stamper;
-	  
+	protected void readEntity(ObjectInputStream in) throws IOException, ClassNotFoundException {
 	  state = (State) in.readObject();
 	  requirements = (List<Requirement>) in.readObject();
 	  generatedFiles = (Set<FileRequirement>) in.readObject();
@@ -479,7 +466,7 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	}
 	
 	public void write() throws IOException {
-    super.write(defaultStamper);
+    super.write(LastModifiedStamper.instance);
   }
 
 	@Override

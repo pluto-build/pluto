@@ -8,6 +8,7 @@ import java.util.List;
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.State;
 import org.sugarj.cleardep.output.BuildOutput;
+import org.sugarj.cleardep.stamp.LastModifiedStamper;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.common.path.Path;
@@ -50,14 +51,17 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
 
   private BuildUnit<Out> result;
   private BuildManager manager;
+  private Stamper defaultStamper;
   Out triggerBuild(BuildUnit<Out> result, BuildManager manager) throws Throwable {
     this.result = result;
     this.manager = manager;
+    this.defaultStamper = defaultStamper();
     try {
       return build();
     } finally {
       this.result = null;
       this.manager = null;
+      this.defaultStamper = null;
     }
   }
   
@@ -105,7 +109,7 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
   }
   
   public void requires(Path p) {
-    result.requires(p);
+    result.requires(p, defaultStamper.stampOf(p));
   }
   public void requires(Path p, Stamper stamper) {
     result.requires(p, stamper.stampOf(p));
@@ -115,7 +119,7 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
   }
   
   public void generates(Path p) {
-    result.generates(p);
+    result.generates(p, LastModifiedStamper.instance.stampOf(p));
   }
   public void generates(Path p, Stamper stamper) {
     result.generates(p, stamper.stampOf(p));

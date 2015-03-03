@@ -58,7 +58,7 @@ public abstract class PersistableEntity implements Serializable {
   }
   
   
-  protected abstract void readEntity(ObjectInputStream in, Stamper stamper) throws IOException, ClassNotFoundException;
+  protected abstract void readEntity(ObjectInputStream in) throws IOException, ClassNotFoundException;
   protected abstract void writeEntity(ObjectOutputStream out) throws IOException;
   
   protected abstract void init();
@@ -112,7 +112,7 @@ public abstract class PersistableEntity implements Serializable {
       entity.cacheInMemory();
       entity.setPersisted(stamper);
 
-      entity.readEntity(in, stamper);
+      entity.readEntity(in);
       return entity;
     } catch (Throwable e) {
       System.err.println("Could not read module's dependency file: " + p + ": " + e);

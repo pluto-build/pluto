@@ -43,10 +43,10 @@ public class ContentStamper implements Stamper {
 
   private Stamp fileContentStamp(Path p) {
     try {
-      return new ValueStamp<>(this, FileCommands.readFileAsByteArray(p));
+      return new ByteArrayStamp(this, FileCommands.readFileAsByteArray(p));
     } catch (IOException e) {
       e.printStackTrace();
-      return new ValueStamp<>(this, new byte[0]);
+      return new ByteArrayStamp(this, null);
     }
   }
 }

@@ -42,12 +42,8 @@ public class ContentHashStamper implements Stamper {
   }
 
   private Stamp fileContentHashStamp(Path p) {
-//    String[][] msgs = new CommandExecution(true).execute("openssl", "sha1", p.getAbsolutePath());
-//    String line = msgs[0][0];
-//    String digest = line.substring(line.indexOf('=') + 1);
-//    return new ValueStamp<>(this, digest);
     try {
-      return new ValueStamp<>(this, FileCommands.fileHash(p));
+      return new ByteArrayStamp(this, FileCommands.fileHash(p));
     } catch (IOException e) {
       e.printStackTrace();
       return new ValueStamp<>(this, -1);
