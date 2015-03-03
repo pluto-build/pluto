@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.State;
+import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.cleardep.stamp.LastModifiedStamper;
 import org.sugarj.cleardep.stamp.Stamp;
@@ -37,19 +38,19 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
   protected abstract Stamper defaultStamper();
   protected abstract Out build() throws Throwable;
 
-  protected boolean canBuildCycle(List<Pair<BuildUnit<?>,BuildRequest<?, ?, ?, ?>>> cycle){
+  protected boolean canBuildCycle(List<BuildRequirement<?>> cycle){
     return false;
   }
   
-  protected void buildCycle(List<Pair<BuildUnit<?>,BuildRequest<?, ?, ?, ?>>> cycle) throws Throwable{
+  protected void buildCycle(List<BuildRequirement<?>> cycle) throws Throwable{
     throw new UnsupportedOperationException("Unable to build cycle");
   }
   
-  protected String cyclicTaskDescription(List<Pair<BuildUnit<?>,BuildRequest<?, ?, ?, ?>>> cycle) {
-    return null;
+  protected String cyclicTaskDescription(List<BuildRequirement<?>> cycle) {
+    throw new UnsupportedOperationException("Unable to build cycle");
   }
 
-  private BuildUnit<Out> result;
+   BuildUnit<Out> result;
   private BuildManager manager;
   private Stamper defaultStamper;
   Out triggerBuild(BuildUnit<Out> result, BuildManager manager) throws Throwable {
