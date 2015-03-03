@@ -2,6 +2,8 @@ package org.sugarj.cleardep.build;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -22,18 +24,32 @@ import com.cedarsoftware.util.DeepEquals;
 
 public class BuildManager {
 
+  private final static Map<Thread, WeakReference<BuildManager>> activeManagers = new HashMap<>();
+  
+  public static BuildManager acquire() {
+    return acquire(null);
+  }
+  
+  public synchronized static BuildManager acquire(Map<? extends Path, Stamp> editedSourceFiles) {
+    Thread current = Thread.currentThread();
+    WeakReference<BuildManager> ref = activeManagers.get(current);
+    BuildManager active = ref == null ? null : ref.get();
+    if (active == null) {
+      active = new BuildManager(editedSourceFiles);
+      activeManagers.put(current, new WeakReference<>(active));
+    }
+    return active;
+  }
+  
+  
   private final Map<? extends Path, Stamp> editedSourceFiles;
   private RequireStack requireStack;
 
   private BuildRequest<?, ?, ?, ?> rebuildTriggeredBy = null;
 
   private Set<BuildUnit<?>> consistentUnits;
-
-  public BuildManager() {
-    this(null);
-  }
-
-  public BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
+  
+  private BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
     this.editedSourceFiles = editedSourceFiles;
     this.requireStack = new RequireStack();
     this.consistentUnits = new HashSet<>();
