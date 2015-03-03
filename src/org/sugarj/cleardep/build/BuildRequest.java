@@ -2,28 +2,28 @@ package org.sugarj.cleardep.build;
 
 import java.io.Serializable;
 
-import org.sugarj.cleardep.BuildUnit;
+import org.sugarj.cleardep.output.BuildOutput;
 
 import com.cedarsoftware.util.DeepEquals;
 
 public class BuildRequest<
-  T extends Serializable, 
-  E extends BuildUnit, 
-  B extends Builder<T, E>,
-  F extends BuilderFactory<T, E, B>
+  In extends Serializable, 
+  Out extends BuildOutput, 
+  B extends Builder<In, Out>,
+  F extends BuilderFactory<In, Out, B>
 > implements Serializable {
   private static final long serialVersionUID = -1598265221666746521L;
   
   public final F factory;
-  public final T input;
+  public final In input;
 
-  public BuildRequest(F factory, T input) {
+  public BuildRequest(F factory, In input) {
     this.factory = factory;
     this.input = input;
   }
 
-  public Builder<T, E> createBuilder(BuildManager manager) {
-    return factory.makeBuilder(input, manager);
+  public Builder<In, Out> createBuilder() {
+    return factory.makeBuilder(input);
   }
   
   public boolean deepEquals(Object o) {

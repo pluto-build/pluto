@@ -19,7 +19,7 @@ public class BuildCycleException extends RuntimeException {
    * The list of the stack entries which form a dependency cycle in order of the stack.
    */
   private final BuildStackEntry cycleCause;
-  private final List<Pair<? extends BuildUnit, BuildRequest<?,?,?,?>>> cycleComponents;
+  private final List<Pair<BuildUnit<?>, BuildRequest<?,?,?,?>>> cycleComponents;
   
   public BuildCycleException(String message, BuildStackEntry cycleCause) {
     super(message);
@@ -28,11 +28,11 @@ public class BuildCycleException extends RuntimeException {
     this.cycleComponents  = new ArrayList<>();
   }
   
-  public List<Pair<? extends BuildUnit, BuildRequest<?, ?, ?, ?>>> getCycleComponents() {
+  public List<Pair<BuildUnit<?>, BuildRequest<?, ?, ?, ?>>> getCycleComponents() {
     return cycleComponents;
   }
   
-  public void addCycleComponent(Pair<?extends BuildUnit, BuildRequest<?, ?, ?, ?>> component) {
+  public void addCycleComponent(Pair<BuildUnit<?>, BuildRequest<?, ?, ?, ?>> component) {
     cycleComponents.add(0, component);
   }
   

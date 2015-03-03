@@ -9,6 +9,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Export-Package: org.sugarj.cleardep,
  org.sugarj.cleardep.build,
  org.sugarj.cleardep.dependency,
+ org.sugarj.cleardep.output,
  org.sugarj.cleardep.stamp,
  org.sugarj.cleardep.xattr
 Require-Bundle: org.eclipse.core.runtime,

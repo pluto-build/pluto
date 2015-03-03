@@ -8,21 +8,22 @@ import java.util.List;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.State;
+import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.common.path.Path;
 import org.sugarj.common.util.Pair;
 
-public abstract class CompileCycleAtOnceBuilder<T extends Serializable, E extends BuildUnit> extends Builder<ArrayList<T>, E> {
+public abstract class CompileCycleAtOnceBuilder<T extends Serializable, Out extends BuildOutput> extends Builder<ArrayList<T>, Out> {
 
   public static <X> ArrayList<X>singletonArrayList(X elem) {
     return new ArrayList<X>(Collections.<X> singletonList(elem));
   }
   
-  public CompileCycleAtOnceBuilder(T input, BuilderFactory<ArrayList<T>, E, ? extends Builder<ArrayList<T>, E>> sourceFactory, BuildManager manager) {
-    super(singletonArrayList(input), sourceFactory, manager);
+  public CompileCycleAtOnceBuilder(T input) {
+    super(singletonArrayList(input));
   }
 
-  public CompileCycleAtOnceBuilder(ArrayList<T> input, BuilderFactory<ArrayList<T>, E, ? extends Builder<ArrayList<T>, E>> sourceFactory, BuildManager manager) {
-    super(input, sourceFactory, manager);
+  public CompileCycleAtOnceBuilder(ArrayList<T> input) {
+    super(input);
   }
 
   protected abstract Path singletonPersistencePath(T input);
@@ -39,8 +40,8 @@ public abstract class CompileCycleAtOnceBuilder<T extends Serializable, E extend
   }
   
   @Override
-  protected boolean canBuildCycle(List<Pair<? extends BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle) {
-    for (Pair<?extends BuildUnit, BuildRequest<?, ?, ?, ?>> unitPairs : cycle) {
+  protected boolean canBuildCycle(List<Pair<BuildUnit<?>, BuildRequest<?, ?, ?, ?>>> cycle) {
+    for (Pair<BuildUnit<?>, BuildRequest<?, ?, ?, ?>> unitPairs : cycle) {
       if (unitPairs.b.factory != this.sourceFactory) {
         System.out.println("Not the same factory");
         return false;
@@ -49,44 +50,45 @@ public abstract class CompileCycleAtOnceBuilder<T extends Serializable, E extend
         System.out.println("No array list input");
         return false;
       }
-      if (!this.resultClass().equals(unitPairs.a.getClass())) {
-        System.out.println("Wrong result class");
-        return false;
-      }
+//      if (!this.resultClass().equals(unitPairs.a.getClass())) { // cannot happen, all results are of class BuildUnit
+//        System.out.println("Wrong result class");
+//        return false;
+//      }
     }
     return true;
   }
 
   @Override
-  protected void buildCycle(List<Pair<? extends BuildUnit, BuildRequest<?, ?, ?, ?>>> cycle) throws Throwable{
+  protected void buildCycle(List<Pair<BuildUnit<?>, BuildRequest<?, ?, ?, ?>>> cycle) throws Throwable{
     ArrayList<T> inputs = new ArrayList<>(cycle.size());
-    for (Pair<? extends BuildUnit, BuildRequest<?, ?, ?, ?>> unitPairs : cycle) {
+    for (Pair<BuildUnit<?>, BuildRequest<?, ?, ?, ?>> unitPairs : cycle) {
       inputs.addAll((ArrayList<T>) unitPairs.b.input);
     }
-    BuildRequest<ArrayList<T>, E, ? extends Builder<ArrayList<T>, E>, ?>  cycleRequirement = new BuildRequest<>(this.sourceFactory, inputs);
-    manager.require(cycleRequirement);
+    BuildRequest<ArrayList<T>, Out, ? extends Builder<ArrayList<T>, Out>, ?>  cycleRequirement = new BuildRequest<>(this.sourceFactory, inputs);
+    require(cycleRequirement);
   }
   
   @Override
-  protected void build(E result) throws Throwable {
+  protected Out build(BuildUnit<Out> result) throws Throwable {
     if (this.input.size() == 1) {
-      buildSingleton(result);
+      return buildSingleton(result);
     } else {
       for (T cyclicInput : this.input) {
-        E cyclicUnit = BuildUnit.create(resultClass(), defaultStamper(), singletonPersistencePath(cyclicInput), new BuildRequest<>(this.sourceFactory, singletonArrayList(cyclicInput)));
+        BuildUnit<Out> cyclicUnit = BuildUnit.create(singletonPersistencePath(cyclicInput), new BuildRequest<>(this.sourceFactory, singletonArrayList(cyclicInput)), defaultStamper());
         cyclicUnit.dependsOn(result);
         result.dependsOn(cyclicUnit);
         cyclicUnit.setState(State.finished(true));
         cyclicUnit.write();
       }
-      buildCycle(result);
+     return  buildCycle(result);
     }
   }
   
-  protected void buildSingleton(E result) throws Throwable{
-    this.buildCycle(result);
+  protected Out buildSingleton(BuildUnit<Out> result) throws Throwable{
+    return this.buildCycle(result);
   }
   
-  protected abstract void buildCycle(E result) throws Throwable;
+  protected abstract Out buildCycle(BuildUnit<Out> result) throws Throwable;
+  
 
 }
