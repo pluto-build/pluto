@@ -70,8 +70,6 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
     BuildUnit<Out> e = PersistableEntity.create(BuildUnit.class, dep);
 		e.defaultStamper = stamper;
 		e.generatedBy = generatedBy;
-		if (e.getModuleDependencies() == null)
-      System.out.println(e);
 		return e;
 	}
 
@@ -80,8 +78,6 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	  BuildUnit<Out> e = PersistableEntity.read(BuildUnit.class, dep);
 	  if (e != null && e.generatedBy.deepEquals(generatedBy)) {
 	    e.generatedBy = generatedBy;
-	    if (e.getModuleDependencies() == null)
-	      System.out.println(e);
 	    return e;
 	  }
     return null;
@@ -95,8 +91,6 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
   public static <Out extends BuildOutput> BuildUnit<Out> readConsistent(Path dep, BuildRequest<?, Out, ?, ?> generatedBy, Map<? extends Path, Stamp> editedSourceFiles) throws IOException {
 	  BuildUnit<Out> e = read(dep, generatedBy);
 	  if (e != null && e.isConsistent(editedSourceFiles)) {
-	    if (e.getModuleDependencies() == null)
-        System.out.println(e);
 	    return e;
 	  }
 	  return null;
