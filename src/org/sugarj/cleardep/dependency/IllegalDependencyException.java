@@ -1,4 +1,4 @@
-package org.sugarj.cleardep;
+package org.sugarj.cleardep.dependency;
 
 public class IllegalDependencyException extends RuntimeException {
 

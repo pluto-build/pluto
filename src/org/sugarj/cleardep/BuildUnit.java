@@ -16,6 +16,7 @@ import java.util.Set;
 import org.sugarj.cleardep.build.BuildRequest;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.dependency.FileRequirement;
+import org.sugarj.cleardep.dependency.IllegalDependencyException;
 import org.sugarj.cleardep.dependency.Requirement;
 import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.cleardep.stamp.LastModifiedStamper;
@@ -480,5 +481,10 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 		out.writeObject(generatedFiles = Collections.unmodifiableSet(generatedFiles));
 		out.writeObject(generatedBy);
 		out.writeObject(buildResult);
+	}
+	
+	@Override
+	public String toString() {
+	  return "BuildUnit(" + generatedBy.factory + ": " + persistentPath + ")";
 	}
 }

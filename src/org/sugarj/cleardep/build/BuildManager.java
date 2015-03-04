@@ -2,7 +2,7 @@ package org.sugarj.cleardep.build;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -12,35 +12,65 @@ import java.util.Set;
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
 import org.sugarj.cleardep.dependency.BuildRequirement;
+import org.sugarj.cleardep.dependency.DuplicateBuildUnitPathException;
+import org.sugarj.cleardep.dependency.DuplicateFileGenerationException;
 import org.sugarj.cleardep.dependency.FileRequirement;
 import org.sugarj.cleardep.dependency.Requirement;
 import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
-import org.sugarj.common.util.Pair;
 
 import com.cedarsoftware.util.DeepEquals;
 
 public class BuildManager {
 
-  private final static Map<Thread, WeakReference<BuildManager>> activeManagers = new HashMap<>();
+  private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
   
-  public static BuildManager acquire() {
-    return acquire(null);
+  public static <Out extends BuildOutput> Out build(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
+    return build(buildReq, null);
   }
   
-  public synchronized static BuildManager acquire(Map<? extends Path, Stamp> editedSourceFiles) {
+  public static <Out extends BuildOutput> Out build(BuildRequest<?, Out, ?, ?> buildReq, Map<? extends Path, Stamp> editedSourceFiles) throws IOException {
     Thread current = Thread.currentThread();
-    WeakReference<BuildManager> ref = activeManagers.get(current);
-    BuildManager active = ref == null ? null : ref.get();
-    if (active == null) {
-      active = new BuildManager(editedSourceFiles);
-      activeManagers.put(current, new WeakReference<>(active));
+    BuildManager manager = activeManagers.get(current);
+    boolean freshManager = manager == null;
+    if (freshManager) {
+      manager = new BuildManager(editedSourceFiles);
+      activeManagers.put(current, manager);
     }
-    return active;
+    
+    try {
+      return manager.require(buildReq).getBuildResult();
+    } finally {
+      if (freshManager)
+        activeManagers.remove(current);
+    }
   }
   
+  public static <Out extends BuildOutput> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs) throws IOException {
+    return buildAll(buildReqs, null);
+  }
+  
+  public static <Out extends BuildOutput> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs, Map<? extends Path, Stamp> editedSourceFiles) throws IOException {
+    Thread current = Thread.currentThread();
+    BuildManager manager = activeManagers.get(current);
+    boolean freshManager = manager == null;
+    if (freshManager) {
+      manager = new BuildManager(editedSourceFiles);
+      activeManagers.put(current, manager);
+    }
+    
+    try {
+      List<Out> out = new ArrayList<>();
+      for (BuildRequest<?, Out, ?, ?> buildReq : buildReqs)
+        out.add(manager.require(buildReq).getBuildResult());
+      return out;
+    } finally {
+      if (freshManager)
+        activeManagers.remove(current);
+    }
+  }
   
   private final Map<? extends Path, Stamp> editedSourceFiles;
   private RequireStack requireStack;
@@ -48,11 +78,13 @@ public class BuildManager {
   private BuildRequest<?, ?, ?, ?> rebuildTriggeredBy = null;
 
   private Set<BuildUnit<?>> consistentUnits;
+  private Map<Path, BuildUnit<?>> generatedFiles;
   
   protected BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
     this.editedSourceFiles = editedSourceFiles;
     this.requireStack = new RequireStack();
     this.consistentUnits = new HashSet<>();
+    this.generatedFiles = new HashMap<>();
   }
 
   protected Builder<?, ?> getCyclicBuilder(List<BuildRequirement<?>> cycle) {
@@ -200,7 +232,7 @@ public class BuildManager {
         return executeBuilder(builder, dep, buildReq);
 
       if (consistentUnits.contains(depResult))
-        return assertConsistency(depResult);
+        return depResult;
 
       if (!depResult.isConsistentNonrequirements())
         return executeBuilder(builder, dep, buildReq);
@@ -226,6 +258,16 @@ public class BuildManager {
   }
 
   private <Out extends BuildOutput> BuildUnit<Out> assertConsistency(BuildUnit<Out> depResult) {
+    BuildUnit<?> other = generatedFiles.put(depResult.getPersistentPath(), depResult);
+    if (other != null)
+      throw new DuplicateBuildUnitPathException("Build unit " + depResult + " has same persistent path as build unit " + other);
+    
+    for (FileRequirement freq : depResult.getGeneratedFileRequirements()) {
+      other = generatedFiles.put(freq.path, depResult);
+      if (other != null)
+        throw new DuplicateFileGenerationException("Build unit " + depResult + " generates same file as build unit " + other);
+    }
+    
 //    if (!depResult.isConsistent(null))
 //      throw new AssertionError("Build manager does not guarantee soundness");
     return depResult;
