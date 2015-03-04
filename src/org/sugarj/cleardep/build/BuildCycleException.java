@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.common.path.Path;
-import org.sugarj.common.util.Pair;
 
 public class BuildCycleException extends RuntimeException {
 

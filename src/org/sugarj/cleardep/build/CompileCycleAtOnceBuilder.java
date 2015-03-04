@@ -11,7 +11,6 @@ import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.cleardep.stamp.LastModifiedStamper;
 import org.sugarj.common.path.Path;
-import org.sugarj.common.util.Pair;
 
 public abstract class CompileCycleAtOnceBuilder<T extends Serializable, Out extends BuildOutput> extends Builder<ArrayList<T>, Out> {
 

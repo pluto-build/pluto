@@ -13,7 +13,6 @@ import org.sugarj.cleardep.stamp.LastModifiedStamper;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.common.path.Path;
-import org.sugarj.common.util.Pair;
 
 public abstract class Builder<In extends Serializable, Out extends BuildOutput> {
   protected final In input;
