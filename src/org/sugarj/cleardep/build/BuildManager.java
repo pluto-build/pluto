@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.sugarj.cleardep.BuildUnit;
+import org.sugarj.cleardep.build.BuildCycleException.CycleState;
 import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.dependency.DuplicateBuildUnitPathException;
@@ -26,11 +27,11 @@ import com.cedarsoftware.util.DeepEquals;
 public class BuildManager {
 
   private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
-  
+
   public static <Out extends BuildOutput> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
     return build(buildReq, null);
   }
-  
+
   public static <Out extends BuildOutput> Out build(BuildRequest<?, Out, ?, ?> buildReq, Map<? extends Path, Stamp> editedSourceFiles) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
@@ -39,7 +40,7 @@ public class BuildManager {
       manager = new BuildManager(editedSourceFiles);
       activeManagers.put(current, manager);
     }
-    
+
     try {
       return manager.require(buildReq).getBuildResult();
     } catch (IOException e) {
@@ -50,11 +51,11 @@ public class BuildManager {
         activeManagers.remove(current);
     }
   }
-  
+
   public static <Out extends BuildOutput> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs) {
     return buildAll(buildReqs, null);
   }
-  
+
   public static <Out extends BuildOutput> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs, Map<? extends Path, Stamp> editedSourceFiles) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
@@ -63,7 +64,7 @@ public class BuildManager {
       manager = new BuildManager(editedSourceFiles);
       activeManagers.put(current, manager);
     }
-    
+
     try {
       List<Out> out = new ArrayList<>();
       for (BuildRequest<?, Out, ?, ?> buildReq : buildReqs)
@@ -80,7 +81,7 @@ public class BuildManager {
         activeManagers.remove(current);
     }
   }
-  
+
   private final Map<? extends Path, Stamp> editedSourceFiles;
   private RequireStack requireStack;
 
@@ -88,7 +89,7 @@ public class BuildManager {
 
   private transient Set<BuildUnit<?>> consistentUnits;
   private transient Map<Path, BuildUnit<?>> generatedFiles;
-  
+
   protected BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
     this.editedSourceFiles = editedSourceFiles;
     this.requireStack = new RequireStack();
@@ -96,22 +97,17 @@ public class BuildManager {
     this.generatedFiles = new HashMap<>();
   }
 
-  protected Builder<?, ?> getCyclicBuilder(List<BuildRequirement<?>> cycle) {
-    for (BuildRequirement<?> req : cycle) {
-      Builder<?, ?> tmp = req.req.createBuilder();
-      if (tmp.canBuildCycle(cycle)) {
-        return tmp;
+  protected CycleSupport searchForCycleSupport(BuildCycle cycle) {
+    for (BuildRequirement<?> requirement : cycle.getCycleComponents()) {
+      CycleSupport support = requirement.req.createBuilder().getCycleSupport();
+      if (support != null && support.canCompileCycle(cycle)) {
+        return support;
       }
     }
     return null;
   }
-  
-  protected <
-  In extends Serializable, 
-  Out extends BuildOutput, 
-  B extends Builder<In, Out>, 
-  F extends BuilderFactory<In, Out, B>
-    > BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+
+  protected <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
     int inputHash = DeepEquals.deepHashCode(builder.input);
@@ -121,20 +117,9 @@ public class BuildManager {
       Log.log.beginTask(taskDescription, Log.CORE);
 
     // First step: cycle detection
-    BuildStackEntry entry = null;
+    BuildStackEntry<Out> entry = null;
 
-    try {
-      entry = this.requireStack.push(buildReq, dep);
-    } catch (BuildCycleException e) {
-      // Here is a cycle, abort without doing anything to Build Units because we
-      // want to use the
-      // BuildUnit which resulted from the first call on the dep path
-      if (taskDescription != null) {
-        Log.log.log("Aborted because of detected cycle", Log.CORE);
-        Log.log.endTask();
-      }
-      throw e;
-    }
+    entry = this.requireStack.push(depResult);
 
     try {
       depResult.setState(BuildUnit.State.IN_PROGESS);
@@ -143,32 +128,27 @@ public class BuildManager {
       try {
         Out out = builder.triggerBuild(depResult, this);
         depResult.setBuildResult(out);
-        
+
         if (!depResult.isFinished())
           depResult.setState(BuildUnit.State.SUCCESS);
         // build(depResult, input);
       } catch (BuildCycleException e) {
-        if (e.isUnitFirstInvokedOn(dep, buildReq.factory)) {
-          if (taskDescription != null)
-            Log.log.endTask();
-          taskDescription = "Try to compile cycle";
-          Log.log.beginTask(taskDescription, Log.CORE);
-          e.addCycleComponent(new BuildRequirement<>(depResult, buildReq));
 
-          // Get the cycle and try to compile it
-          List<BuildRequirement<?>> cycle = e.getCycleComponents();
-          Builder<?, ?> cycleBuilder = getCyclicBuilder(cycle);
-          if (cycleBuilder == null) {
-            Log.log.logErr("Unable to find builder which can compile the cycle", Log.CORE);
-            // Cycle cannot be handled
-            throw new RequiredBuilderFailed(builder, depResult, e);
+        if (e.getCycleState() != CycleState.UNHANDLED) {
+
+
+          e.setCycleState(CycleState.NOT_RESOLVED);
+          BuildCycle cycle = new BuildCycle(e.getCycleComponents());
+          CycleSupport cycleSupport = this.searchForCycleSupport(cycle);
+          if (cycleSupport == null) {
+            throw e;
           }
-          Log.log.log(cycleBuilder.cyclicTaskDescription(cycle), Log.CORE);
-          cycleBuilder.buildCycle(cycle);
-          // Do not throw anything here because cycle is completed successfully.
+
+          e.setCycleState(CycleState.RESOLVED);
         } else {
           throw e;
         }
+
       }
 
     } catch (BuildCycleException e) {
@@ -178,14 +158,13 @@ public class BuildManager {
       // where normal
       // units are compiled too
       if (e.isUnitFirstInvokedOn(dep, buildReq.factory)) {
-        // here we should never get because this case in handled in the inner
-        // try
-        throw new AssertionError("should not get there");
+        if (e.getCycleState() != CycleState.RESOLVED) {
+          Log.log.log("Unable to find builder which can compile the cycle", Log.CORE);
+          // Cycle cannot be handled
+          throw new RequiredBuilderFailed(builder, depResult, e);
+        }
       } else {
-        // Collect all components of the cycle while their the compilation
-        if (taskDescription != null)
-          Log.log.log("Aborted because of detected cycle", Log.CORE);
-        e.addCycleComponent(new BuildRequirement<>(depResult, buildReq));
+        // Kill depending builders
         throw e;
       }
     } catch (RequiredBuilderFailed e) {
@@ -211,7 +190,7 @@ public class BuildManager {
       if (taskDescription != null)
         Log.log.endTask();
       this.consistentUnits.add(assertConsistency(depResult));
-      BuildStackEntry poppedEntry = this.requireStack.pop();
+      BuildStackEntry<?> poppedEntry = this.requireStack.pop();
       assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
     }
 
@@ -221,12 +200,7 @@ public class BuildManager {
     return depResult;
   }
 
-  public <
-  In extends Serializable, 
-  Out extends BuildOutput, 
-  B extends Builder<In, Out>, 
-  F extends BuilderFactory<In, Out, B>
-  > BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  public <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
     if (rebuildTriggeredBy == null) {
       rebuildTriggeredBy = buildReq;
       Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
@@ -251,8 +225,7 @@ public class BuildManager {
           FileRequirement freq = (FileRequirement) req;
           if (!freq.isConsistent())
             return executeBuilder(builder, dep, buildReq);
-        }
-        else if (req instanceof BuildRequirement) {
+        } else if (req instanceof BuildRequirement) {
           BuildRequirement<?> breq = (BuildRequirement<?>) req;
           require(breq.req);
         }
@@ -270,15 +243,15 @@ public class BuildManager {
     BuildUnit<?> other = generatedFiles.put(depResult.getPersistentPath(), depResult);
     if (other != null)
       throw new DuplicateBuildUnitPathException("Build unit " + depResult + " has same persistent path as build unit " + other);
-    
+
     for (FileRequirement freq : depResult.getGeneratedFileRequirements()) {
       other = generatedFiles.put(freq.path, depResult);
       if (other != null)
         throw new DuplicateFileGenerationException("Build unit " + depResult + " generates same file as build unit " + other);
     }
-    
-//    if (!depResult.isConsistent(null))
-//      throw new AssertionError("Build manager does not guarantee soundness");
+
+    // if (!depResult.isConsistent(null))
+    // throw new AssertionError("Build manager does not guarantee soundness");
     return depResult;
   }
 }

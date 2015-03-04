@@ -1,23 +1,19 @@
 package org.sugarj.cleardep.build;
 
+import org.sugarj.cleardep.BuildUnit;
+import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.common.path.Path;
 
-class BuildStackEntry {
-  private final BuildRequest<?, ?, ?, ?> req;
+public class BuildStackEntry<Out extends BuildOutput> {
+  private final BuildUnit<Out> unit;
   private final Path persistencePath;
   
-  
-  public BuildStackEntry(BuildRequest<?, ?, ?,?> req, Path persistencePath) {
-    super();
-    this.req = req;
-    this.persistencePath = persistencePath;
+  public BuildStackEntry(BuildUnit<Out> unit) {
+    super();this.unit = unit;
+    this.persistencePath = unit.getPersistentPath();
   }
-  
-  public BuildRequest<?, ?, ?, ?> getRequest() {
-    return req;
-  }
-  public Path getPersistencePath() {
-    return persistencePath;
+  public BuildUnit<Out> getUnit() {
+    return unit;
   }
 
   @Override

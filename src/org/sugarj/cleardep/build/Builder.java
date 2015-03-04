@@ -37,16 +37,8 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
   protected abstract Stamper defaultStamper();
   protected abstract Out build() throws Throwable;
 
-  protected boolean canBuildCycle(List<BuildRequirement<?>> cycle){
-    return false;
-  }
-  
-  protected void buildCycle(List<BuildRequirement<?>> cycle) throws Throwable{
-    throw new UnsupportedOperationException("Unable to build cycle");
-  }
-  
-  protected String cyclicTaskDescription(List<BuildRequirement<?>> cycle) {
-    throw new UnsupportedOperationException("Unable to build cycle");
+  protected CycleSupport getCycleSupport() {
+    return null;
   }
 
   transient BuildUnit<Out> result;
