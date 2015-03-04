@@ -48,11 +48,11 @@ public class BuildManager {
     }
   }
   
-  public static <Out extends BuildOutput> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs) throws IOException {
+  public static <Out extends BuildOutput> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs) {
     return buildAll(buildReqs, null);
   }
   
-  public static <Out extends BuildOutput> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs, Map<? extends Path, Stamp> editedSourceFiles) throws IOException {
+  public static <Out extends BuildOutput> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs, Map<? extends Path, Stamp> editedSourceFiles) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
     boolean freshManager = manager == null;
@@ -64,7 +64,13 @@ public class BuildManager {
     try {
       List<Out> out = new ArrayList<>();
       for (BuildRequest<?, Out, ?, ?> buildReq : buildReqs)
-        out.add(manager.require(buildReq).getBuildResult());
+        if (buildReq != null)
+          try {
+            out.add(manager.require(buildReq).getBuildResult());
+          } catch (IOException e) {
+            e.printStackTrace();
+            out.add(null);
+          }
       return out;
     } finally {
       if (freshManager)
