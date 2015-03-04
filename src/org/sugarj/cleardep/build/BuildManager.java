@@ -86,8 +86,8 @@ public class BuildManager {
 
   private BuildRequest<?, ?, ?, ?> rebuildTriggeredBy = null;
 
-  private Set<BuildUnit<?>> consistentUnits;
-  private Map<Path, BuildUnit<?>> generatedFiles;
+  private transient Set<BuildUnit<?>> consistentUnits;
+  private transient Map<Path, BuildUnit<?>> generatedFiles;
   
   protected BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
     this.editedSourceFiles = editedSourceFiles;

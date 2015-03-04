@@ -49,9 +49,9 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
     throw new UnsupportedOperationException("Unable to build cycle");
   }
 
-   BuildUnit<Out> result;
-  private BuildManager manager;
-  private Stamper defaultStamper;
+  transient BuildUnit<Out> result;
+  private transient BuildManager manager;
+  private transient Stamper defaultStamper;
   Out triggerBuild(BuildUnit<Out> result, BuildManager manager) throws Throwable {
     this.result = result;
     this.manager = manager;
