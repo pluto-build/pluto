@@ -241,6 +241,10 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 		return set;
 	}
 	
+	public Set<FileRequirement> getGeneratedFileRequirements() {
+	  return Collections.unmodifiableSet(generatedFiles);
+  }
+	
 	public List<Requirement> getRequirements() {
     return requirements;
   }

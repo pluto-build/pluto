@@ -129,4 +129,7 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
     result.setState(state);
   }
 
+  public BuildUnit<Out> getBuildUnit() {
+    return result;
+  }
 }
