@@ -49,15 +49,15 @@ public class BuildManager {
 
   private Set<BuildUnit<?>> consistentUnits;
   
-  private BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
+  protected BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
     this.editedSourceFiles = editedSourceFiles;
     this.requireStack = new RequireStack();
     this.consistentUnits = new HashSet<>();
   }
 
-  protected Builder<?, ?> getCyclicBuilder(List<Pair<BuildUnit<?>, BuildRequest<?, ?, ?, ?>>> cycle) {
-    for (Pair<? extends BuildUnit<?>, BuildRequest<?, ?, ?, ?>> req : cycle) {
-      Builder<?, ?> tmp = req.b.createBuilder();
+  protected Builder<?, ?> getCyclicBuilder(List<BuildRequirement<?>> cycle) {
+    for (BuildRequirement<?> req : cycle) {
+      Builder<?, ?> tmp = req.req.createBuilder();
       if (tmp.canBuildCycle(cycle)) {
         return tmp;
       }
@@ -112,16 +112,17 @@ public class BuildManager {
             Log.log.endTask();
           taskDescription = "Try to compile cycle";
           Log.log.beginTask(taskDescription, Log.CORE);
-          e.addCycleComponent(new Pair<BuildUnit<?>, BuildRequest<?, ?, ?, ?>>(depResult, buildReq));
+          e.addCycleComponent(new BuildRequirement<>(depResult, buildReq));
 
           // Get the cycle and try to compile it
-          List<Pair<BuildUnit<?>, BuildRequest<?, ?, ?, ?>>> cycle = e.getCycleComponents();
+          List<BuildRequirement<?>> cycle = e.getCycleComponents();
           Builder<?, ?> cycleBuilder = getCyclicBuilder(cycle);
           if (cycleBuilder == null) {
             Log.log.logErr("Unable to find builder which can compile the cycle", Log.CORE);
             // Cycle cannot be handled
             throw new RequiredBuilderFailed(builder, depResult, e);
           }
+          Log.log.log(cycleBuilder.cyclicTaskDescription(cycle), Log.CORE);
           cycleBuilder.buildCycle(cycle);
           // Do not throw anything here because cycle is completed successfully.
         } else {
@@ -143,7 +144,7 @@ public class BuildManager {
         // Collect all components of the cycle while their the compilation
         if (taskDescription != null)
           Log.log.log("Aborted because of detected cycle", Log.CORE);
-        e.addCycleComponent(new Pair<BuildUnit<?>, BuildRequest<?, ?, ?, ?>>(depResult, buildReq));
+        e.addCycleComponent(new BuildRequirement<>(depResult, buildReq));
         throw e;
       }
     } catch (RequiredBuilderFailed e) {
