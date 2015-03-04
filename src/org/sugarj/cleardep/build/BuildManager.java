@@ -27,11 +27,11 @@ public class BuildManager {
 
   private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
   
-  public static <Out extends BuildOutput> Out build(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
+  public static <Out extends BuildOutput> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
     return build(buildReq, null);
   }
   
-  public static <Out extends BuildOutput> Out build(BuildRequest<?, Out, ?, ?> buildReq, Map<? extends Path, Stamp> editedSourceFiles) throws IOException {
+  public static <Out extends BuildOutput> Out build(BuildRequest<?, Out, ?, ?> buildReq, Map<? extends Path, Stamp> editedSourceFiles) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
     boolean freshManager = manager == null;
@@ -42,6 +42,9 @@ public class BuildManager {
     
     try {
       return manager.require(buildReq).getBuildResult();
+    } catch (IOException e) {
+      e.printStackTrace();
+      return null;
     } finally {
       if (freshManager)
         activeManagers.remove(current);
