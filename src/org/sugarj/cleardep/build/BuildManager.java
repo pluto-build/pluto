@@ -106,6 +106,7 @@ public class BuildManager {
     }
     return null;
   }
+  
 
   protected <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
@@ -133,40 +134,11 @@ public class BuildManager {
           depResult.setState(BuildUnit.State.SUCCESS);
         // build(depResult, input);
       } catch (BuildCycleException e) {
-
-        if (e.getCycleState() != CycleState.UNHANDLED) {
-
-
-          e.setCycleState(CycleState.NOT_RESOLVED);
-          BuildCycle cycle = new BuildCycle(e.getCycleComponents());
-          CycleSupport cycleSupport = this.searchForCycleSupport(cycle);
-          if (cycleSupport == null) {
-            throw e;
-          }
-
-          e.setCycleState(CycleState.RESOLVED);
-        } else {
-          throw e;
-        }
-
+        tryCompileCycle(e);
       }
 
     } catch (BuildCycleException e) {
-      // This is the exception which has been rethrown above, but we cannot
-      // handle it
-      // here because compiling the cycle needs to be in the major try block
-      // where normal
-      // units are compiled too
-      if (e.isUnitFirstInvokedOn(dep, buildReq.factory)) {
-        if (e.getCycleState() != CycleState.RESOLVED) {
-          Log.log.log("Unable to find builder which can compile the cycle", Log.CORE);
-          // Cycle cannot be handled
-          throw new RequiredBuilderFailed(builder, depResult, e);
-        }
-      } else {
-        // Kill depending builders
-        throw e;
-      }
+      stopBuilderInCycle(builder, dep, buildReq, depResult, e);
     } catch (RequiredBuilderFailed e) {
       BuilderResult required = e.getLastAddedBuilder();
       depResult.requires(required.result);
@@ -198,6 +170,41 @@ public class BuildManager {
       throw new RequiredBuilderFailed(builder, depResult, new IllegalStateException("Builder failed for unknown reason, please confer log."));
 
     return depResult;
+  }
+
+  private void tryCompileCycle(BuildCycleException e) {
+    if (e.getCycleState() != CycleState.UNHANDLED) {
+
+
+      e.setCycleState(CycleState.NOT_RESOLVED);
+      BuildCycle cycle = new BuildCycle(e.getCycleComponents());
+      CycleSupport cycleSupport = this.searchForCycleSupport(cycle);
+      if (cycleSupport == null) {
+        throw e;
+      }
+
+      e.setCycleState(CycleState.RESOLVED);
+    } else {
+      throw e;
+    }
+  }
+
+  private <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> void stopBuilderInCycle(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq, BuildUnit<Out> depResult, BuildCycleException e) {
+    // This is the exception which has been rethrown above, but we cannot
+    // handle it
+    // here because compiling the cycle needs to be in the major try block
+    // where normal
+    // units are compiled too
+    if (e.isUnitFirstInvokedOn(dep, buildReq.factory)) {
+      if (e.getCycleState() != CycleState.RESOLVED) {
+        Log.log.log("Unable to find builder which can compile the cycle", Log.CORE);
+        // Cycle cannot be handled
+        throw new RequiredBuilderFailed(builder, depResult, e);
+      }
+    } else {
+      // Kill depending builders
+      throw e;
+    }
   }
 
   public <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
