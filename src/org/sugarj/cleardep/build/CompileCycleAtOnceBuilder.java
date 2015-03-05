@@ -7,36 +7,38 @@ import java.util.List;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.State;
+import org.sugarj.cleardep.build.BuildCycle.Result;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.cleardep.stamp.LastModifiedStamper;
+import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.common.path.Path;
 
-public abstract class CompileCycleAtOnceBuilder<T extends Serializable, Out extends BuildOutput> extends Builder<ArrayList<T>, Out> {
+public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out extends BuildOutput> extends Builder<ArrayList<In>, Out> implements CycleSupport{
 
   public static <X> ArrayList<X> singletonArrayList(X elem) {
     return new ArrayList<X>(Collections.<X> singletonList(elem));
   }
 
-  private final BuilderFactory<ArrayList<T>, Out, ? extends CompileCycleAtOnceBuilder<T,Out>> factory;
+  private final BuilderFactory<ArrayList<In>, Out, ? extends CompileCycleAtOnceBuilder<In,Out>> factory;
   
-  public CompileCycleAtOnceBuilder(T input, BuilderFactory<ArrayList<T>, Out, ? extends CompileCycleAtOnceBuilder<T,Out>> factory) {
+  public CompileCycleAtOnceBuilder(In input, BuilderFactory<ArrayList<In>, Out, ? extends CompileCycleAtOnceBuilder<In,Out>> factory) {
     this(singletonArrayList(input), factory);
   }
 
-  public CompileCycleAtOnceBuilder(ArrayList<T> input,BuilderFactory<ArrayList<T>, Out, ? extends CompileCycleAtOnceBuilder<T,Out>> factory) {
+  public CompileCycleAtOnceBuilder(ArrayList<In> input,BuilderFactory<ArrayList<In>, Out, ? extends CompileCycleAtOnceBuilder<In,Out>> factory) {
     super(input);
     this.factory = factory;
   }
+  
+  @Override
+  protected CycleSupport getCycleSupport() {
+    return this;
+  }
 
-  protected abstract Path singletonPersistencePath(T input);
+  protected abstract Path singletonPersistencePath(In input);
 
   private List<BuildUnit<Out>> cyclicResults;
-
-  //@Override
-  protected String cyclicTaskDescription(List<BuildRequirement<?>> cycle) {
-    return this.taskDescription();
-  }
   
   @Override
   public void requires(Path p) {
@@ -46,9 +48,13 @@ public abstract class CompileCycleAtOnceBuilder<T extends Serializable, Out exte
   }
 
   @Override
-  public void generates(Path p) {
-    for (BuildUnit<Out> result : cyclicResults) {
-      result.generates(p, LastModifiedStamper.instance.stampOf(p));
+  public void generates(Path p) {throw new AssertionError();};
+  
+  public void generates(In input, Path p) {
+    for (int i = 0; i < this.input.size(); i++) {
+      if (this.input.get(i) == input) {
+      this.cyclicResults.get(i).generates(p, LastModifiedStamper.instance.stampOf(p));
+      }
      
     }
   }
@@ -68,10 +74,22 @@ public abstract class CompileCycleAtOnceBuilder<T extends Serializable, Out exte
       throw new AssertionError("Should not occur");
     }
   }
+  
+  @Override
+  protected Out build() throws Throwable {
+    this.cyclicResults = Collections.singletonList(super.result);
+    List<Out> result = this.buildAll();
+    if (result.size() != 1) {
+      throw new AssertionError("buildAll needs to return one output for one input");
+    }
+    return result.get(0);
+  }
+  
+  protected abstract List<Out> buildAll() throws Throwable; 
 
-  //@Override
-  protected boolean canBuildCycle(List<BuildRequirement<?>> cycle) {
-    for (BuildRequirement<?> req : cycle) {
+  @Override
+  public boolean canCompileCycle(BuildCycle cycle) {
+    for (BuildRequirement<?> req : cycle.getCycleComponents()) {
       if (req.req.factory != this.factory) {
         System.out.println("Not the same factory");
         return false;
@@ -84,42 +102,41 @@ public abstract class CompileCycleAtOnceBuilder<T extends Serializable, Out exte
     return true;
   }
 
-  //@Override
-  protected void buildCycle(List<BuildRequirement<?>> cycle) throws Throwable {
-   ArrayList<BuildUnit<Out>> cyclicResults = new ArrayList<>();
-   ArrayList<T> inputs = new ArrayList<>();
-   
-    for (BuildRequirement<?> req : cycle) {
-      cyclicResults.add((BuildUnit<Out>) req.unit);
-      inputs.addAll((ArrayList<T>) req.req.input);
-    }
+  @Override
+  public Result compileCycle(BuildCycle cycle) throws Throwable {
+    ArrayList<BuildUnit<Out>> cyclicResults = new ArrayList<>();
+    ArrayList<In> inputs = new ArrayList<>();
     
-    CompileCycleAtOnceBuilder<T, Out > newBuilder = factory.makeBuilder(inputs);
-    for (BuildUnit<Out> result : cyclicResults) {
-      result = BuildUnit.create(result.getPersistentPath(), result.getGeneratedBy());
-    }
-    newBuilder.cyclicResults = cyclicResults;
-    newBuilder.buildInternal();
+     for (BuildRequirement<?> req : cycle.getCycleComponents()) {
+       cyclicResults.add((BuildUnit<Out>) req.unit);
+       inputs.addAll((ArrayList<In>) req.req.input);
+     }
+     
+     CompileCycleAtOnceBuilder<In, Out > newBuilder = factory.makeBuilder(inputs);
+     newBuilder.cyclicResults = cyclicResults;
+     
+     List<Out> outputs = newBuilder.buildAll();
+     if (outputs.size() != inputs.size()) {
+       throw new AssertionError("buildAll needs to return one output for one input");
+     }
+     
+     Result result = new Result();
+     for (int i = 0;  i < outputs.size(); i++) {
+       result.setBuildResult(cyclicResults.get(i), outputs.get(i));
+     }
+     return result;
   }
   
   @Override
-  protected Out build() throws Throwable {
+  public String getCycleDescription(BuildCycle cycle) {
+    ArrayList<In> inputs = new ArrayList<>();
     
-   this.cyclicResults = singletonArrayList(super.result);
-   return buildInternal();
+     for (BuildRequirement<?> req : cycle.getCycleComponents()) {
+       inputs.addAll((ArrayList<In>) req.req.input);
+     }
+    CompileCycleAtOnceBuilder<In, Out > newBuilder = factory.makeBuilder(inputs);
+    return newBuilder.taskDescription();
   }
   
-protected Out buildInternal() throws Throwable {
-  if ( cyclicResults == null) {
-    throw new AssertionError("There should be a result");
-  }
-    Out out = buildCycle();
-    for (BuildUnit<Out> result : cyclicResults) {
-      result.setBuildResult(out);
-    }
-    return out;
-  }
-
-  protected abstract Out buildCycle() throws Throwable;
 
 }
