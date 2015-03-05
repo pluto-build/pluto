@@ -13,7 +13,7 @@ public class BuildCycle {
   
   public static class Result {
     
-    private static class  UnitResultTuple <Out extends BuildOutput>{
+    public static class  UnitResultTuple <Out extends BuildOutput>{
       private BuildUnit<Out> unit;
       private Out result;
       public UnitResultTuple(BuildUnit<Out> unit, Out result) {
@@ -21,7 +21,7 @@ public class BuildCycle {
         this.unit = unit;
         this.result = result;
       }
-      private void setOutputToUnit() {
+      public void setOutputToUnit() {
         unit.setBuildResult(result);
       }
     }
@@ -31,6 +31,11 @@ public class BuildCycle {
     
     public <Out extends BuildOutput> void setBuildResult(BuildUnit<Out> unit, Out result) {
       this.cycleOutpus.put(unit.getPersistentPath(), new UnitResultTuple<Out>(unit, result));
+    }
+    
+    public <Out extends BuildOutput>  UnitResultTuple<Out> getUnitResult(BuildUnit<Out> unit) {
+      UnitResultTuple<Out> tuple = (UnitResultTuple<Out>) this.cycleOutpus.get(unit.getPersistentPath());
+      return tuple;
     }
     
     

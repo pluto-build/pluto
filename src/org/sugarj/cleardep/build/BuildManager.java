@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.sugarj.cleardep.BuildUnit;
+import org.sugarj.cleardep.build.BuildCycle.Result.UnitResultTuple;
 import org.sugarj.cleardep.build.BuildCycleException.CycleState;
 import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
 import org.sugarj.cleardep.dependency.BuildRequirement;
@@ -214,7 +215,8 @@ public class BuildManager {
       }
       
       Log.log.beginTask("Compile cycle with: " +cycleSupport.getCycleDescription(cycle), Log.CORE);
-      cycleSupport.compileCycle(cycle);
+      BuildCycle.Result result = cycleSupport.compileCycle(cycle);
+      e.setCycleResult(result);
       Log.log.endTask();
 
       e.setCycleState(CycleState.RESOLVED);
@@ -231,6 +233,16 @@ public class BuildManager {
     // here because compiling the cycle needs to be in the major try block
     // where normal
     // units are compiled too
+    
+    // Set the result to the unit
+    if (e.getCycleState() == CycleState.RESOLVED) {
+      UnitResultTuple<Out> tuple = e.getCycleResult().getUnitResult(depResult);
+      if (tuple == null) {
+        throw new AssertionError("Cyclic builder does not provide a result for " + depResult.getPersistentPath());
+      }
+      tuple.setOutputToUnit();
+    }
+    
     if (e.isUnitFirstInvokedOn(dep, buildReq.factory)) {
       if (e.getCycleState() != CycleState.RESOLVED) {
         Log.log.log("Unable to find builder which can compile the cycle", Log.CORE);
