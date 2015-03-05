@@ -51,7 +51,7 @@ public class BuildManager {
       } else {
         BuildUnit metaBuilder = BuildUnit.readUnchecked(BuildUnit.class, depFile);
 
-        depResult.dependsOn(metaBuilder);
+        depResult.requires(metaBuilder);
         depResult.requires(builderClass);
         for (Path p : metaBuilder.getExternalFileDependencies()) {
           depResult.requires(p);
