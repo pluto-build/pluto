@@ -16,9 +16,11 @@ import java.util.Set;
 import org.sugarj.cleardep.build.BuildRequest;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.dependency.FileRequirement;
+import org.sugarj.cleardep.dependency.IllegalDependencyException;
 import org.sugarj.cleardep.dependency.Requirement;
+import org.sugarj.cleardep.output.BuildOutput;
+import org.sugarj.cleardep.stamp.LastModifiedStamper;
 import org.sugarj.cleardep.stamp.Stamp;
-import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.cleardep.stamp.Util;
 import org.sugarj.cleardep.xattr.Xattr;
 import org.sugarj.common.FileCommands;
@@ -30,7 +32,7 @@ import org.sugarj.common.path.Path;
  * 
  * @author Sebastian Erdweg
  */
-public class BuildUnit extends PersistableEntity {
+final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity {
 
   public static final long serialVersionUID = -2821414386853890682L;
 
@@ -48,34 +50,36 @@ public class BuildUnit extends PersistableEntity {
 	
 	private State state = State.NEW;
 
-	protected Stamper defaultStamper;
-	
 	protected List<Requirement> requirements;
 	protected Set<FileRequirement> generatedFiles;
 
-	protected transient Set<BuildUnit> requiredUnits;
-	protected transient Set<Path> requiredFiles;
+	protected Out buildResult;
+
+	private transient Set<BuildUnit<?>> requiredUnits;
+	private transient Set<Path> requiredFiles;
 	
-	protected BuildRequest<?, ?, ?, ?> generatedBy;
+	protected BuildRequest<?, Out, ?, ?> generatedBy;
 	
 	// **************************
 	// Methods for initialization
 	// **************************
 
-	public static <E extends BuildUnit> E create(Class<E> cl, Stamper stamper, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
-		E e = PersistableEntity.create(cl, dep);
-		e.defaultStamper = stamper;
+	public static <Out extends BuildOutput> BuildUnit<Out> create(Path dep, BuildRequest<?, Out, ?, ?> generatedBy) throws IOException {
+		@SuppressWarnings("unchecked")
+    BuildUnit<Out> e = PersistableEntity.create(BuildUnit.class, dep);
 		e.generatedBy = generatedBy;
 		return e;
 	}
 	
-	final public static <E extends BuildUnit> E readUnchecked(Class<E> clazz, Path dep) throws IOException {
-	  E e = read(clazz, dep);
+	final public static <Out extends BuildOutput> BuildUnit<Out> readUnchecked(Path dep) throws IOException {
+	  @SuppressWarnings("unchecked")
+    BuildUnit<Out> e = PersistableEntity.read(BuildUnit.class, dep);
 	  return e;
 	}
 
-	final public static <E extends BuildUnit> E read(Class<E> clazz, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
-	  E e = read(clazz, dep);
+	final public static <Out extends BuildOutput> BuildUnit<Out> read(Path dep, BuildRequest<?, Out, ?, ?> generatedBy) throws IOException {
+	  @SuppressWarnings("unchecked")
+	  BuildUnit<Out> e = PersistableEntity.read(BuildUnit.class, dep);
 	  if (e != null && e.generatedBy.deepEquals(generatedBy)) {
 	    e.generatedBy = generatedBy;
 	    return e;
@@ -88,10 +92,11 @@ public class BuildUnit extends PersistableEntity {
 	 * 
 	 * @return null if no consistent compilation unit is available.
 	 */
-  public static <E extends BuildUnit> E readConsistent(Class<E> clazz, Map<? extends Path, Stamp> editedSourceFiles, Path dep, BuildRequest<?, E, ?, ?> generatedBy) throws IOException {
-	  E e = read(clazz, dep, generatedBy);
-	  if (e != null && e.isConsistent(editedSourceFiles))
+  public static <Out extends BuildOutput> BuildUnit<Out> readConsistent(Path dep, BuildRequest<?, Out, ?, ?> generatedBy, Map<? extends Path, Stamp> editedSourceFiles) throws IOException {
+	  BuildUnit<Out> e = read(dep, generatedBy);
+	  if (e != null && e.isConsistent(editedSourceFiles)) {
 	    return e;
+	  }
 	  return null;
   }
 
@@ -110,10 +115,6 @@ public class BuildUnit extends PersistableEntity {
 	// Methods for adding dependencies
 	// *******************************
 
-  public void requires(Path file) {
-		requires(file, defaultStamper.stampOf(file));
-	}
-
 	public void requires(Path file, Stamp stampOfFile) {
 		requirements.add(new FileRequirement(file, stampOfFile));
 		requiredFiles.add(file);
@@ -129,7 +130,7 @@ public class BuildUnit extends PersistableEntity {
         
         boolean foundDep = visit(new ModuleVisitor<Boolean>() {
           @Override
-          public Boolean visit(BuildUnit mod) {
+          public Boolean visit(BuildUnit<?> mod) {
             return dep.equals(mod.getPersistentPath());
           }
 
@@ -157,10 +158,6 @@ public class BuildUnit extends PersistableEntity {
 	  }
   }
 
-  public void generates(Path file) {
-		generates(file, defaultStamper.stampOf(file));
-	}
-
 	public void generates(Path file, Stamp stampOfFile) {
 		generatedFiles.add(new FileRequirement(file, stampOfFile));
 		try {
@@ -171,9 +168,9 @@ public class BuildUnit extends PersistableEntity {
     }
 	}
 	
-	public void requires(BuildUnit mod) {
+	public <Out_ extends BuildOutput> void requires(BuildUnit<Out_> mod) {
 	  Objects.requireNonNull(mod);
-	  requirements.add(new BuildRequirement(mod, mod.getGeneratedBy()));
+	  requirements.add(new BuildRequirement<Out_>(mod, mod.getGeneratedBy()));
 	  requiredUnits.add(mod);
 	}
 
@@ -183,7 +180,7 @@ public class BuildUnit extends PersistableEntity {
 	 * @see GraphUtils#repairGraph(Set)
 	 */
 	@Deprecated
-	protected void removeModuleDependency(BuildUnit mod) {
+	protected void removeModuleDependency(BuildUnit<?> mod) {
 		this.requiredUnits.remove(mod);
 	}
 
@@ -192,14 +189,14 @@ public class BuildUnit extends PersistableEntity {
 	// Methods for querying dependencies
 	// *********************************
 
-	public boolean dependsOn(BuildUnit other) {
+	public boolean dependsOn(BuildUnit<?> other) {
 		return getModuleDependencies().contains(other) ;
 	}
 
-	public boolean dependsOnTransitively(final BuildUnit other) {
+	public boolean dependsOnTransitively(final BuildUnit<?> other) {
 	  return visit(new ModuleVisitor<Boolean>() {
       @Override
-      public Boolean visit(BuildUnit mod) {
+      public Boolean visit(BuildUnit<?> mod) {
         return mod.equals(other);
       }
 
@@ -224,12 +221,24 @@ public class BuildUnit extends PersistableEntity {
 		return requiredFiles;
 	}
 
-	public Set<BuildUnit> getModuleDependencies() {
+	public Set<BuildUnit<?>> getModuleDependencies() {
+	  if (requiredUnits == null) {
+	    requiredUnits = new HashSet<>();
+	    for (Requirement req : requirements)
+	      if (req instanceof BuildRequirement)
+	        requiredUnits.add(((BuildRequirement<?>) req).unit);
+	  }
 		return requiredUnits;
 	}
 
 	public Set<Path> getExternalFileDependencies() {
-		return requiredFiles;
+	  if (requiredFiles == null) {
+      requiredFiles = new HashSet<>();
+      for (Requirement req : requirements)
+        if (req instanceof FileRequirement)
+          requiredFiles.add(((FileRequirement) req).path);
+    }
+	  return requiredFiles;
 	}
 
 	public Set<Path> getGeneratedFiles() {
@@ -239,14 +248,26 @@ public class BuildUnit extends PersistableEntity {
 		return set;
 	}
 	
+	public Set<FileRequirement> getGeneratedFileRequirements() {
+	  return Collections.unmodifiableSet(generatedFiles);
+  }
+	
 	public List<Requirement> getRequirements() {
     return requirements;
   }
 	
-	public BuildRequest<?, ?, ?, ?> getGeneratedBy() {
+	public BuildRequest<?, Out, ?, ?> getGeneratedBy() {
     return generatedBy;
   }
+	
+	public Out getBuildResult() {
+    return buildResult;
+  }
 
+	public void setBuildResult(Out out) {
+    this.buildResult = out;
+  }
+	
 //	public Set<Path> getCircularFileDependencies() throws IOException {
 //		Set<Path> dependencies = new HashSet<Path>();
 //		Set<CompilationUnit> visited = new HashSet<>();
@@ -277,10 +298,6 @@ public class BuildUnit extends PersistableEntity {
 	// Methods for checking compilation consistency
 	// ********************************************
 
-	protected boolean isConsistentExtend() {
-	  return true;
-	}
-	
 	public State getState() {
 	  return state;
 	}
@@ -338,7 +355,7 @@ public class BuildUnit extends PersistableEntity {
       if (!freq.isConsistent())
         return false;
 
-    if (!isConsistentExtend())
+    if (buildResult != null && !buildResult.isConsistent())
       return false;
 
     return true;
@@ -358,10 +375,10 @@ public class BuildUnit extends PersistableEntity {
 		for (Requirement req : requirements)
 		  if (req instanceof FileRequirement && !((FileRequirement) req).isConsistent())
 		    return InconsistenyReason.FILES_NOT_CONSISTENT;
-		  else if (req instanceof BuildRequirement && !((BuildRequirement) req).isConsistent())
+		  else if (req instanceof BuildRequirement && !((BuildRequirement<?>) req).isConsistent())
 		    return InconsistenyReason.DEPENDENCIES_INCONSISTENT;
 		
-		if (!isConsistentExtend())
+		if (buildResult != null && !buildResult.isConsistent())
 			return InconsistenyReason.OTHER;
 
 		return InconsistenyReason.NO_REASON;
@@ -370,7 +387,7 @@ public class BuildUnit extends PersistableEntity {
 	public boolean isConsistent(final Map<? extends Path, Stamp> editedSourceFiles) {
 		ModuleVisitor<Boolean> isConsistentVisitor = new ModuleVisitor<Boolean>() {
 			@Override
-			public Boolean visit(BuildUnit mod) {
+			public Boolean visit(BuildUnit<?> mod) {
 				return mod.isConsistentShallow(editedSourceFiles);
 			}
 
@@ -397,7 +414,7 @@ public class BuildUnit extends PersistableEntity {
 	// *************************************
 
 	public static interface ModuleVisitor<T> {
-		public T visit(BuildUnit mod);
+		public T visit(BuildUnit<?> mod);
 
 		public T combine(T t1, T t2);
 
@@ -414,23 +431,25 @@ public class BuildUnit extends PersistableEntity {
 	 * graph, then m1 is visited before m2.
 	 */
 	public <T> T visit(ModuleVisitor<T> visitor) {
-	  Queue<BuildUnit> queue = new ArrayDeque<>();
+	  Queue<BuildUnit<?>> queue = new ArrayDeque<>();
 	  queue.add(this);
 	  
-	  Set<BuildUnit> seenUnits = new HashSet<>();
+	  Set<BuildUnit<?>> seenUnits = new HashSet<>();
     seenUnits.add(this);
 	  
 	  T result = visitor.init();
 	  while(!queue.isEmpty()) {
-	    BuildUnit toVisit = queue.poll();
+	    BuildUnit<?> toVisit = queue.poll();
       T newResult = visitor.visit(toVisit);
       result = visitor.combine(result, newResult);
       if (visitor.cancel(result))
         break;
       
-      for (BuildUnit dep : toVisit.getModuleDependencies()) {
+      for (BuildUnit<?> dep : toVisit.getModuleDependencies()) {
         if (!seenUnits.contains(dep)) {
           queue.add(dep);
+          if (dep.getModuleDependencies() == null)
+            System.out.println(dep);
           seenUnits.add(dep);
         }
       }
@@ -449,26 +468,16 @@ public class BuildUnit extends PersistableEntity {
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	protected void readEntity(ObjectInputStream in, Stamper stamper) throws IOException, ClassNotFoundException {
-	  defaultStamper = stamper;
-	  
+	protected void readEntity(ObjectInputStream in) throws IOException, ClassNotFoundException {
 	  state = (State) in.readObject();
 	  requirements = (List<Requirement>) in.readObject();
 	  generatedFiles = (Set<FileRequirement>) in.readObject();
-	  generatedBy = (BuildRequest<?, ?, ?, ?>) in.readObject();
-	  
-	  requiredFiles = new HashSet<>();
-	  requiredUnits = new HashSet<>();
-	  
-	  for (Requirement req : requirements)
-	    if (req instanceof FileRequirement)
-	      requiredFiles.add(((FileRequirement) req).path);
-	    else if (req instanceof BuildRequirement)
-	      requiredUnits.add(((BuildRequirement) req).unit);
+	  generatedBy = (BuildRequest<?, Out, ?, ?>) in.readObject();
+	  buildResult = (Out) in.readObject();
 	}
 	
 	public void write() throws IOException {
-    super.write(defaultStamper);
+    super.write(LastModifiedStamper.instance);
   }
 
 	@Override
@@ -477,5 +486,11 @@ public class BuildUnit extends PersistableEntity {
 	  out.writeObject(requirements = Collections.unmodifiableList(requirements));
 		out.writeObject(generatedFiles = Collections.unmodifiableSet(generatedFiles));
 		out.writeObject(generatedBy);
+		out.writeObject(buildResult);
+	}
+	
+	@Override
+	public String toString() {
+	  return "BuildUnit(" + generatedBy.factory + ": " + persistentPath + ")";
 	}
 }

@@ -1,25 +1,29 @@
 package org.sugarj.cleardep.build;
 
+import org.sugarj.cleardep.BuildUnit;
+import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.common.path.Path;
 
-class BuildStackEntry {
-  private final BuilderFactory<?, ?, ?> factory;
+public class BuildStackEntry<Out extends BuildOutput> {
+  private final BuildUnit<Out> unit;
   private final Path persistencePath;
   
-  
-  public BuildStackEntry(BuilderFactory<?, ?, ?> factory, Path persistencePath) {
-    super();
-    this.factory = factory;
-    this.persistencePath = persistencePath;
+  public BuildStackEntry(BuildUnit<Out> unit) {
+    super();this.unit = unit;
+    this.persistencePath = unit.getPersistentPath();
   }
+  public BuildUnit<Out> getUnit() {
+    return unit;
+  }
+
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + ((factory == null) ? 0 : factory.hashCode());
     result = prime * result + ((persistencePath == null) ? 0 : persistencePath.hashCode());
     return result;
   }
+
   @Override
   public boolean equals(Object obj) {
     if (this == obj)
@@ -29,11 +33,6 @@ class BuildStackEntry {
     if (getClass() != obj.getClass())
       return false;
     BuildStackEntry other = (BuildStackEntry) obj;
-    if (factory == null) {
-      if (other.factory != null)
-        return false;
-    } else if (!factory.equals(other.factory))
-      return false;
     if (persistencePath == null) {
       if (other.persistencePath != null)
         return false;
@@ -41,7 +40,7 @@ class BuildStackEntry {
       return false;
     return true;
   }
-
+ 
   
   
 }

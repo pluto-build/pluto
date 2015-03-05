@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.sugarj.cleardep.stamp.CollectionStamper.CollectionStamp;
-import org.sugarj.cleardep.stamp.LastModifiedStamper.LastModifiedStamp;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.path.Path;
 
@@ -25,64 +23,30 @@ public class ContentHashStamper implements Stamper {
   @Override
   public Stamp stampOf(Path p) {
     if (!FileCommands.exists(p))
-      return new ContentHashStamp(0);
+      return new ValueStamp<>(this, null);
     
     if (p.getFile().isDirectory()) {
       Map<Path, Stamp> stamps = new HashMap<>();
-      stamps.put(p, new LastModifiedStamp(p.getFile().lastModified()));
+      stamps.put(p, new ValueStamp<>(this, p.getFile().lastModified()));
       
       for (Path sub : FileCommands.listFilesRecursive(p))
         if (sub.getFile().isDirectory())
-          stamps.put(sub, new LastModifiedStamp(sub.getFile().lastModified()));
+          stamps.put(sub, new ValueStamp<>(this, sub.getFile().lastModified()));
         else
           stamps.put(sub, fileContentHashStamp(sub));
       
-      return new CollectionStamp(stamps, this);
+      return new ValueStamp<>(this, stamps);
     }
     
     return fileContentHashStamp(p);
   }
 
-  private ContentHashStamp fileContentHashStamp(Path p) {
+  private Stamp fileContentHashStamp(Path p) {
     try {
-      return new ContentHashStamp(FileCommands.fileHash(p));
+      return new ByteArrayStamp(this, FileCommands.fileHash(p));
     } catch (IOException e) {
       e.printStackTrace();
-      return new ContentHashStamp(-1);
-    }
-  }
-
-  public static class ContentHashStamp implements Stamp {
-
-    private static final long serialVersionUID = 7535020621495360152L;
-    
-    private final Integer value;
-
-    public ContentHashStamp(Integer value) {
-      this.value = value;
-    }
-    
-    @Override
-    public boolean equals(Object o) {
-      if (o instanceof ContentHashStamp) {
-        Integer ovalue = ((ContentHashStamp) o).value;
-        return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
-      }
-      if (o instanceof ContentHashStamp) {
-        Integer ovalue = ((ContentHashStamp) o).value;
-        return ovalue == null && value == null || ovalue != null && ovalue.equals(value);
-      }
-      return false;
-    }
-    
-    @Override
-    public Stamper getStamper() {
-      return ContentHashStamper.instance;
-    }
-    
-    @Override
-    public String toString() {
-      return "ContentHash(" + value + ")";
+      return new ValueStamp<>(this, -1);
     }
   }
 }

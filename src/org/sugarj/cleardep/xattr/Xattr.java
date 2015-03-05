@@ -43,7 +43,7 @@ public class Xattr {
     this.strategy = strategy;
   }
  
-  public void setGenBy(Path p, BuildUnit unit) throws IOException {
+  public void setGenBy(Path p, BuildUnit<?> unit) throws IOException {
     strategy.setXattr(p, "genBy", unit.getPersistentPath().getAbsolutePath());
   }
   
