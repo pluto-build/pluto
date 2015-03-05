@@ -1,6 +1,7 @@
 package org.sugarj.cleardep.stamp;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,7 +44,8 @@ public class ContentHashStamper implements Stamper {
 
   private Stamp fileContentHashStamp(Path p) {
     try {
-      return new ByteArrayStamp(this, FileCommands.fileHash(p));
+      byte[] stampData = ByteBuffer.allocate(4).putInt(FileCommands.fileHash(p)).array();
+      return new ByteArrayStamp(this, stampData);
     } catch (IOException e) {
       e.printStackTrace();
       return new ValueStamp<>(this, -1);
