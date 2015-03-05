@@ -33,7 +33,7 @@ public abstract class CompileCycleAtOnceBuilder<T extends Serializable, Out exte
 
   private List<BuildUnit<Out>> cyclicResults;
 
-  @Override
+  //@Override
   protected String cyclicTaskDescription(List<BuildRequirement<?>> cycle) {
     return this.taskDescription();
   }
@@ -69,7 +69,7 @@ public abstract class CompileCycleAtOnceBuilder<T extends Serializable, Out exte
     }
   }
 
-  @Override
+  //@Override
   protected boolean canBuildCycle(List<BuildRequirement<?>> cycle) {
     for (BuildRequirement<?> req : cycle) {
       if (req.req.factory != this.factory) {
@@ -84,7 +84,7 @@ public abstract class CompileCycleAtOnceBuilder<T extends Serializable, Out exte
     return true;
   }
 
-  @Override
+  //@Override
   protected void buildCycle(List<BuildRequirement<?>> cycle) throws Throwable {
    ArrayList<BuildUnit<Out>> cyclicResults = new ArrayList<>();
    ArrayList<T> inputs = new ArrayList<>();
