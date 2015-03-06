@@ -29,7 +29,7 @@ import org.sugarj.common.path.Path;
 
 import com.cedarsoftware.util.DeepEquals;
 
-public class BuildManager {
+public class BuildManager implements BuildUnitProvider{
 
   private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
 
@@ -215,7 +215,7 @@ public class BuildManager {
       }
       
       Log.log.beginTask("Compile cycle with: " +cycleSupport.getCycleDescription(cycle), Log.CORE);
-      BuildCycle.Result result = cycleSupport.compileCycle(cycle);
+      BuildCycle.Result result = cycleSupport.compileCycle(this, cycle);
       e.setCycleResult(result);
       Log.log.endTask();
 
@@ -256,7 +256,13 @@ public class BuildManager {
     }
   }
 
-  public <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  @Override
+  public 
+    <In extends Serializable,
+     Out extends BuildOutput,
+     B extends Builder<In, Out>,
+     F extends BuilderFactory<In, Out, B>> 
+   BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
     if (rebuildTriggeredBy == null) {
       rebuildTriggeredBy = buildReq;
       Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);

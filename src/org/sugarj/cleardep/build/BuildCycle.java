@@ -52,4 +52,13 @@ public class BuildCycle {
     return cycleComponents;
   }
 
+  // TODO get edited source files
+  public boolean isConsistent() {
+    for (BuildRequirement<?> req : this.cycleComponents){
+      if (!req.unit.isConsistent(null))
+        return false;
+    }
+    return true;
+  }
+  
 }

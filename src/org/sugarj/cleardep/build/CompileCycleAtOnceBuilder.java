@@ -103,7 +103,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   }
 
   @Override
-  public Result compileCycle(BuildCycle cycle) throws Throwable {
+  public Result compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
     ArrayList<BuildUnit<Out>> cyclicResults = new ArrayList<>();
     ArrayList<In> inputs = new ArrayList<>();
     

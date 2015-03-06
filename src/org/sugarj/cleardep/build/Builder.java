@@ -42,9 +42,9 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
   }
 
   transient BuildUnit<Out> result;
-  private transient BuildManager manager;
+  private transient BuildUnitProvider manager;
   private transient Stamper defaultStamper;
-  Out triggerBuild(BuildUnit<Out> result, BuildManager manager) throws Throwable {
+  Out triggerBuild(BuildUnit<Out> result, BuildUnitProvider manager) throws Throwable {
     this.result = result;
     this.manager = manager;
     this.defaultStamper = defaultStamper();
