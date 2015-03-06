@@ -16,6 +16,10 @@ public class BuildRequirement<Out extends BuildOutput> implements Requirement, E
   public BuildUnit<Out> unit;
   public BuildRequest<?, Out, ?, ?> req;
   
+  public BuildRequirement() {
+    
+  }
+  
   public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req) {
     this.unit = unit;
     this.req = req;
