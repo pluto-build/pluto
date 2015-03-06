@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.sugarj.cleardep.BuildUnit;
+import org.sugarj.cleardep.build.BuildCycle.Result.UnitResultTuple;
 import org.sugarj.cleardep.build.BuildCycleException.CycleState;
 import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
 import org.sugarj.cleardep.dependency.BuildRequirement;
@@ -121,38 +122,29 @@ public class BuildManager {
     }
   }
 
-  
-  protected CycleSupport searchForCycleSupport(BuildCycle cycle) {
-    for (BuildRequirement<?> requirement : cycle.getCycleComponents()) {
-      CycleSupport support = requirement.req.createBuilder().getCycleSupport();
-      if (support != null && support.canCompileCycle(cycle)) {
-        return support;
-      }
-    }
-    return null;
-  }
-  
 
   protected <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
     int inputHash = DeepEquals.deepHashCode(builder.input);
 
-    String taskDescription = builder.taskDescription();
-    if (taskDescription != null)
-      Log.log.beginTask(taskDescription, Log.CORE);
 
     // First step: cycle detection
     BuildStackEntry<Out> entry = null;
 
     entry = this.requireStack.push(depResult);
+    
+
+    String taskDescription = builder.taskDescription();
+    if (taskDescription != null)
+      Log.log.beginTask(taskDescription, Log.CORE);
 
     try {
       depResult.setState(BuildUnit.State.IN_PROGESS);
 
       // call the actual builder
       try {
-        setUpMetaDependency(builder, depResult);
+        //setUpMetaDependency(builder, depResult);
         
         Out out = builder.triggerBuild(depResult, this);
         depResult.setBuildResult(out);
@@ -198,20 +190,39 @@ public class BuildManager {
 
     return depResult;
   }
+  
+  protected CycleSupport searchForCycleSupport(BuildCycle cycle) {
+    for (BuildRequirement<?> requirement : cycle.getCycleComponents()) {
+      CycleSupport support = requirement.req.createBuilder().getCycleSupport();
+      if (support != null && support.canCompileCycle(cycle)) {
+        return support;
+      }
+    }
+    return null;
+  }
+  
 
-  private void tryCompileCycle(BuildCycleException e) {
-    if (e.getCycleState() != CycleState.UNHANDLED) {
+  private void tryCompileCycle(BuildCycleException e) throws Throwable {
+    if (e.getCycleState() == CycleState.UNHANDLED) {
 
-
+      Log.log.log("Detected an dependency cycle", Log.CORE);
+      
       e.setCycleState(CycleState.NOT_RESOLVED);
       BuildCycle cycle = new BuildCycle(e.getCycleComponents());
       CycleSupport cycleSupport = this.searchForCycleSupport(cycle);
       if (cycleSupport == null) {
         throw e;
       }
+      
+      Log.log.beginTask("Compile cycle with: " +cycleSupport.getCycleDescription(cycle), Log.CORE);
+      BuildCycle.Result result = cycleSupport.compileCycle(cycle);
+      e.setCycleResult(result);
+      Log.log.endTask();
 
       e.setCycleState(CycleState.RESOLVED);
+      throw e;
     } else {
+      
       throw e;
     }
   }
@@ -222,6 +233,16 @@ public class BuildManager {
     // here because compiling the cycle needs to be in the major try block
     // where normal
     // units are compiled too
+    
+    // Set the result to the unit
+    if (e.getCycleState() == CycleState.RESOLVED) {
+      UnitResultTuple<Out> tuple = e.getCycleResult().getUnitResult(depResult);
+      if (tuple == null) {
+        throw new AssertionError("Cyclic builder does not provide a result for " + depResult.getPersistentPath());
+      }
+      tuple.setOutputToUnit();
+    }
+    
     if (e.isUnitFirstInvokedOn(dep, buildReq.factory)) {
       if (e.getCycleState() != CycleState.RESOLVED) {
         Log.log.log("Unable to find builder which can compile the cycle", Log.CORE);
@@ -230,6 +251,7 @@ public class BuildManager {
       }
     } else {
       // Kill depending builders
+      Log.log.log("Stopped because of cycle", Log.CORE);
       throw e;
     }
   }
