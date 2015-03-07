@@ -47,6 +47,10 @@ public class Xattr {
     strategy.setXattr(p, "genBy", unit.getPersistentPath().getAbsolutePath());
   }
   
+  public void removeGenBy(Path p) throws IOException {
+    strategy.removeXattr(p, "genBy");
+  }
+  
   public Path getGenBy(Path p) throws IOException {
     String val = strategy.getXattr(p, "genBy");
     if (val == null || !FileCommands.exists(new AbsolutePath(val)))

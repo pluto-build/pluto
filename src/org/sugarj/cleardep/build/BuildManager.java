@@ -273,6 +273,8 @@ public class BuildManager implements BuildUnitProvider{
       Path dep = builder.persistentPath();
       BuildUnit<Out> depResult = BuildUnit.read(dep);
 
+      resetGenBy(dep, depResult);
+      
       if (depResult == null)
         return executeBuilder(builder, dep, buildReq);
       
@@ -318,5 +320,11 @@ public class BuildManager implements BuildUnitProvider{
     // if (!depResult.isConsistent(null))
     // throw new AssertionError("Build manager does not guarantee soundness");
     return depResult;
+  }
+  
+  private void resetGenBy(Path dep, BuildUnit<?> depResult) throws IOException {
+    if (depResult != null)
+      for (Path p : depResult.getGeneratedFiles())
+        BuildUnit.xattr.removeGenBy(p);
   }
 }
