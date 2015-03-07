@@ -14,6 +14,11 @@ public class XattrAttributeViewStrategy implements XattrStrategy {
   public void setXattr(Path p, String key, String value) throws IOException {
     Files.setAttribute(p.getFile().toPath(), "user:" + Xattr.PREFIX + ":" + key, value);
   }
+  
+  @Override
+  public void removeXattr(Path p, String key) throws IOException {
+    Files.setAttribute(p.getFile().toPath(), "user:" + Xattr.PREFIX + ":" + key, null);
+  }
 
   @Override
   public String getXattr(Path p, String key) throws IOException {

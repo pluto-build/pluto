@@ -111,7 +111,7 @@ public class BuildManager implements BuildUnitProvider{
       if (!FileCommands.exists(depFile)) {
         Log.log.logErr("Warning: Builder was not built using meta builder. Consistency for builder changes are not tracked...", Log.DETAIL);
       } else {
-        BuildUnit<BuildOutput> metaBuilder = BuildUnit.readUnchecked(depFile);
+        BuildUnit<BuildOutput> metaBuilder = BuildUnit.read(depFile);
 
         depResult.requires(metaBuilder);
         depResult.requires(builderClass, metaBuilder.stamp());
@@ -271,9 +271,12 @@ public class BuildManager implements BuildUnitProvider{
     try {
       Builder<In, Out> builder = buildReq.createBuilder();
       Path dep = builder.persistentPath();
-      BuildUnit<Out> depResult = BuildUnit.read(dep, buildReq);
+      BuildUnit<Out> depResult = BuildUnit.read(dep);
 
       if (depResult == null)
+        return executeBuilder(builder, dep, buildReq);
+      
+      if (!depResult.getGeneratedBy().deepEquals(buildReq))
         return executeBuilder(builder, dep, buildReq);
 
       if (consistentUnits.contains(depResult))

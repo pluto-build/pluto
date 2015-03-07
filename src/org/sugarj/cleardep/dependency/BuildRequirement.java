@@ -46,6 +46,6 @@ public class BuildRequirement<Out extends BuildOutput> implements Requirement, E
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     Path unitPath = (Path) in.readObject();
     req = (BuildRequest<?, Out, ?, ?>) in.readObject();
-    unit = BuildUnit.read(unitPath, req);
+    unit = BuildUnit.read(unitPath);
   }
 }
