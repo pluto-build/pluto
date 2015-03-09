@@ -88,7 +88,7 @@ public class BuildManager implements BuildUnitProvider{
   }
 
   private final Map<? extends Path, Stamp> editedSourceFiles;
-  private RequireStack requireStack;
+  private ExecutingStack executingStack;
 
   private BuildRequest<?, ?, ?, ?> rebuildTriggeredBy = null;
 
@@ -97,7 +97,7 @@ public class BuildManager implements BuildUnitProvider{
 
   protected BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
     this.editedSourceFiles = editedSourceFiles;
-    this.requireStack = new RequireStack();
+    this.executingStack = new ExecutingStack();
     this.consistentUnits = new HashSet<>();
     this.generatedFiles = new HashMap<>();
   }
@@ -132,7 +132,7 @@ public class BuildManager implements BuildUnitProvider{
     // First step: cycle detection
     BuildStackEntry<Out> entry = null;
 
-    entry = this.requireStack.push(depResult);
+    entry = this.executingStack.push(depResult);
     
 
     String taskDescription = builder.taskDescription();
@@ -181,7 +181,7 @@ public class BuildManager implements BuildUnitProvider{
       if (taskDescription != null)
         Log.log.endTask();
       this.consistentUnits.add(assertConsistency(depResult));
-      BuildStackEntry<?> poppedEntry = this.requireStack.pop();
+      BuildStackEntry<?> poppedEntry = this.executingStack.pop();
       assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
     }
 

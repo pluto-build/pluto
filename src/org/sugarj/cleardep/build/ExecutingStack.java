@@ -9,7 +9,7 @@ import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.common.path.Path;
 
-public class RequireStack {
+public class ExecutingStack {
 
   private List<BuildStackEntry<?>> requireCallStack = new ArrayList<>();
 
@@ -31,11 +31,7 @@ public class RequireStack {
   
   private <Out extends BuildOutput> BuildRequirement<Out> requirementForEntry(BuildStackEntry<Out> entry) throws IOException{
     BuildUnit<Out> unit = entry.getUnit();
-    if (unit == null) {
-      throw new AssertionError("No unit fo");
-    }
     return new BuildRequirement<>(unit, unit.getGeneratedBy());
-    
   }
 
   protected BuildStackEntry<?> pop() {
