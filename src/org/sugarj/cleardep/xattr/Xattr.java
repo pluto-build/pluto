@@ -53,7 +53,7 @@ public class Xattr {
   
   public Path getGenBy(Path p) throws IOException {
     String val = strategy.getXattr(p, "genBy");
-    if (val == null || !FileCommands.exists(new AbsolutePath(val)))
+    if (val == null)
       return null;
     return new AbsolutePath(val);
   }
