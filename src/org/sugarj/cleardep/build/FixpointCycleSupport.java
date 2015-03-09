@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.sugarj.cleardep.BuildUnit;
+import org.sugarj.cleardep.BuildUnit.State;
 import org.sugarj.cleardep.build.BuildCycle.Result;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.output.BuildOutput;
@@ -37,6 +38,7 @@ public abstract class FixpointCycleSupport implements CycleSupport {
       Log.log.beginTask(builder.taskDescription(), Log.CORE);
       Out result = builder.triggerBuild(req.unit, cycleManager);
       req.unit.setBuildResult(result);
+      req.unit.setState(State.finished(true));
       Log.log.endTask();
       return result;
     }
@@ -102,14 +104,14 @@ public abstract class FixpointCycleSupport implements CycleSupport {
     
     int numInterations = 1;
     while (!cycle.isConsistent()) {
-      Log.log.beginTask("Compile cycle interation " + numInterations, Log.CORE);
-      for (int i = 0; i < cycleBuilders.size(); i++) {
+      Log.log.beginTask("Compile cycle iteration " + numInterations, Log.CORE);
+      for (int i = cycleBuilders.size()-1; i>= 0; i--) {
         BuildRequirement req = cycle.getCycleComponents().get(i);
         FixpointEntry entry = cycleBuilders.get(i);
 
         req.unit = BuildUnit.create(req.unit.getPersistentPath(), req.unit.getGeneratedBy());
         result.setBuildResult(req.unit, entry.compile(cycleManager, req));
-      
+       
       }
       Log.log.endTask();
       numInterations ++;

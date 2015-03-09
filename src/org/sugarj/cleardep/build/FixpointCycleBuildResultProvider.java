@@ -6,6 +6,7 @@ import java.io.Serializable;
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.output.BuildOutput;
+import org.sugarj.common.path.Path;
 
 public class FixpointCycleBuildResultProvider implements BuildUnitProvider{
   
@@ -27,8 +28,9 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider{
      B extends Builder<In, Out>, 
      F extends BuilderFactory<In, Out, B>> 
   BuildUnit<Out> getBuildUnitInCycle(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+    Path depPath = buildReq.createBuilder().persistentPath();
     for (BuildRequirement<?> req : this.cycle.getCycleComponents()) {
-      if (req.req.deepEquals(buildReq)) {
+      if (req.unit.getPersistentPath().equals(depPath)) {
         return  (BuildUnit<Out>) req.unit;
       }
     }
