@@ -108,6 +108,8 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
         boolean foundDep = visit(new ModuleVisitor<Boolean>() {
           @Override
           public Boolean visit(BuildUnit<?> mod) {
+            if (mod == BuildUnit.this)
+              return false;
             return dep.equals(mod.getPersistentPath());
           }
 
