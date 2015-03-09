@@ -29,7 +29,7 @@ import org.sugarj.common.path.Path;
 
 import com.cedarsoftware.util.DeepEquals;
 
-public class BuildManager implements BuildUnitProvider{
+public class BuildManager implements BuildUnitProvider {
 
   private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
 
@@ -88,21 +88,26 @@ public class BuildManager implements BuildUnitProvider{
   }
 
   private final Map<? extends Path, Stamp> editedSourceFiles;
-  private RequireStack requireStack;
+  private ExecutingStack executingStack;
 
   private BuildRequest<?, ?, ?, ?> rebuildTriggeredBy = null;
 
-  private transient Set<BuildUnit<?>> consistentUnits;
+  private transient ConsistencyManager consistencyManager;
   private transient Map<Path, BuildUnit<?>> generatedFiles;
 
   protected BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
     this.editedSourceFiles = editedSourceFiles;
-    this.requireStack = new RequireStack();
-    this.consistentUnits = new HashSet<>();
+    this.executingStack = new ExecutingStack();
+    this.consistencyManager = new ConsistencyManager();
     this.generatedFiles = new HashMap<>();
   }
 
-  private <In extends Serializable, Out extends BuildOutput> void setUpMetaDependency(Builder<In, Out> builder, BuildUnit<Out> depResult) throws IOException {
+  // @formatter:off
+  private 
+    <In extends Serializable,
+     Out extends BuildOutput>
+  // @formatter:on
+  void setUpMetaDependency(Builder<In, Out> builder, BuildUnit<Out> depResult) throws IOException {
     if (depResult != null) {
       // require the meta builder...
       URL res = builder.getClass().getResource(builder.getClass().getSimpleName() + ".class");
@@ -122,18 +127,22 @@ public class BuildManager implements BuildUnitProvider{
     }
   }
 
-
-  protected <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  // @formatter:off
+  protected 
+    <In extends Serializable,
+     Out extends BuildOutput,
+     B extends Builder<In, Out>,
+     F extends BuilderFactory<In, Out, B>>
+  // @formatter:on
+  BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
     int inputHash = DeepEquals.deepHashCode(builder.input);
 
-
     // First step: cycle detection
     BuildStackEntry<Out> entry = null;
 
-    entry = this.requireStack.push(depResult);
-    
+    entry = this.executingStack.push(depResult);
 
     String taskDescription = builder.taskDescription();
     if (taskDescription != null)
@@ -145,7 +154,7 @@ public class BuildManager implements BuildUnitProvider{
       // call the actual builder
       try {
         setUpMetaDependency(builder, depResult);
-        
+
         Out out = builder.triggerBuild(depResult, this);
         depResult.setBuildResult(out);
 
@@ -155,7 +164,7 @@ public class BuildManager implements BuildUnitProvider{
       } catch (BuildCycleException e) {
         tryCompileCycle(e);
       }
-      
+
     } catch (BuildCycleException e) {
       stopBuilderInCycle(builder, dep, buildReq, depResult, e);
     } catch (RequiredBuilderFailed e) {
@@ -180,8 +189,10 @@ public class BuildManager implements BuildUnitProvider{
 
       if (taskDescription != null)
         Log.log.endTask();
-      this.consistentUnits.add(assertConsistency(depResult));
-      BuildStackEntry<?> poppedEntry = this.requireStack.pop();
+      // Do not think, that this is necessary, because execute is called by
+      // requires
+      // this.consistentUnits.add(assertConsistency(depResult));
+      BuildStackEntry<?> poppedEntry = this.executingStack.pop();
       assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
     }
 
@@ -190,7 +201,7 @@ public class BuildManager implements BuildUnitProvider{
 
     return depResult;
   }
-  
+
   protected CycleSupport searchForCycleSupport(BuildCycle cycle) {
     for (BuildRequirement<?> requirement : cycle.getCycleComponents()) {
       CycleSupport support = requirement.req.createBuilder().getCycleSupport();
@@ -200,21 +211,20 @@ public class BuildManager implements BuildUnitProvider{
     }
     return null;
   }
-  
 
   private void tryCompileCycle(BuildCycleException e) throws Throwable {
     if (e.getCycleState() == CycleState.UNHANDLED) {
 
       Log.log.log("Detected an dependency cycle", Log.CORE);
-      
+
       e.setCycleState(CycleState.NOT_RESOLVED);
       BuildCycle cycle = new BuildCycle(e.getCycleComponents());
       CycleSupport cycleSupport = this.searchForCycleSupport(cycle);
       if (cycleSupport == null) {
         throw e;
       }
-      
-      Log.log.beginTask("Compile cycle with: " +cycleSupport.getCycleDescription(cycle), Log.CORE);
+
+      Log.log.beginTask("Compile cycle with: " + cycleSupport.getCycleDescription(cycle), Log.CORE);
       BuildCycle.Result result = cycleSupport.compileCycle(this, cycle);
       e.setCycleResult(result);
       Log.log.endTask();
@@ -222,18 +232,25 @@ public class BuildManager implements BuildUnitProvider{
       e.setCycleState(CycleState.RESOLVED);
       throw e;
     } else {
-      
+
       throw e;
     }
   }
 
-  private <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> void stopBuilderInCycle(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq, BuildUnit<Out> depResult, BuildCycleException e) {
+  // @formatter:off
+  private 
+    <In extends Serializable,
+     Out extends BuildOutput,
+     B extends Builder<In, Out>,
+     F extends BuilderFactory<In, Out, B>> 
+  //@formatter:on
+  void stopBuilderInCycle(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq, BuildUnit<Out> depResult, BuildCycleException e) {
     // This is the exception which has been rethrown above, but we cannot
     // handle it
     // here because compiling the cycle needs to be in the major try block
     // where normal
     // units are compiled too
-    
+
     // Set the result to the unit
     if (e.getCycleState() == CycleState.RESOLVED) {
       UnitResultTuple<Out> tuple = e.getCycleResult().getUnitResult(depResult);
@@ -256,12 +273,14 @@ public class BuildManager implements BuildUnitProvider{
   }
 
   @Override
-  public 
+  //@formatter:off
+  public
     <In extends Serializable,
      Out extends BuildOutput,
      B extends Builder<In, Out>,
-     F extends BuilderFactory<In, Out, B>> 
-   BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+     F extends BuilderFactory<In, Out, B>>
+  //@formatter:on
+  BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
     if (rebuildTriggeredBy == null) {
       rebuildTriggeredBy = buildReq;
       Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
@@ -272,15 +291,17 @@ public class BuildManager implements BuildUnitProvider{
       Path dep = builder.persistentPath();
       BuildUnit<Out> depResult = BuildUnit.read(dep);
 
+      this.consistencyManager.startCheckProgress(depResult);
+
       resetGenBy(dep, depResult);
-      
+
       if (depResult == null)
         return executeBuilder(builder, dep, buildReq);
-      
+
       if (!depResult.getGeneratedBy().deepEquals(buildReq))
         return executeBuilder(builder, dep, buildReq);
 
-      if (consistentUnits.contains(depResult))
+      if (this.consistencyManager.isConsistent(depResult))
         return depResult;
 
       if (!depResult.isConsistentNonrequirements())
@@ -292,12 +313,17 @@ public class BuildManager implements BuildUnitProvider{
           if (!freq.isConsistent())
             return executeBuilder(builder, dep, buildReq);
         } else if (req instanceof BuildRequirement) {
-          BuildRequirement<?> breq = (BuildRequirement<?>) req;
-          require(breq.req);
+          if (this.consistencyManager.canCheckUnit(depResult, (BuildRequirement<?>) req)) {
+            BuildRequirement<?> breq = (BuildRequirement<?>) req;
+            require(breq.req);
+          }
         }
       }
 
-      consistentUnits.add(assertConsistency(depResult));
+      Set<BuildRequirement<?>> inconsistentCylicUnits = this.consistencyManager.stopCheckProgress(depResult, true);
+      for (BuildRequirement<?> inconsistentUnit : inconsistentCylicUnits) {
+        require(inconsistentUnit.req);
+      }
       return depResult;
     } finally {
       if (rebuildTriggeredBy == buildReq)
@@ -320,7 +346,7 @@ public class BuildManager implements BuildUnitProvider{
     // throw new AssertionError("Build manager does not guarantee soundness");
     return depResult;
   }
-  
+
   private void resetGenBy(Path dep, BuildUnit<?> depResult) throws IOException {
     if (depResult != null)
       for (Path p : depResult.getGeneratedFiles())
