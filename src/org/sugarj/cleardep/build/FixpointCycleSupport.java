@@ -14,70 +14,73 @@ import org.sugarj.common.Log;
 
 public abstract class FixpointCycleSupport implements CycleSupport {
 
-  public static class FixpointEntry
-    < In  extends Serializable, 
-      Out extends BuildOutput,
-      B extends Builder<In, Out>,
-      F extends BuilderFactory<In, Out, B>> {
-    
+  public static class FixpointEntry<In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> {
+
     private F builderFactory;
     private Class<In> inputClass;
-    
+
     public FixpointEntry(F factory, Class<In> inputClass) {
       super();
       this.builderFactory = factory;
       this.inputClass = inputClass;
     }
-    
-    private B makeBuilder(BuildRequirement<Out> req) {
-      return this.builderFactory.makeBuilder((In)req.req.input);
+
+    private B makeBuilder(In input) {
+      return this.builderFactory.makeBuilder(input);
     }
-    
-    private Out compile(FixpointCycleBuildResultProvider cycleManager, BuildRequirement<Out> req) throws Throwable{
-      Builder<In, Out> builder = makeBuilder(req);
+
+    protected Out compileRequest(FixpointCycleBuildResultProvider cycleManager, BuildRequest<In, Out, B, F> req) throws Throwable {
+      Builder<In, Out> builder = makeBuilder(req.input);
       Log.log.beginTask(builder.taskDescription(), Log.CORE);
-      Out result = builder.triggerBuild(req.unit, cycleManager);
-      req.unit.setBuildResult(result);
-      req.unit.setState(State.finished(true));
+      BuildUnit<Out> unit = BuildUnit.create(builder.persistentPath(), req);
+      Out result = builder.triggerBuild(unit, cycleManager);
+      unit.setBuildResult(result);
+      unit.setState(State.finished(true));
       Log.log.endTask();
       return result;
     }
     
+    protected String taskDescription(Object input) {
+      return makeBuilder((In) input).taskDescription();
+    }
+
   }
-  
-  private List<FixpointEntry<?,?,?,?>> supportedBuilders;
-  
-  public FixpointCycleSupport(FixpointEntry<?,?,?,?> ... supportedBuilders) {
+
+  private List<FixpointEntry<?, ?, ?, ?>> supportedBuilders;
+
+  public FixpointCycleSupport(FixpointEntry<?, ?, ?, ?>... supportedBuilders) {
     this.supportedBuilders = Arrays.asList(supportedBuilders);
   }
-  
+
+  // @formatter:off
   protected static
-  < In  extends Serializable, 
-  Out extends BuildOutput,
-  B extends Builder<In, Out>,
-  F extends BuilderFactory<In, Out, B>>
-   FixpointEntry<In, Out, B, F> entry(F factory, Class<In> inputClass) {
+    <In  extends Serializable, 
+     Out extends BuildOutput,
+     B   extends Builder<In, Out>,
+     F   extends BuilderFactory<In, Out, B>>
+  // @formatter:on
+  FixpointEntry<In, Out, B, F> entry(F factory, Class<In> inputClass) {
     return new FixpointEntry<In, Out, B, F>(factory, inputClass);
   }
-  
+
   @Override
   public String getCycleDescription(BuildCycle cycle) {
     String cycleName = "Cycle ";
     for (BuildRequirement<?> req : cycle.getCycleComponents()) {
-      cycleName += getBuilderForInput(req.req.input).makeBuilder((BuildRequirement) req).taskDescription() + ", ";
+      cycleName += getBuilderForInput(req.req.input).taskDescription(req.req.input) + ", ";
     }
     return cycleName;
   }
-  
-  private FixpointEntry<?, ?,?, ?> getBuilderForInput(Serializable input) {
-    for (FixpointEntry<?, ?, ?,?> supportedBuilder : supportedBuilders) {
+
+  protected FixpointEntry<?, ?, ?, ?> getBuilderForInput(Serializable input) {
+    for (FixpointEntry<?, ?, ?, ?> supportedBuilder : supportedBuilders) {
       if (supportedBuilder.inputClass.isAssignableFrom(input.getClass())) {
         return supportedBuilder;
       }
     }
     return null;
   }
-  
+
   private boolean canCompileInput(Serializable input) {
     return this.getBuilderForInput(input) != null;
   }
@@ -86,6 +89,7 @@ public abstract class FixpointCycleSupport implements CycleSupport {
   public boolean canCompileCycle(BuildCycle cycle) {
     for (BuildRequirement<?> req : cycle.getCycleComponents()) {
       if (!canCompileInput(req.req.input)) {
+        System.out.println("Cannot compule cycle " + req.req.input);
         return false;
       }
     }
@@ -94,31 +98,26 @@ public abstract class FixpointCycleSupport implements CycleSupport {
 
   @Override
   public Result compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
-    List<FixpointEntry<?, ?, ?,?>> cycleBuilders = new ArrayList<>(cycle.getCycleComponents().size());
+    List<FixpointEntry<?, ?, ?, ?>> cycleBuilders = new ArrayList<>(cycle.getCycleComponents().size());
     for (BuildRequirement<?> req : cycle.getCycleComponents()) {
       cycleBuilders.add(getBuilderForInput(req.req.input));
     }
-    
-    FixpointCycleBuildResultProvider cycleManager = new FixpointCycleBuildResultProvider(manager, cycle);
-    BuildCycle.Result result = new Result();
-    
+
+    FixpointCycleBuildResultProvider cycleManager = new FixpointCycleBuildResultProvider(this, manager, cycle);
+
+
     int numInterations = 1;
     while (!cycle.isConsistent()) {
       Log.log.beginTask("Compile cycle iteration " + numInterations, Log.CORE);
-      for (int i = cycleBuilders.size()-1; i>= 0; i--) {
-        BuildRequirement req = cycle.getCycleComponents().get(i);
-        FixpointEntry entry = cycleBuilders.get(i);
 
-        req.unit = BuildUnit.create(req.unit.getPersistentPath(), req.unit.getGeneratedBy());
-        result.setBuildResult(req.unit, entry.compile(cycleManager, req));
-       
-      }
+      cycleManager.require(cycle.getInitialComponent().req);
+     
       Log.log.endTask();
-      numInterations ++;
-      
+      numInterations++;
+      cycleManager.nextIteration();
     }
     Log.log.log("Fixpoint detected.", Log.CORE);
-    return result;
+    return cycleManager.getResult();
   }
 
 }
