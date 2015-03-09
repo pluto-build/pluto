@@ -19,19 +19,25 @@ public class XattrPreferencesStrategy implements XattrStrategy {
   @Override
   public void setXattr(Path p, String k, String value) throws IOException {
     String key = p + ":" + k;
-    String ckey = key;
     if (key.length() > Preferences.MAX_KEY_LENGTH)
-      ckey = p.hashCode() + ":" + k;
-    prefs.put(ckey, value);
+      key = p.hashCode() + ":" + k;
+    prefs.put(key, value);
+  }
+  
+  @Override
+  public void removeXattr(Path p, String k) throws IOException {
+    String key = p + ":" + k;
+    if (key.length() > Preferences.MAX_KEY_LENGTH)
+      key = p.hashCode() + ":" + k;
+    prefs.remove(key);
   }
 
   @Override
   public String getXattr(Path p, String k) throws IOException {
     String key = p + ":" + k;
-    String ckey = key;
     if (key.length() > Preferences.MAX_KEY_LENGTH)
-      ckey = p.hashCode() + ":" + k;
-    String val = prefs.get(ckey, null);
+      key = p.hashCode() + ":" + k;
+    String val = prefs.get(key, null);
     return val;
   }
 

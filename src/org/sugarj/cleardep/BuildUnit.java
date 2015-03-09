@@ -71,34 +71,11 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 		return e;
 	}
 	
-	final public static <Out extends BuildOutput> BuildUnit<Out> readUnchecked(Path dep) throws IOException {
+	final public static <Out extends BuildOutput> BuildUnit<Out> read(Path dep) throws IOException {
 	  @SuppressWarnings("unchecked")
     BuildUnit<Out> e = PersistableEntity.read(BuildUnit.class, dep);
 	  return e;
 	}
-
-	final public static <Out extends BuildOutput> BuildUnit<Out> read(Path dep, BuildRequest<?, Out, ?, ?> generatedBy) throws IOException {
-	  @SuppressWarnings("unchecked")
-	  BuildUnit<Out> e = PersistableEntity.read(BuildUnit.class, dep);
-	  if (e != null && e.generatedBy.deepEquals(generatedBy)) {
-	    e.generatedBy = generatedBy;
-	    return e;
-	  }
-    return null;
-  }
-	
-	/**
-	 * Reads a CompilationUnit from memory or disk. The returned Compilation unit is guaranteed to be consistent.
-	 * 
-	 * @return null if no consistent compilation unit is available.
-	 */
-  public static <Out extends BuildOutput> BuildUnit<Out> readConsistent(Path dep, BuildRequest<?, Out, ?, ?> generatedBy, Map<? extends Path, Stamp> editedSourceFiles) throws IOException {
-	  BuildUnit<Out> e = read(dep, generatedBy);
-	  if (e != null && e.isConsistent(editedSourceFiles)) {
-	    return e;
-	  }
-	  return null;
-  }
 
 	@Override
 	protected void init() {

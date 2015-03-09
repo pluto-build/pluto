@@ -19,6 +19,15 @@ public class XattrCommandStrategy implements XattrStrategy {
       throw new IOException(e);
     }
   }
+  
+  @Override
+  public void removeXattr(Path p, String key) throws IOException {
+    try {
+      exec.execute("xattr", "-d", Xattr.PREFIX + ":" + key, p.getAbsolutePath());
+    } catch (CommandExecution.ExecutionError e) {
+      throw new IOException(e);
+    }
+  }
 
   @Override
   public String getXattr(Path p, String key) throws IOException {

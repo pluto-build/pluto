@@ -18,22 +18,22 @@ public class BuildRequirement<Out extends BuildOutput> implements Requirement, E
   public BuildUnit<Out> unit;
   public BuildRequest<?, Out, ?, ?> req;
   public Out output;
-  
+
   public BuildRequirement() {
-    
+
   }
-  
+
   public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req) {
     this.unit = unit;
     this.req = req;
     this.output = unit.getBuildResult();
   }
-  
+
   @Override
   public boolean isConsistent() {
     return unit == null || (unit.getGeneratedBy().deepEquals(req) && DeepEquals.deepEquals(output, unit.getBuildResult()));
   }
-  
+
   @Override
   public String toString() {
     return req.toString();
@@ -51,7 +51,7 @@ public class BuildRequirement<Out extends BuildOutput> implements Requirement, E
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     Path unitPath = (Path) in.readObject();
     req = (BuildRequest<?, Out, ?, ?>) in.readObject();
-    unit = BuildUnit.read(unitPath, req);
+    unit = BuildUnit.read(unitPath);
     output = (Out) in.readObject();
   }
 }
