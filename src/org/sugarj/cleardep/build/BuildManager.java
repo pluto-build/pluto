@@ -153,7 +153,7 @@ public class BuildManager implements BuildUnitProvider {
 
       // call the actual builder
       try {
-        setUpMetaDependency(builder, depResult);
+        //setUpMetaDependency(builder, depResult);
 
         Out out = builder.triggerBuild(depResult, this);
         depResult.setBuildResult(out);
