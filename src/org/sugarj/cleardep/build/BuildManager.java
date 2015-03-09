@@ -92,13 +92,17 @@ public class BuildManager implements BuildUnitProvider {
 
   private BuildRequest<?, ?, ?, ?> rebuildTriggeredBy = null;
 
-  private transient ConsistencyManager consistencyManager;
+  private final static boolean CONSISTENT = true;
+  private final static boolean PENDING = false;
+//  private transient ConsistencyManager consistencyManager;
+  private transient Map<Path, Boolean> consistencyCache;
   private transient Map<Path, BuildUnit<?>> generatedFiles;
 
   protected BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
     this.editedSourceFiles = editedSourceFiles;
     this.executingStack = new ExecutingStack();
-    this.consistencyManager = new ConsistencyManager();
+//    this.consistencyManager = new ConsistencyManager();
+    this.consistencyCache = new HashMap<>();
     this.generatedFiles = new HashMap<>();
   }
 
@@ -136,25 +140,26 @@ public class BuildManager implements BuildUnitProvider {
   // @formatter:on
   BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
+    resetGenBy(dep, BuildUnit.read(dep));
     BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
     int inputHash = DeepEquals.deepHashCode(builder.input);
 
-    // First step: cycle detection
-    BuildStackEntry<Out> entry = null;
-
-    entry = this.executingStack.push(depResult);
-
     String taskDescription = builder.taskDescription();
-    if (taskDescription != null)
-      Log.log.beginTask(taskDescription, Log.CORE);
-
+    
+    BuildStackEntry<Out> entry = null;
     try {
-      depResult.setState(BuildUnit.State.IN_PROGESS);
-
-      // call the actual builder
       try {
+        // First step: cycle detection
+        entry = this.executingStack.push(depResult);
+        
+        if (taskDescription != null)
+          Log.log.beginTask(taskDescription, Log.CORE);
+        
+        depResult.setState(BuildUnit.State.IN_PROGESS);
+        
         //setUpMetaDependency(builder, depResult);
 
+        // call the actual builder
         Out out = builder.triggerBuild(depResult, this);
         depResult.setBuildResult(out);
 
@@ -186,14 +191,14 @@ public class BuildManager implements BuildUnitProvider {
       if (inputHash != DeepEquals.deepHashCode(builder.input))
         throw new AssertionError("API Violation detected: Builder mutated its input.");
       depResult.write();
+      assertConsistency(depResult);
 
       if (taskDescription != null)
         Log.log.endTask();
-      // Do not think, that this is necessary, because execute is called by
-      // requires
-      // this.consistentUnits.add(assertConsistency(depResult));
-      BuildStackEntry<?> poppedEntry = this.executingStack.pop();
-      assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
+      if (entry != null) {
+        BuildStackEntry<?> poppedEntry = this.executingStack.pop();
+        assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
+      }
     }
 
     if (depResult.getState() == BuildUnit.State.FAILURE)
@@ -215,7 +220,7 @@ public class BuildManager implements BuildUnitProvider {
   private void tryCompileCycle(BuildCycleException e) throws Throwable {
     if (e.getCycleState() == CycleState.UNHANDLED) {
 
-      Log.log.log("Detected an dependency cycle", Log.CORE);
+      Log.log.log("Detected a dependency cycle", Log.CORE);
 
       e.setCycleState(CycleState.NOT_RESOLVED);
       BuildCycle cycle = new BuildCycle(e.getCycleComponents());
@@ -286,14 +291,14 @@ public class BuildManager implements BuildUnitProvider {
       Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
     }
 
+    BuildUnit<Out> depResult = null;
+    Path dep = null;
     try {
       Builder<In, Out> builder = buildReq.createBuilder();
-      Path dep = builder.persistentPath();
-      BuildUnit<Out> depResult = BuildUnit.read(dep);
+      dep = builder.persistentPath();
+      depResult = BuildUnit.read(dep);
 
-      this.consistencyManager.startCheckProgress(depResult);
-
-      resetGenBy(dep, depResult);
+//      this.consistencyManager.startCheckProgress(depResult);
 
       if (depResult == null)
         return executeBuilder(builder, dep, buildReq);
@@ -301,9 +306,12 @@ public class BuildManager implements BuildUnitProvider {
       if (!depResult.getGeneratedBy().deepEquals(buildReq))
         return executeBuilder(builder, dep, buildReq);
 
-      if (this.consistencyManager.isConsistent(depResult))
+//      if (this.consistencyManager.isConsistent(depResult))
+//        return depResult;
+      if (consistencyCache.containsKey(dep))
         return depResult;
 
+      consistencyCache.put(dep, PENDING);
       if (!depResult.isConsistentNonrequirements())
         return executeBuilder(builder, dep, buildReq);
 
@@ -313,19 +321,21 @@ public class BuildManager implements BuildUnitProvider {
           if (!freq.isConsistent())
             return executeBuilder(builder, dep, buildReq);
         } else if (req instanceof BuildRequirement) {
-          if (this.consistencyManager.canCheckUnit(depResult, (BuildRequirement<?>) req)) {
+//          if (this.consistencyManager.canCheckUnit(depResult, (BuildRequirement<?>) req)) {
             BuildRequirement<?> breq = (BuildRequirement<?>) req;
             require(breq.req);
-          }
+//          }
         }
       }
 
-      Set<BuildRequirement<?>> inconsistentCylicUnits = this.consistencyManager.stopCheckProgress(depResult, true);
-      for (BuildRequirement<?> inconsistentUnit : inconsistentCylicUnits) {
-        require(inconsistentUnit.req);
-      }
+//      Set<BuildRequirement<?>> inconsistentCylicUnits = this.consistencyManager.stopCheckProgress(depResult, true);
+//      for (BuildRequirement<?> inconsistentUnit : inconsistentCylicUnits) {
+//        require(inconsistentUnit.req);
+//      }
       return depResult;
     } finally {
+      if (dep != null)
+        consistencyCache.put(dep, CONSISTENT);
       if (rebuildTriggeredBy == buildReq)
         Log.log.endTask();
     }
@@ -333,12 +343,12 @@ public class BuildManager implements BuildUnitProvider {
 
   private <Out extends BuildOutput> BuildUnit<Out> assertConsistency(BuildUnit<Out> depResult) {
     BuildUnit<?> other = generatedFiles.put(depResult.getPersistentPath(), depResult);
-    if (other != null)
+    if (other != null && other != depResult)
       throw new DuplicateBuildUnitPathException("Build unit " + depResult + " has same persistent path as build unit " + other);
 
     for (FileRequirement freq : depResult.getGeneratedFileRequirements()) {
       other = generatedFiles.put(freq.path, depResult);
-      if (other != null)
+      if (other != null && other != depResult)
         throw new DuplicateFileGenerationException("Build unit " + depResult + " generates same file as build unit " + other);
     }
 
