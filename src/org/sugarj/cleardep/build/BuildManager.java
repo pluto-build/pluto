@@ -144,7 +144,7 @@ public class BuildManager implements BuildUnitProvider{
 
       // call the actual builder
       try {
-        //setUpMetaDependency(builder, depResult);
+        setUpMetaDependency(builder, depResult);
         
         Out out = builder.triggerBuild(depResult, this);
         depResult.setBuildResult(out);
@@ -155,7 +155,7 @@ public class BuildManager implements BuildUnitProvider{
       } catch (BuildCycleException e) {
         tryCompileCycle(e);
       }
-
+      
     } catch (BuildCycleException e) {
       stopBuilderInCycle(builder, dep, buildReq, depResult, e);
     } catch (RequiredBuilderFailed e) {
@@ -242,7 +242,7 @@ public class BuildManager implements BuildUnitProvider{
       }
       tuple.setOutputToUnit();
     }
-    
+    Log.log.log("Stopped because of cycle", Log.CORE);
     if (e.isUnitFirstInvokedOn(dep, buildReq.factory)) {
       if (e.getCycleState() != CycleState.RESOLVED) {
         Log.log.log("Unable to find builder which can compile the cycle", Log.CORE);
@@ -251,7 +251,6 @@ public class BuildManager implements BuildUnitProvider{
       }
     } else {
       // Kill depending builders
-      Log.log.log("Stopped because of cycle", Log.CORE);
       throw e;
     }
   }

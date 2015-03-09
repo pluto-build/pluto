@@ -9,6 +9,7 @@ import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.BuildCycle.Result;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.output.BuildOutput;
+import org.sugarj.common.Log;
 
 public abstract class FixpointCycleSupport implements CycleSupport {
 
@@ -33,7 +34,10 @@ public abstract class FixpointCycleSupport implements CycleSupport {
     
     private Out compile(FixpointCycleBuildResultProvider cycleManager, BuildRequirement<Out> req) throws Throwable{
       Builder<In, Out> builder = makeBuilder(req);
+      Log.log.beginTask(builder.taskDescription(), Log.CORE);
       Out result = builder.triggerBuild(req.unit, cycleManager);
+      req.unit.setBuildResult(result);
+      Log.log.endTask();
       return result;
     }
     
@@ -96,16 +100,22 @@ public abstract class FixpointCycleSupport implements CycleSupport {
     FixpointCycleBuildResultProvider cycleManager = new FixpointCycleBuildResultProvider(manager, cycle);
     BuildCycle.Result result = new Result();
     
+    int numInterations = 1;
     while (!cycle.isConsistent()) {
-      
+      Log.log.beginTask("Compile cycle interation " + numInterations, Log.CORE);
       for (int i = 0; i < cycleBuilders.size(); i++) {
         BuildRequirement req = cycle.getCycleComponents().get(i);
         FixpointEntry entry = cycleBuilders.get(i);
+
+        req.unit = BuildUnit.create(req.unit.getPersistentPath(), req.unit.getGeneratedBy());
         result.setBuildResult(req.unit, entry.compile(cycleManager, req));
-       
+      
       }
+      Log.log.endTask();
+      numInterations ++;
       
     }
+    Log.log.log("Fixpoint detected.", Log.CORE);
     return result;
   }
 
