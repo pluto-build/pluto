@@ -61,4 +61,8 @@ public class BuildCycle {
     return true;
   }
   
+  public BuildRequirement<?> getInitialComponent() {
+    return this.cycleComponents.get(0);
+  }
+  
 }
