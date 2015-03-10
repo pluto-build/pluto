@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,10 +93,10 @@ public class BuildManager implements BuildUnitProvider {
 
   private BuildRequest<?, ?, ?, ?> rebuildTriggeredBy = null;
 
-  private final static boolean CONSISTENT = true;
-  private final static boolean PENDING = false;
 //  private transient ConsistencyManager consistencyManager;
-  private transient Map<Path, Boolean> consistencyCache;
+  private transient Map<Path, Set<Path>> consistencyCache;
+  private transient LinkedList<Path> stack;
+  
   private transient Map<Path, BuildUnit<?>> generatedFiles;
 
   protected BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
@@ -103,6 +104,7 @@ public class BuildManager implements BuildUnitProvider {
     this.executingStack = new ExecutingStack();
 //    this.consistencyManager = new ConsistencyManager();
     this.consistencyCache = new HashMap<>();
+    this.stack = new LinkedList<>();
     this.generatedFiles = new HashMap<>();
   }
 
@@ -293,6 +295,8 @@ public class BuildManager implements BuildUnitProvider {
 
     BuildUnit<Out> depResult = null;
     Path dep = null;
+    Set<Path> cyclicAssumptions = new HashSet<Path>();
+      
     try {
       Builder<In, Out> builder = buildReq.createBuilder();
       dep = builder.persistentPath();
@@ -311,21 +315,30 @@ public class BuildManager implements BuildUnitProvider {
       if (consistencyCache.containsKey(dep))
         return depResult;
 
-      consistencyCache.put(dep, PENDING);
-      if (!depResult.isConsistentNonrequirements())
-        return executeBuilder(builder, dep, buildReq);
+      if (stack.contains(dep)) {
+        cyclicAssumptions.add(dep);
+        return depResult;
+      }
+      stack.push(dep);
 
-      for (Requirement req : depResult.getRequirements()) {
-        if (req instanceof FileRequirement) {
-          FileRequirement freq = (FileRequirement) req;
-          if (!freq.isConsistent())
-            return executeBuilder(builder, dep, buildReq);
-        } else if (req instanceof BuildRequirement) {
-//          if (this.consistencyManager.canCheckUnit(depResult, (BuildRequirement<?>) req)) {
-            BuildRequirement<?> breq = (BuildRequirement<?>) req;
-            require(breq.req);
-//          }
+      try {
+        if (!depResult.isConsistentNonrequirements())
+          return executeBuilder(builder, dep, buildReq);
+  
+        for (Requirement req : depResult.getRequirements()) {
+          if (req instanceof FileRequirement) {
+            FileRequirement freq = (FileRequirement) req;
+            if (!freq.isConsistent())
+              return executeBuilder(builder, dep, buildReq);
+          } else if (req instanceof BuildRequirement) {
+              BuildRequirement<?> breq = (BuildRequirement<?>) req;
+              BuildUnit<?> unit = require(breq.req);
+              if (consistencyCache.containsKey(unit.getPersistentPath()))
+                cyclicAssumptions.addAll(consistencyCache.get(unit.getPersistentPath()));
+          }
         }
+      } finally {
+        stack.pop();
       }
 
 //      Set<BuildRequirement<?>> inconsistentCylicUnits = this.consistencyManager.stopCheckProgress(depResult, true);
@@ -334,8 +347,7 @@ public class BuildManager implements BuildUnitProvider {
 //      }
       return depResult;
     } finally {
-      if (dep != null)
-        consistencyCache.put(dep, CONSISTENT);
+      consistencyCache.put(dep, cyclicAssumptions);
       if (rebuildTriggeredBy == buildReq)
         Log.log.endTask();
     }
