@@ -127,7 +127,7 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
           public boolean cancel(Boolean t) {
             return t;
           }
-        });
+        }, getModuleDependencies());
         
         if (!foundDep)
           throw new IllegalDependencyException("Build unit " + FileCommands.tryGetRelativePath(getPersistentPath()) + " has a hidden dependency on file " + FileCommands.tryGetRelativePath(file) + " without build-unit dependency on " + dep + ", which generated this file. The current builder " + FileCommands.fileName(getPersistentPath()) + " should mark a dependency to " + FileCommands.tryGetRelativePath(dep) + " by `requiring` the corresponding builder.");
@@ -410,8 +410,14 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	 * graph, then m1 is visited before m2.
 	 */
 	public <T> T visit(ModuleVisitor<T> visitor) {
+	  return visit(visitor, null);
+	}
+	public <T> T visit(ModuleVisitor<T> visitor, Set<BuildUnit<?>> init) {
 	  Queue<BuildUnit<?>> queue = new ArrayDeque<>();
-	  queue.add(this);
+	  if (init == null)
+	    queue.add(this);
+	  else
+	    queue.addAll(init);
 	  
 	  Set<BuildUnit<?>> seenUnits = new HashSet<>();
     seenUnits.add(this);
