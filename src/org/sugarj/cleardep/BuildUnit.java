@@ -129,7 +129,7 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
           }
         }, getModuleDependencies());
         
-        if (!foundDep)
+        if (!foundDep && false)
           throw new IllegalDependencyException("Build unit " + FileCommands.tryGetRelativePath(getPersistentPath()) + " has a hidden dependency on file " + FileCommands.tryGetRelativePath(file) + " without build-unit dependency on " + dep + ", which generated this file. The current builder " + FileCommands.fileName(getPersistentPath()) + " should mark a dependency to " + FileCommands.tryGetRelativePath(dep) + " by `requiring` the corresponding builder.");
       } catch (IOException e) {
         Log.log.log("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, Log.IMPORT);
@@ -205,7 +205,9 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	    requiredUnits = new HashSet<>();
 	    for (Requirement req : requirements)
 	      if (req instanceof BuildRequirement)
+	        if (((BuildRequirement<?>) req).unit != null) {
 	        requiredUnits.add(((BuildRequirement<?>) req).unit);
+	        }
 	  }
 		return requiredUnits;
 	}
