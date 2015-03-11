@@ -29,6 +29,16 @@ public class ExecutingStack {
     return entry;
   }
   
+  public int getNumContains(BuildUnit<?> unit) {
+    int num = 0;
+    for (BuildStackEntry<?> e : requireCallStack) {
+      if (e.getUnit() == unit) {
+        num ++;
+      }
+    }
+    return num;
+  }
+  
   private <Out extends BuildOutput> BuildRequirement<Out> requirementForEntry(BuildStackEntry<Out> entry) throws IOException{
     BuildUnit<Out> unit = entry.getUnit();
     return new BuildRequirement<>(unit, unit.getGeneratedBy());

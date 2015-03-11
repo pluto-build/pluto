@@ -205,7 +205,9 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	    requiredUnits = new HashSet<>();
 	    for (Requirement req : requirements)
 	      if (req instanceof BuildRequirement)
+	        if (((BuildRequirement<?>) req).unit != null) {
 	        requiredUnits.add(((BuildRequirement<?>) req).unit);
+	        }
 	  }
 		return requiredUnits;
 	}

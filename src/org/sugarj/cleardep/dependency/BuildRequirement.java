@@ -4,6 +4,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Objects;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.BuildRequest;
@@ -24,6 +25,7 @@ public class BuildRequirement<Out extends BuildOutput> implements Requirement, E
   }
 
   public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req) {
+    Objects.requireNonNull(unit);
     this.unit = unit;
     this.req = req;
     this.output = unit.getBuildResult();

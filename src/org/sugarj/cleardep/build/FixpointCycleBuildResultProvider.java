@@ -62,6 +62,7 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider{
      B extends Builder<In, Out>, 
      F extends BuilderFactory<In, Out, B>> 
    BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+
     BuildUnit<Out> cycleUnit = getBuildUnitInCycle(buildReq);
     if (cycleUnit != null && this.requiredUnitsInIteration.contains(cycleUnit)) {
       return cycleUnit;
@@ -73,6 +74,8 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider{
           cycleUnit.setBuildResult(result);
           this.result.setBuildResult(cycleUnit, result);
           return cycleUnit;
+         } catch (BuildCycleException e) {
+           throw e;
         } catch (Throwable e) {
           throw new RuntimeException(e);
         }
