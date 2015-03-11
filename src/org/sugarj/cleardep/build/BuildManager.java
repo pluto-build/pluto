@@ -189,9 +189,8 @@ public class BuildManager implements BuildUnitProvider {
 
       if (taskDescription != null)
         Log.log.endTask();
-      // Do not think, that this is necessary, because execute is called by
-      // requires
-      // this.consistentUnits.add(assertConsistency(depResult));
+      
+      this.consistencyManager.startCheckProgress(assertConsistency(depResult));
       BuildStackEntry<?> poppedEntry = this.executingStack.pop();
       assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
     }
@@ -320,10 +319,8 @@ public class BuildManager implements BuildUnitProvider {
         }
       }
 
-      Set<BuildRequirement<?>> inconsistentCylicUnits = this.consistencyManager.stopCheckProgress(depResult, true);
-      for (BuildRequirement<?> inconsistentUnit : inconsistentCylicUnits) {
-        require(inconsistentUnit.req);
-      }
+      this.consistencyManager.stopCheckProgress(depResult);
+      
       return depResult;
     } finally {
       if (rebuildTriggeredBy == buildReq)
