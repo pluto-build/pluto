@@ -9,6 +9,7 @@ import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.BuildCycle.Result;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.output.BuildOutput;
+import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 
 public class FixpointCycleBuildResultProvider implements BuildUnitProvider{
@@ -69,15 +70,21 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider{
     } else {
       if (cycleUnit != null) {
         this.requiredUnitsInIteration.add(cycleUnit);
+        Log.log.beginTask(this.parent.getBuilderForInput(buildReq.input).taskDescription(buildReq.input), Log.CORE);
          try {
+          
           Out result = (Out) this.parent.getBuilderForInput(buildReq.input).compileRequest(this,(BuildRequest)buildReq);
           cycleUnit.setBuildResult(result);
           this.result.setBuildResult(cycleUnit, result);
           return cycleUnit;
          } catch (BuildCycleException e) {
+           Log.log.log("Stopped because of cycle", Log.CORE);
            throw e;
         } catch (Throwable e) {
           throw new RuntimeException(e);
+        } finally {
+
+          Log.log.endTask();
         }
       } else {
       return this.parentManager.require(buildReq);

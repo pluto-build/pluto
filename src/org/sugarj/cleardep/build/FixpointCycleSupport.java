@@ -31,12 +31,11 @@ public abstract class FixpointCycleSupport implements CycleSupport {
 
     protected Out compileRequest(FixpointCycleBuildResultProvider cycleManager, BuildRequest<In, Out, B, F> req) throws Throwable {
       Builder<In, Out> builder = makeBuilder(req.input);
-      Log.log.beginTask(builder.taskDescription(), Log.CORE);
+      
       BuildUnit<Out> unit = BuildUnit.create(builder.persistentPath(), req);
       Out result = builder.triggerBuild(unit, cycleManager);
       unit.setBuildResult(result);
       unit.setState(State.finished(true));
-      Log.log.endTask();
       return result;
     }
     

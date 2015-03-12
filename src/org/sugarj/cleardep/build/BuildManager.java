@@ -243,15 +243,17 @@ public class BuildManager implements BuildUnitProvider {
 
       Log.log.beginTask("Compile cycle with: " + cycleSupport.getCycleDescription(cycle), Log.CORE);
       try {
-      
+        try {
         BuildCycle.Result result = cycleSupport.compileCycle(this, cycle);
         e.setCycleResult(result);
         e.setCycleState(CycleState.RESOLVED);
-        throw e;
+        } catch (BuildCycleException cyclicEx) {
+          e.setCycleState(cyclicEx.getCycleState());
+          e.setCycleResult(cyclicEx.getCycleResult());
+        }
       } finally {
         Log.log.endTask();
-
-        
+        throw e;
      }
     } else {
 
@@ -275,6 +277,10 @@ public class BuildManager implements BuildUnitProvider {
 
     // Set the result to the unit
     if (e.getCycleState() == CycleState.RESOLVED) {
+      if (e.getCycleResult() == null) {
+        Log.log.log("Error: Cyclic builder does not provide a cycleResult " + e.hashCode(), Log.CORE);
+        throw new AssertionError("Cyclic builder does not provide a cycleResult");
+      }
       UnitResultTuple<Out> tuple = e.getCycleResult().getUnitResult(depResult);
       if (tuple == null) {
         throw new AssertionError("Cyclic builder does not provide a result for " + depResult.getPersistentPath());
