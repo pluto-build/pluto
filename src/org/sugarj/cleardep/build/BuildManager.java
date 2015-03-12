@@ -22,6 +22,7 @@ import org.sugarj.cleardep.dependency.DuplicateFileGenerationException;
 import org.sugarj.cleardep.dependency.FileRequirement;
 import org.sugarj.cleardep.dependency.Requirement;
 import org.sugarj.cleardep.output.BuildOutput;
+import org.sugarj.cleardep.stamp.LastModifiedStamper;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.xattr.Xattr;
 import org.sugarj.common.FileCommands;
@@ -131,10 +132,12 @@ public class BuildManager implements BuildUnitProvider {
         BuildUnit<BuildOutput> metaBuilder = BuildUnit.read(depFile);
 
         depResult.requires(metaBuilder);
-        depResult.requires(builderClass, metaBuilder.stamp());
-        for (Path p : metaBuilder.getExternalFileDependencies()) {
-          depResult.requires(p, metaBuilder.stamp());
-        }
+        depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
+
+        // TODO: needed?
+        //for (Path p : metaBuilder.getExternalFileDependencies()) {
+        //  depResult.requires(p, LastModifiedStamper.instance.stampOf(p));
+        //}
       }
     }
   }
