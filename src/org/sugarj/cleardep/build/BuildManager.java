@@ -22,6 +22,7 @@ import org.sugarj.cleardep.dependency.DuplicateFileGenerationException;
 import org.sugarj.cleardep.dependency.FileRequirement;
 import org.sugarj.cleardep.dependency.Requirement;
 import org.sugarj.cleardep.output.BuildOutput;
+import org.sugarj.cleardep.stamp.LastModifiedStamper;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.xattr.Xattr;
 import org.sugarj.common.FileCommands;
@@ -130,7 +131,12 @@ public class BuildManager implements BuildUnitProvider {
         BuildUnit<BuildOutput> metaBuilder = BuildUnit.read(depFile);
 
         depResult.requires(metaBuilder);
-        depResult.requires(builderClass, metaBuilder.stamp());
+        depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
+
+        // TODO: needed?
+        //for (Path p : metaBuilder.getExternalFileDependencies()) {
+        //  depResult.requires(p, LastModifiedStamper.instance.stampOf(p));
+        //}
       }
     }
   }
@@ -240,7 +246,7 @@ public class BuildManager implements BuildUnitProvider {
 
       Log.log.beginTask("Compile cycle with: " + cycleSupport.getCycleDescription(cycle), Log.CORE);
       try {
-      
+
         BuildCycle.Result result = cycleSupport.compileCycle(this, cycle);
         e.setCycleResult(result);
         e.setCycleState(CycleState.RESOLVED);
@@ -248,8 +254,7 @@ public class BuildManager implements BuildUnitProvider {
       } finally {
         Log.log.endTask();
 
-        
-     }
+      }
     } else {
 
       throw e;
