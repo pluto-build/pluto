@@ -41,6 +41,7 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider {
   }
 
   private <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> getBuildUnitInCycle(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+
     Path depPath = buildReq.createBuilder().persistentPath();
     for (BuildRequirement<?> req : this.cycle.getCycleComponents()) {
       if (req.unit.getPersistentPath().equals(depPath)) {
@@ -52,9 +53,8 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider {
 
   @Override
   public <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
-
     BuildUnit<Out> cycleUnit = getBuildUnitInCycle(buildReq);
-    if (cycleUnit != null && this.requiredUnitsInIteration.contains(cycleUnit)) {
+    if (cycleUnit != null && (source == cycleUnit || this.requiredUnitsInIteration.contains(cycleUnit))) {
       return cycleUnit;
     } else {
       if (cycleUnit != null) {
@@ -67,6 +67,7 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider {
           this.result.setBuildResult(cycleUnit, result);
           return cycleUnit;
         } catch (BuildCycleException e) {
+          Log.log.log("Stopped because of cycle", Log.CORE);
           try {
             this.parentManager.tryCompileCycle(e);
           } catch (BuildCycleException e2) {
@@ -76,7 +77,7 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider {
           }
           throw e;
         } catch (Throwable e) {
-          throw new RuntimeException(e);
+          throw new RequiredBuilderFailed(buildReq.factory.makeBuilder(buildReq.input), cycleUnit, e);
         } finally {
 
           Log.log.endTask();

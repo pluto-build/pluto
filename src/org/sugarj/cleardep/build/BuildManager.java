@@ -153,6 +153,7 @@ public class BuildManager implements BuildUnitProvider {
  //   if (cyclicAssumptions != null) {
       for (Path assumed : this.requireStack) {
         this.knownInconsistentUnits.add(assumed);
+        
         this.consistentUnits.remove(assumed);
       }
   //  }
@@ -165,10 +166,12 @@ public class BuildManager implements BuildUnitProvider {
 
     BuildStackEntry<Out> entry = null;
     // First step: cycle detection
-    entry = this.executingStack.push(depResult);
+   
 
     if (taskDescription != null)
       Log.log.beginTask(taskDescription, Log.CORE);
+    
+    entry = this.executingStack.push(depResult);
 
     depResult.setState(BuildUnit.State.IN_PROGESS);
 
@@ -191,7 +194,6 @@ public class BuildManager implements BuildUnitProvider {
     } catch (BuildCycleException e) {
       stopBuilderInCycle(builder, dep, buildReq, depResult, e);
     } catch (RequiredBuilderFailed e) {
-      e.printStackTrace();
       BuilderResult required = e.getLastAddedBuilder();
       depResult.requires(required.result);
       depResult.setState(BuildUnit.State.FAILURE);
@@ -201,7 +203,6 @@ public class BuildManager implements BuildUnitProvider {
         Log.log.logErr("Required builder failed", Log.CORE);
       throw e;
     } catch (Throwable e) {
-      e.printStackTrace();
       depResult.setState(BuildUnit.State.FAILURE);
 
       Log.log.logErr(e.getMessage(), Log.CORE);
@@ -261,6 +262,8 @@ public class BuildManager implements BuildUnitProvider {
         } catch (BuildCycleException cyclicEx) {
           e.setCycleState(cyclicEx.getCycleState());
           e.setCycleResult(cyclicEx.getCycleResult());
+        } catch (Throwable t) {
+          throw t;
         }
       } finally {
         Log.log.endTask();
@@ -356,6 +359,11 @@ public class BuildManager implements BuildUnitProvider {
       Log.log.log("Knon Consist:   " + knownInconsistentUnits, Log.CORE);
 */
 
+      if (knownInconsistentUnits.contains(dep)) {
+        depResult = BuildUnit.create(dep, buildReq);
+        depResult =null;
+      }
+
       if (depResult == null)
         return executeBuilder(builder, dep, buildReq);
 
@@ -379,6 +387,7 @@ public class BuildManager implements BuildUnitProvider {
         cyclicAssumptions.add(source.getPersistentPath());
         cyclicAssumptions.add(dep);
         assumedCyclicConsistency.put(dep, cyclicAssumptions);
+        
         return depResult;
       }
       requireStack.push(dep);
@@ -395,7 +404,7 @@ public class BuildManager implements BuildUnitProvider {
           } else if (req instanceof BuildRequirement) {
             BuildRequirement<?> breq = (BuildRequirement<?>) req;
             int numBefore = 0;
-            if (assumedCyclicConsistency.containsKey(breq.unit.getPersistentPath())) {
+            if (breq.unit != null && assumedCyclicConsistency.containsKey(breq.unit.getPersistentPath())) {
               numBefore = assumedCyclicConsistency.get(breq.unit.getPersistentPath()).size();
             }
            
