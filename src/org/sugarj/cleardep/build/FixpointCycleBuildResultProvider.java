@@ -12,19 +12,17 @@ import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 
-public class FixpointCycleBuildResultProvider implements BuildUnitProvider{
-  
+public class FixpointCycleBuildResultProvider implements BuildUnitProvider {
+
   private FixpointCycleSupport parent;
   private BuildUnitProvider parentManager;
-  
+
   private BuildCycle cycle;
-  
+
   private Set<BuildUnit<?>> requiredUnitsInIteration;
-  
+
   private Result result;
 
-  
-  
   public FixpointCycleBuildResultProvider(FixpointCycleSupport parent, BuildUnitProvider parentManager, BuildCycle cycle) {
     super();
     this.parentManager = parentManager;
@@ -33,36 +31,27 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider{
     this.parent = parent;
     this.result = new Result();
   }
-  
+
   public Result getResult() {
     return result;
   }
+
   public void nextIteration() {
     requiredUnitsInIteration.clear();
   }
 
-  private
-    <In extends Serializable,
-     Out extends BuildOutput, 
-     B extends Builder<In, Out>, 
-     F extends BuilderFactory<In, Out, B>> 
-  BuildUnit<Out> getBuildUnitInCycle(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  private <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> getBuildUnitInCycle(BuildRequest<In, Out, B, F> buildReq) throws IOException {
     Path depPath = buildReq.createBuilder().persistentPath();
     for (BuildRequirement<?> req : this.cycle.getCycleComponents()) {
       if (req.unit.getPersistentPath().equals(depPath)) {
-        return  (BuildUnit<Out>) req.unit;
+        return (BuildUnit<Out>) req.unit;
       }
     }
     return null;
   }
-  
+
   @Override
-  public 
-    <In extends Serializable,
-     Out extends BuildOutput, 
-     B extends Builder<In, Out>, 
-     F extends BuilderFactory<In, Out, B>> 
-   BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  public <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     BuildUnit<Out> cycleUnit = getBuildUnitInCycle(buildReq);
     if (cycleUnit != null && this.requiredUnitsInIteration.contains(cycleUnit)) {
@@ -71,15 +60,21 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider{
       if (cycleUnit != null) {
         this.requiredUnitsInIteration.add(cycleUnit);
         Log.log.beginTask(this.parent.getBuilderForInput(buildReq.input).taskDescription(buildReq.input), Log.CORE);
-         try {
-          
-          Out result = (Out) this.parent.getBuilderForInput(buildReq.input).compileRequest(this,(BuildRequest)buildReq);
+        try {
+
+          Out result = (Out) this.parent.getBuilderForInput(buildReq.input).compileRequest(this, (BuildRequest) buildReq);
           cycleUnit.setBuildResult(result);
           this.result.setBuildResult(cycleUnit, result);
           return cycleUnit;
-         } catch (BuildCycleException e) {
-           Log.log.log("Stopped because of cycle", Log.CORE);
-           throw e;
+        } catch (BuildCycleException e) {
+          try {
+            this.parentManager.tryCompileCycle(e);
+          } catch (BuildCycleException e2) {
+            throw e2;
+          } catch (Throwable e2) {
+            throw new RuntimeException(e2);
+          }
+          throw e;
         } catch (Throwable e) {
           throw new RuntimeException(e);
         } finally {
@@ -87,11 +82,14 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider{
           Log.log.endTask();
         }
       } else {
-      return this.parentManager.require(buildReq);
+        return this.parentManager.require(source, buildReq);
       }
     }
   }
-  
-  
+
+  @Override
+  public void tryCompileCycle(BuildCycleException e) throws Throwable {
+    this.parentManager.tryCompileCycle(e);
+  }
 
 }

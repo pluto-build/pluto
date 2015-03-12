@@ -109,7 +109,7 @@ public abstract class FixpointCycleSupport implements CycleSupport {
     while (!cycle.isConsistent()) {
       Log.log.beginTask("Compile cycle iteration " + numInterations, Log.CORE);
       try {
-      cycleManager.require(cycle.getInitialComponent().req);
+      cycleManager.require(null, cycle.getInitialComponent().req);
      
       } finally {
       Log.log.endTask();

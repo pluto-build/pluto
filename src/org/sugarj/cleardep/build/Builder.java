@@ -65,7 +65,7 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
   SubIn_ extends In_
   > Out_ require(F_ factory, SubIn_ input) throws IOException {
     BuildRequest<In_, Out_, B_, F_> req = new BuildRequest<In_, Out_, B_, F_>(factory, input);
-    BuildUnit<Out_> e = manager.require(req);
+    BuildUnit<Out_> e = manager.require(result, req);
     result.requires(e);
     return e.getBuildResult();
   }
@@ -76,7 +76,7 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
   B_ extends Builder<In_,Out_>,
   F_ extends BuilderFactory<In_, Out_, B_>
   > Out_ require(BuildRequest<In_, Out_, B_, F_> req) throws IOException {
-    BuildUnit<Out_> e = manager.require(req);
+    BuildUnit<Out_> e = manager.require(result, req);
     result.requires(e);
     return e.getBuildResult();
   }
@@ -88,7 +88,7 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
   F_ extends BuilderFactory<ArrayList<In_>, Out_, B_>
   > Out_ requireCyclicable(F_ factory, In_ input) throws IOException {
     BuildRequest<ArrayList<In_>, Out_, B_, F_> req = new BuildRequest<ArrayList<In_>, Out_, B_, F_>(factory, CompileCycleAtOnceBuilder.singletonArrayList(input));
-    BuildUnit<Out_> e = manager.require(req);
+    BuildUnit<Out_> e = manager.require(result, req);
     result.requires(e);
     return e.getBuildResult();
   }

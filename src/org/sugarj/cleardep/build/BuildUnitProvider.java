@@ -13,6 +13,8 @@ public interface BuildUnitProvider {
    Out extends BuildOutput,
    B extends Builder<In, Out>,
    F extends BuilderFactory<In, Out, B>> 
- BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException;
+ BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException;
+  
+  public void tryCompileCycle(BuildCycleException e) throws Throwable;
   
 }
