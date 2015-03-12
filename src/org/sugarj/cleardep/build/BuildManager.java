@@ -131,9 +131,6 @@ public class BuildManager implements BuildUnitProvider {
 
         depResult.requires(metaBuilder);
         depResult.requires(builderClass, metaBuilder.stamp());
-        for (Path p : metaBuilder.getExternalFileDependencies()) {
-          depResult.requires(p, metaBuilder.stamp());
-        }
       }
     }
   }
