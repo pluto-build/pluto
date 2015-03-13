@@ -10,12 +10,12 @@ import org.sugarj.common.path.Path;
 /**
  * @author Sebastian Erdweg
  */
-public class ContentHashStamper implements Stamper {
+public class FileHashStamper implements Stamper {
 
   private static final long serialVersionUID = 7688772212399111636L;
 
-  private ContentHashStamper() {}
-  public static final Stamper instance = new ContentHashStamper();
+  private FileHashStamper() {}
+  public static final Stamper instance = new FileHashStamper();
   
   /**
    * @see org.sugarj.cleardep.stamp.Stamper#stampOf(org.sugarj.common.path.Path)

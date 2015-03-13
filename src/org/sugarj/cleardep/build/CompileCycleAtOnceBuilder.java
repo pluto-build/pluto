@@ -41,14 +41,14 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   private List<BuildUnit<Out>> cyclicResults;
   
   @Override
-  public void requires(Path p) {
+  public void require(Path p) {
     for (BuildUnit<Out> result : cyclicResults) {
       result.requires(p, defaultStamper().stampOf(p));
     }
   }
 
   @Override
-  public void generates(Path p) {throw new AssertionError();};
+  public void generate(Path p) {throw new AssertionError();};
   
   public void generates(In input, Path p) {
     for (int i = 0; i < this.input.size(); i++) {

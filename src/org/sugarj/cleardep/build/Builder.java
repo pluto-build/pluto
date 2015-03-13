@@ -3,11 +3,9 @@ package org.sugarj.cleardep.build;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.State;
-import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.cleardep.stamp.LastModifiedStamper;
 import org.sugarj.cleardep.stamp.Stamp;
@@ -33,12 +31,17 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
    * @return the task description or `null` if no logging is wanted.
    */
   protected abstract String taskDescription();
+  
   protected abstract Path persistentPath();
-  protected abstract Stamper defaultStamper();
+  
   protected abstract Out build() throws Throwable;
 
   protected CycleSupport getCycleSupport() {
     return null;
+  }
+  
+  protected Stamper defaultStamper() {
+    return LastModifiedStamper.instance;
   }
 
   transient BuildUnit<Out> result;
@@ -63,7 +66,7 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
   B_ extends Builder<In_,Out_>,
   F_ extends BuilderFactory<In_, Out_, B_>,
   SubIn_ extends In_
-  > Out_ require(F_ factory, SubIn_ input) throws IOException {
+  > Out_ requireBuild(F_ factory, SubIn_ input) throws IOException {
     BuildRequest<In_, Out_, B_, F_> req = new BuildRequest<In_, Out_, B_, F_>(factory, input);
     BuildUnit<Out_> e = manager.require(result, req);
     result.requires(e);
@@ -75,7 +78,7 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
   Out_ extends BuildOutput, 
   B_ extends Builder<In_,Out_>,
   F_ extends BuilderFactory<In_, Out_, B_>
-  > Out_ require(BuildRequest<In_, Out_, B_, F_> req) throws IOException {
+  > Out_ requireBuild(BuildRequest<In_, Out_, B_, F_> req) throws IOException {
     BuildUnit<Out_> e = manager.require(result, req);
     result.requires(e);
     return e.getBuildResult();
@@ -94,29 +97,29 @@ public abstract class Builder<In extends Serializable, Out extends BuildOutput> 
   }
 
     
-  protected void require(BuildRequest<?, ?, ?, ?>[] reqs) throws IOException {
+  protected void requireBuild(BuildRequest<?, ?, ?, ?>[] reqs) throws IOException {
     if (reqs != null)
       for (BuildRequest<?, ?, ?, ?> req : reqs)
-        require(req);
+        requireBuild(req);
   }
   
-  public void requires(Path p) {
+  public void require(Path p) {
     result.requires(p, defaultStamper.stampOf(p));
   }
-  public void requires(Path p, Stamper stamper) {
+  public void require(Path p, Stamper stamper) {
     result.requires(p, stamper.stampOf(p));
   }
-  public void requires(Path p, Stamp stamp) {
+  public void require(Path p, Stamp stamp) {
     result.requires(p, stamp);
   }
   
-  public void generates(Path p) {
+  public void generate(Path p) {
     result.generates(p, LastModifiedStamper.instance.stampOf(p));
   }
-  public void generates(Path p, Stamper stamper) {
+  public void generate(Path p, Stamper stamper) {
     result.generates(p, stamper.stampOf(p));
   }
-  
+
   public void setState(State state) {
     result.setState(state);
   }
