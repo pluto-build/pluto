@@ -21,7 +21,6 @@ import org.sugarj.cleardep.dependency.DuplicateBuildUnitPathException;
 import org.sugarj.cleardep.dependency.DuplicateFileGenerationException;
 import org.sugarj.cleardep.dependency.FileRequirement;
 import org.sugarj.cleardep.dependency.Requirement;
-import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.cleardep.stamp.LastModifiedStamper;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.xattr.Xattr;
@@ -29,7 +28,6 @@ import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.AbsolutePath;
 import org.sugarj.common.path.Path;
-import org.sugarj.common.path.RelativePath;
 
 import com.cedarsoftware.util.DeepEquals;
 
@@ -37,11 +35,11 @@ public class BuildManager implements BuildUnitProvider {
 
   private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
 
-  public static <Out extends BuildOutput> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
+  public static <Out extends Serializable> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
     return build(buildReq, null);
   }
 
-  public static <Out extends BuildOutput> Out build(BuildRequest<?, Out, ?, ?> buildReq, Map<? extends Path, Stamp> editedSourceFiles) {
+  public static <Out extends Serializable> Out build(BuildRequest<?, Out, ?, ?> buildReq, Map<? extends Path, Stamp> editedSourceFiles) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
     boolean freshManager = manager == null;
@@ -61,11 +59,11 @@ public class BuildManager implements BuildUnitProvider {
     }
   }
 
-  public static <Out extends BuildOutput> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs) {
+  public static <Out extends Serializable> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs) {
     return buildAll(buildReqs, null);
   }
 
-  public static <Out extends BuildOutput> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs, Map<? extends Path, Stamp> editedSourceFiles) {
+  public static <Out extends Serializable> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs, Map<? extends Path, Stamp> editedSourceFiles) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
     boolean freshManager = manager == null;
@@ -118,7 +116,7 @@ public class BuildManager implements BuildUnitProvider {
   // @formatter:off
   private 
     <In extends Serializable,
-     Out extends BuildOutput>
+     Out extends Serializable>
   // @formatter:on
   void setUpMetaDependency(Builder<In, Out> builder, BuildUnit<Out> depResult) throws IOException {
     if (depResult != null) {
@@ -129,7 +127,7 @@ public class BuildManager implements BuildUnitProvider {
       if (!FileCommands.exists(depFile)) {
         Log.log.logErr("Warning: Builder was not built using meta builder. Consistency for builder changes are not tracked...", Log.DETAIL);
       } else {
-        BuildUnit<BuildOutput> metaBuilder = BuildUnit.read(depFile);
+        BuildUnit<Serializable> metaBuilder = BuildUnit.read(depFile);
 
         depResult.requires(metaBuilder);
         depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
@@ -145,7 +143,7 @@ public class BuildManager implements BuildUnitProvider {
   // @formatter:off
   protected 
     <In extends Serializable,
-     Out extends BuildOutput,
+     Out extends Serializable,
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   // @formatter:on
@@ -281,7 +279,7 @@ public class BuildManager implements BuildUnitProvider {
   // @formatter:off
   private 
     <In extends Serializable,
-     Out extends BuildOutput,
+     Out extends Serializable,
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>> 
   //@formatter:on
@@ -328,7 +326,7 @@ public class BuildManager implements BuildUnitProvider {
   //@formatter:off
   public
     <In extends Serializable,
-     Out extends BuildOutput,
+     Out extends Serializable,
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
@@ -441,7 +439,7 @@ public class BuildManager implements BuildUnitProvider {
     }
   }
 
-  private <Out extends BuildOutput> BuildUnit<Out> assertConsistency(BuildUnit<Out> depResult) {
+  private <Out extends Serializable> BuildUnit<Out> assertConsistency(BuildUnit<Out> depResult) {
     BuildUnit<?> other = generatedFiles.put(depResult.getPersistentPath(), depResult);
     if (other != null && other != depResult)
       throw new DuplicateBuildUnitPathException("Build unit " + depResult + " has same persistent path as build unit " + other);

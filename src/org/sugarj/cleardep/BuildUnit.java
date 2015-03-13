@@ -3,6 +3,7 @@ package org.sugarj.cleardep;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,7 +19,6 @@ import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.dependency.FileRequirement;
 import org.sugarj.cleardep.dependency.IllegalDependencyException;
 import org.sugarj.cleardep.dependency.Requirement;
-import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.cleardep.stamp.LastModifiedStamper;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Util;
@@ -32,7 +32,7 @@ import org.sugarj.common.path.Path;
  * 
  * @author Sebastian Erdweg
  */
-final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity {
+final public class BuildUnit<Out extends Serializable> extends PersistableEntity {
 
   public static final long serialVersionUID = -2821414386853890682L;
 
@@ -64,14 +64,14 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 	// Methods for initialization
 	// **************************
 
-	public static <Out extends BuildOutput> BuildUnit<Out> create(Path dep, BuildRequest<?, Out, ?, ?> generatedBy) throws IOException {
+	public static <Out extends Serializable> BuildUnit<Out> create(Path dep, BuildRequest<?, Out, ?, ?> generatedBy) throws IOException {
 		@SuppressWarnings("unchecked")
     BuildUnit<Out> e = PersistableEntity.create(BuildUnit.class, dep);
 		e.generatedBy = generatedBy;
 		return e;
 	}
 	
-	final public static <Out extends BuildOutput> BuildUnit<Out> read(Path dep) throws IOException {
+	final public static <Out extends Serializable> BuildUnit<Out> read(Path dep) throws IOException {
 	  @SuppressWarnings("unchecked")
     BuildUnit<Out> e = PersistableEntity.read(BuildUnit.class, dep);
 	  return e;
@@ -129,7 +129,7 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
           }
         }, getModuleDependencies());
         
-        if (!foundDep && false)
+        if (!foundDep)
           throw new IllegalDependencyException("Build unit " + FileCommands.tryGetRelativePath(getPersistentPath()) + " has a hidden dependency on file " + FileCommands.tryGetRelativePath(file) + " without build-unit dependency on " + dep + ", which generated this file. The current builder " + FileCommands.fileName(getPersistentPath()) + " should mark a dependency to " + FileCommands.tryGetRelativePath(dep) + " by `requiring` the corresponding builder.");
       } catch (IOException e) {
         Log.log.log("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, Log.IMPORT);
@@ -147,7 +147,7 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
     }
 	}
 	
-	public <Out_ extends BuildOutput> void requires(BuildUnit<Out_> mod) {
+	public <Out_ extends Serializable> void requires(BuildUnit<Out_> mod) {
 	  Objects.requireNonNull(mod);
 	  requirements.add(new BuildRequirement<Out_>(mod, mod.getGeneratedBy()));
 	  requiredUnits.add(mod);
@@ -336,9 +336,6 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
       if (!freq.isConsistent())
         return false;
 
-    if (buildResult != null && !buildResult.isConsistent())
-      return false;
-
     return true;
 	}
 	  
@@ -359,9 +356,6 @@ final public class BuildUnit<Out extends BuildOutput> extends PersistableEntity 
 		  else if (req instanceof BuildRequirement && !((BuildRequirement<?>) req).isConsistent())
 		    return InconsistenyReason.DEPENDENCIES_INCONSISTENT;
 		
-		if (buildResult != null && !buildResult.isConsistent())
-			return InconsistenyReason.OTHER;
-
 		return InconsistenyReason.NO_REASON;
 	}
 

@@ -8,7 +8,6 @@ import java.util.Set;
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.BuildCycle.Result;
 import org.sugarj.cleardep.dependency.BuildRequirement;
-import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 
@@ -40,7 +39,7 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider {
     requiredUnitsInIteration.clear();
   }
 
-  private <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> getBuildUnitInCycle(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  private <In extends Serializable, Out extends Serializable, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> getBuildUnitInCycle(BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     Path depPath = buildReq.createBuilder().persistentPath();
     for (BuildRequirement<?> req : this.cycle.getCycleComponents()) {
@@ -52,7 +51,7 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider {
   }
 
   @Override
-  public <In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  public <In extends Serializable, Out extends Serializable, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
     BuildUnit<Out> cycleUnit = getBuildUnitInCycle(buildReq);
     if (cycleUnit != null && (source == cycleUnit || this.requiredUnitsInIteration.contains(cycleUnit))) {
       return cycleUnit;

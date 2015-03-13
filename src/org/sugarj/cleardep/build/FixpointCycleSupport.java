@@ -9,12 +9,11 @@ import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.State;
 import org.sugarj.cleardep.build.BuildCycle.Result;
 import org.sugarj.cleardep.dependency.BuildRequirement;
-import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.common.Log;
 
 public abstract class FixpointCycleSupport implements CycleSupport {
 
-  public static class FixpointEntry<In extends Serializable, Out extends BuildOutput, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> {
+  public static class FixpointEntry<In extends Serializable, Out extends Serializable, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> {
 
     private F builderFactory;
     private Class<In> inputClass;
@@ -54,7 +53,7 @@ public abstract class FixpointCycleSupport implements CycleSupport {
   // @formatter:off
   protected static
     <In  extends Serializable, 
-     Out extends BuildOutput,
+     Out extends Serializable,
      B   extends Builder<In, Out>,
      F   extends BuilderFactory<In, Out, B>>
   // @formatter:on

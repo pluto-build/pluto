@@ -4,21 +4,22 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.io.Serializable;
 import java.util.Objects;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.BuildRequest;
-import org.sugarj.cleardep.output.BuildOutput;
+import org.sugarj.cleardep.output.OutputStamp;
 import org.sugarj.common.path.Path;
 
 import com.cedarsoftware.util.DeepEquals;
 
-public class BuildRequirement<Out extends BuildOutput> implements Requirement, Externalizable {
+public class BuildRequirement<Out extends Serializable> implements Requirement, Externalizable {
   private static final long serialVersionUID = 6148973732378610648L;
 
   public BuildUnit<Out> unit;
   public BuildRequest<?, Out, ?, ?> req;
-  public Out output;
+  public OutputStamp outputStamp;
 
   public BuildRequirement() {
 
@@ -28,12 +29,13 @@ public class BuildRequirement<Out extends BuildOutput> implements Requirement, E
     Objects.requireNonNull(unit);
     this.unit = unit;
     this.req = req;
-    this.output = unit.getBuildResult();
+    this.outputStamp = req.stamper.stampOf(unit.getBuildResult());
   }
 
   @Override
   public boolean isConsistent() {
-    return unit == null || (unit.getGeneratedBy().deepEquals(req) && DeepEquals.deepEquals(output, unit.getBuildResult()));
+    return unit.getGeneratedBy().deepEquals(req) && 
+        outputStamp.equals(outputStamp.getStamper().stampOf(unit.getBuildResult()));
   }
 
   @Override
@@ -45,7 +47,7 @@ public class BuildRequirement<Out extends BuildOutput> implements Requirement, E
   public void writeExternal(ObjectOutput out) throws IOException {
     out.writeObject(unit.getPersistentPath());
     out.writeObject(req);
-    out.writeObject(output);
+    out.writeObject(outputStamp);
   }
 
   @Override
@@ -54,6 +56,6 @@ public class BuildRequirement<Out extends BuildOutput> implements Requirement, E
     Path unitPath = (Path) in.readObject();
     req = (BuildRequest<?, Out, ?, ?>) in.readObject();
     unit = BuildUnit.read(unitPath);
-    output = (Out) in.readObject();
+    outputStamp = (OutputStamp) in.readObject();
   }
 }

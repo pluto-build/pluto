@@ -9,12 +9,10 @@ import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.State;
 import org.sugarj.cleardep.build.BuildCycle.Result;
 import org.sugarj.cleardep.dependency.BuildRequirement;
-import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.cleardep.stamp.LastModifiedStamper;
-import org.sugarj.cleardep.stamp.Stamper;
 import org.sugarj.common.path.Path;
 
-public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out extends BuildOutput> extends Builder<ArrayList<In>, Out> implements CycleSupport{
+public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out extends Serializable> extends Builder<ArrayList<In>, Out> implements CycleSupport{
 
   public static <X> ArrayList<X> singletonArrayList(X elem) {
     return new ArrayList<X>(Collections.<X> singletonList(elem));

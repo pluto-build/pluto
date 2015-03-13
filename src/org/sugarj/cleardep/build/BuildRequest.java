@@ -2,13 +2,14 @@ package org.sugarj.cleardep.build;
 
 import java.io.Serializable;
 
-import org.sugarj.cleardep.output.BuildOutput;
+import org.sugarj.cleardep.output.OutputEqualStamper;
+import org.sugarj.cleardep.output.OutputStamper;
 
 import com.cedarsoftware.util.DeepEquals;
 
 public class BuildRequest<
   In extends Serializable, 
-  Out extends BuildOutput, 
+  Out extends Serializable, 
   B extends Builder<In, Out>,
   F extends BuilderFactory<In, Out, B>
 > implements Serializable {
@@ -16,10 +17,16 @@ public class BuildRequest<
   
   public final F factory;
   public final In input;
+  public final OutputStamper<Out> stamper;
 
   public BuildRequest(F factory, In input) {
+    this(factory, input, OutputEqualStamper.<Out>instance());
+  }
+  
+  public BuildRequest(F factory, In input, OutputStamper<Out> stamper) {
     this.factory = factory;
     this.input = input;
+    this.stamper = stamper;
   }
 
   public Builder<In, Out> createBuilder() {

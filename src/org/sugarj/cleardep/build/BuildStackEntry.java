@@ -1,10 +1,11 @@
 package org.sugarj.cleardep.build;
 
+import java.io.Serializable;
+
 import org.sugarj.cleardep.BuildUnit;
-import org.sugarj.cleardep.output.BuildOutput;
 import org.sugarj.common.path.Path;
 
-public class BuildStackEntry<Out extends BuildOutput> {
+public class BuildStackEntry<Out extends Serializable> {
   private final BuildUnit<Out> unit;
   private final Path persistencePath;
   
