@@ -3,24 +3,24 @@ package org.sugarj.cleardep.output;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class OutputEqualStamper<Out extends Serializable> implements OutputStamper<Out> {
+public class OutputEqualStamper implements OutputStamper<Serializable> {
 
   private static final long serialVersionUID = -820125647502953082L;
   
-  private final static OutputEqualStamper<?> instance = new OutputEqualStamper<>();
-  @SuppressWarnings("unchecked")
-  public static <Out extends Serializable> OutputEqualStamper<Out> instance() { 
-    return (OutputEqualStamper<Out>) instance;
+  private final static OutputEqualStamper instance = new OutputEqualStamper();
+  
+  public static OutputEqualStamper instance() { 
+    return instance;
   }
   
   private OutputEqualStamper() { }
   
   @Override
-  public OutputStamp stampOf(Out out) {
+  public OutputStamp<Serializable> stampOf(Serializable out) {
     return new OutputEqualStamp(out);
   }
   
-  public static class OutputEqualStamp implements OutputStamp {
+  public static class OutputEqualStamp implements OutputStamp<Serializable> {
 
     private static final long serialVersionUID = -5404621797279839303L;
 

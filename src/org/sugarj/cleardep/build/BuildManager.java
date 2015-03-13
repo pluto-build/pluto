@@ -16,6 +16,7 @@ import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.BuildCycle.Result.UnitResultTuple;
 import org.sugarj.cleardep.build.BuildCycleException.CycleState;
 import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
+import org.sugarj.cleardep.dependency.BuildOutputRequirement;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.dependency.DuplicateBuildUnitPathException;
 import org.sugarj.cleardep.dependency.DuplicateFileGenerationException;
@@ -431,6 +432,9 @@ public class BuildManager extends BuildUnitProvider {
             }
             if (this.consistentUnits.contains(dep))
               return depResult;
+          } else if (req instanceof BuildOutputRequirement) {
+            if (! req.isConsistent())
+              return executeBuilder(builder, dep, buildReq);
           }
         }
         this.consistentUnits.add(dep);
