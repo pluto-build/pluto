@@ -31,7 +31,7 @@ import org.sugarj.common.path.Path;
 
 import com.cedarsoftware.util.DeepEquals;
 
-public class BuildManager implements BuildUnitProvider {
+public class BuildManager extends BuildUnitProvider {
 
   private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
 
@@ -49,7 +49,7 @@ public class BuildManager implements BuildUnitProvider {
     }
 
     try {
-      return manager.require(null,buildReq).getBuildResult();
+      return manager.requireInitially(buildReq).getBuildResult();
     } catch (IOException e) {
       e.printStackTrace();
       return null;
@@ -77,7 +77,7 @@ public class BuildManager implements BuildUnitProvider {
       for (BuildRequest<?, Out, ?, ?> buildReq : buildReqs)
         if (buildReq != null)
           try {
-            out.add(manager.require(null,buildReq).getBuildResult());
+            out.add(manager.requireInitially(buildReq).getBuildResult());
           } catch (IOException e) {
             e.printStackTrace();
             out.add(null);
@@ -91,8 +91,6 @@ public class BuildManager implements BuildUnitProvider {
 
   private final Map<? extends Path, Stamp> editedSourceFiles;
   private ExecutingStack executingStack;
-
-  private BuildRequest<?, ?, ?, ?> rebuildTriggeredBy = null;
 
   // private transient ConsistencyManager consistencyManager;
   private transient Map<Path, Set<Path>> assumedCyclicConsistency;
@@ -242,7 +240,8 @@ public class BuildManager implements BuildUnitProvider {
     return null;
   }
 
-  public void tryCompileCycle(BuildCycleException e) throws Throwable {
+  @Override
+  protected void tryCompileCycle(BuildCycleException e) throws Throwable {
     if (e.getCycleState() == CycleState.UNHANDLED) {
 
       Log.log.log("Detected a dependency cycle with root " + e.getCycleComponents().get(0).unit.getPersistentPath(), Log.CORE);
@@ -321,27 +320,38 @@ public class BuildManager implements BuildUnitProvider {
       throw e;
     }
   }
+  
+//@formatter:off
+  protected
+    <In extends Serializable,
+     Out extends Serializable,
+     B extends Builder<In, Out>,
+     F extends BuilderFactory<In, Out, B>>
+  //@formatter:on
+  BuildUnit<Out> requireInitially (BuildRequest<In, Out, B, F> buildReq) throws IOException {
+    Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
+    try {
+      return require(null, buildReq);
+    } finally {
+      Log.log.endTask();
+    }
+  }
 
   @Override
   //@formatter:off
-  public
+  protected
     <In extends Serializable,
      Out extends Serializable,
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
   BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
-    if (rebuildTriggeredBy == null) {
-      rebuildTriggeredBy = buildReq;
-      Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
-    }
     
-
     BuildUnit<Out> depResult = null;
     Path dep = null;
    
     
-    try {
+   
       Builder<In, Out> builder = buildReq.createBuilder();
       dep = builder.persistentPath();
       depResult = BuildUnit.read(dep);
@@ -432,11 +442,7 @@ public class BuildManager implements BuildUnitProvider {
      
 
       return depResult;
-    } finally {
-    //  Log.log.endTask();
-      if (rebuildTriggeredBy == buildReq)
-        Log.log.endTask();
-    }
+    
   }
 
   private <Out extends Serializable> BuildUnit<Out> assertConsistency(BuildUnit<Out> depResult) {

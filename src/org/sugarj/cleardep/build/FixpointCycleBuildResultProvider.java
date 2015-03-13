@@ -11,7 +11,7 @@ import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 
-public class FixpointCycleBuildResultProvider implements BuildUnitProvider {
+public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
   private FixpointCycleSupport parent;
   private BuildUnitProvider parentManager;
@@ -51,7 +51,7 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider {
   }
 
   @Override
-  public <In extends Serializable, Out extends Serializable, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  protected <In extends Serializable, Out extends Serializable, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
     BuildUnit<Out> cycleUnit = getBuildUnitInCycle(buildReq);
     if (cycleUnit != null && (source == cycleUnit || this.requiredUnitsInIteration.contains(cycleUnit))) {
       return cycleUnit;
@@ -88,7 +88,7 @@ public class FixpointCycleBuildResultProvider implements BuildUnitProvider {
   }
 
   @Override
-  public void tryCompileCycle(BuildCycleException e) throws Throwable {
+  protected void tryCompileCycle(BuildCycleException e) throws Throwable {
     this.parentManager.tryCompileCycle(e);
   }
 
