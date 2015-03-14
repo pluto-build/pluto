@@ -7,34 +7,31 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
-import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.common.path.Path;
 
 public class RequireStack {
 
-  private transient Deque<Path> requireStack;
-  private transient Set<Path> knownInconsistentUnits;
-  private transient Set<Path> consistentUnits;
-  // private transient ConsistencyManager consistencyManager;
-  private transient Map<Path, Set<Path>> assumedCyclicConsistency;
-  
+  private Deque<Path> requireStack;
+  private Set<Path> knownInconsistentUnits;
+  private Set<Path> consistentUnits;
+  private Map<Path, Set<Path>> assumedCyclicConsistency;
+
   public RequireStack() {
     this.assumedCyclicConsistency = new HashMap<>();
     this.consistentUnits = new HashSet<>();
     this.knownInconsistentUnits = new HashSet<>();
     this.requireStack = new LinkedList<>();
   }
-  
+
   public void beginRebuild(Path dep) {
     this.knownInconsistentUnits.add(dep);
-    Set<Path> cyclicAssumptions = this.assumedCyclicConsistency.get(dep);
-      for (Path assumed : this.requireStack) {
-        this.knownInconsistentUnits.add(assumed);
-        
-        this.consistentUnits.remove(assumed);
-      }
+    for (Path assumed : this.requireStack) {
+      // This could be too strict
+      this.knownInconsistentUnits.add(assumed);
+      this.consistentUnits.remove(assumed);
+    }
   }
-  
+
   private Set<Path> getCyclicConsistentAssumtion(Path dep) {
     Set<Path> cyclicAssumptions = assumedCyclicConsistency.get(dep);
     if (cyclicAssumptions == null) {
@@ -43,26 +40,19 @@ public class RequireStack {
     }
     return cyclicAssumptions;
   }
-  
-  public void finishRebuild(Path dep) {
- // if (cyclicAssumptions == null || cyclicAssumptions.isEmpty()) {
-    this.consistentUnits.add(dep);
-    this.assumedCyclicConsistency.remove(dep);
- // }
-  this.knownInconsistentUnits.remove(dep);
-  }
-  
-  public boolean isKnownInconsistent(Path dep) {
 
+  public void finishRebuild(Path dep) {
+    this.consistentUnits.add(dep);
+    this.knownInconsistentUnits.remove(dep);
+    // Allowed to do that in any case?
+    this.assumedCyclicConsistency.remove(dep);
+  }
+
+  public boolean isKnownInconsistent(Path dep) {
     return knownInconsistentUnits.contains(dep) || this.isAssumtionKnownInconsistent(dep);
   }
   
-  public boolean isConsistent(Path dep) {
-    return this.consistentUnits.contains(dep);
-  }
-  
-  public boolean isAssumtionKnownInconsistent(Path dep) {
-
+  private boolean isAssumtionKnownInconsistent(Path dep) {
     for (Path p : this.getCyclicConsistentAssumtion(dep)) {
       if (this.knownInconsistentUnits.contains(p)) {
         return true;
@@ -70,7 +60,11 @@ public class RequireStack {
     }
     return false;
   }
-  
+
+  public boolean isConsistent(Path dep) {
+    return this.consistentUnits.contains(dep);
+  }
+
   public boolean isAlreadyRequired(Path source, Path dep) {
     if (this.requireStack.contains(dep)) {
       Set<Path> cyclicAssumptions = this.getCyclicConsistentAssumtion(dep);
@@ -83,24 +77,25 @@ public class RequireStack {
     }
     return false;
   }
-  
+
   public void beginRequire(Path dep) {
     this.requireStack.push(dep);
   }
-  
+
   public void finishRequire(Path source, Path dep) {
-    if (source != null)
+    if (source != null) {
       this.handleRequiredFinished(source, dep);
+    }
     this.requireStack.pop();
   }
-  
-  public void handleRequiredFinished(Path dep, Path required) {
+
+  private void handleRequiredFinished(Path dep, Path required) {
     Set<Path> depAssumptions = this.getCyclicConsistentAssumtion(required);
     this.getCyclicConsistentAssumtion(dep).addAll(depAssumptions);
   }
-  
+
   public void markConsistent(Path dep) {
     this.consistentUnits.add(dep);
   }
-  
+
 }
