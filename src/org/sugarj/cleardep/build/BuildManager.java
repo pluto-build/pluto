@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -93,11 +92,7 @@ public class BuildManager extends BuildUnitProvider {
   private final Map<? extends Path, Stamp> editedSourceFiles;
   private ExecutingStack executingStack;
 
-  // private transient ConsistencyManager consistencyManager;
-  private transient Map<Path, Set<Path>> assumedCyclicConsistency;
-  private transient Set<Path> consistentUnits;
-  private transient Set<Path> knownInconsistentUnits;
-  private transient Deque<Path> requireStack;
+  private transient RequireStack requireStack;
 
   private transient Map<Path, BuildUnit<?>> generatedFiles;
 
@@ -105,11 +100,8 @@ public class BuildManager extends BuildUnitProvider {
     this.editedSourceFiles = editedSourceFiles;
     this.executingStack = new ExecutingStack();
     // this.consistencyManager = new ConsistencyManager();
-    this.assumedCyclicConsistency = new HashMap<>();
-    this.consistentUnits = new HashSet<>();
-    this.knownInconsistentUnits = new HashSet<>();
-    this.requireStack = new LinkedList<>();
-    this.generatedFiles = new HashMap<>();
+  this.generatedFiles = new HashMap<Path, BuildUnit<?>>();
+    this.requireStack = new RequireStack();
   }
 
   // @formatter:off
@@ -148,15 +140,7 @@ public class BuildManager extends BuildUnitProvider {
   // @formatter:on
   BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
-    this.knownInconsistentUnits.add(dep);
-    Set<Path> cyclicAssumptions = this.assumedCyclicConsistency.get(dep);
- //   if (cyclicAssumptions != null) {
-      for (Path assumed : this.requireStack) {
-        this.knownInconsistentUnits.add(assumed);
-        
-        this.consistentUnits.remove(assumed);
-      }
-  //  }
+    requireStack.beginRebuild(dep);
 
     resetGenBy(dep, BuildUnit.read(dep));
     BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
@@ -213,11 +197,8 @@ public class BuildManager extends BuildUnitProvider {
         throw new AssertionError("API Violation detected: Builder mutated its input.");
       depResult.write();
       assertConsistency(depResult);
-     // if (cyclicAssumptions == null || cyclicAssumptions.isEmpty()) {
-        this.consistentUnits.add(dep);
-        this.assumedCyclicConsistency.remove(dep);
-     // }
-      this.knownInconsistentUnits.remove(dep);
+      requireStack.finishRebuild(dep);
+   
 
       if (taskDescription != null)
         Log.log.endTask();
@@ -356,23 +337,17 @@ public class BuildManager extends BuildUnitProvider {
       Builder<In, Out> builder = buildReq.createBuilder();
       dep = builder.persistentPath();
       depResult = BuildUnit.read(dep);
-      
-      Set<Path> cyclicAssumptions = assumedCyclicConsistency.get(dep);
-      if (cyclicAssumptions == null) {
-        cyclicAssumptions = new HashSet<Path>();
-        assumedCyclicConsistency.put(dep, cyclicAssumptions);
-      }
     
-     Log.log.beginTask("Require " + FileCommands.tryGetRelativePath(dep), Log.CORE);
+     /*Log.log.beginTask("Require " + FileCommands.tryGetRelativePath(dep), Log.CORE);
       Log.log.log("Consistent:     " + consistentUnits.contains(dep), Log.CORE);
       Log.log.log("Not Consistent: " + knownInconsistentUnits.contains(dep), Log.CORE);
       Log.log.log("Assumptions:    " + cyclicAssumptions, Log.CORE);
       Log.log.log("Knon Consist:   " + consistentUnits, Log.CORE);
-      Log.log.log("Knon Consist:   " + knownInconsistentUnits, Log.CORE);
+      Log.log.log("Knon Consist:   " + knownInconsistentUnits, Log.CORE);*/
       try {
       
 
-      if (knownInconsistentUnits.contains(dep)) {
+      if (requireStack.isKnownInconsistent(dep)) {
         depResult = BuildUnit.create(dep, buildReq);
         return executeBuilder(builder, dep, buildReq);
       }
@@ -383,26 +358,17 @@ public class BuildManager extends BuildUnitProvider {
       if (!depResult.getGeneratedBy().deepEquals(buildReq))
         return executeBuilder(builder, dep, buildReq);
 
-      for (Path p : cyclicAssumptions) {
-        if (this.knownInconsistentUnits.contains(p)) {
+     if (requireStack.isAssumtionKnownInconsistent(dep))
           return executeBuilder(builder, dep, buildReq);
-        }
-      }
+      
 
-      if (this.consistentUnits.contains(dep))
+      if (requireStack.isConsistent(dep))
         return depResult;
 
-      if (this.requireStack.contains(dep)) {
-        Set<Path> unitAssumptions = assumedCyclicConsistency.get(source.getPersistentPath());
-        unitAssumptions.addAll(cyclicAssumptions);
-        unitAssumptions.add(dep);
-        cyclicAssumptions.addAll(unitAssumptions);
-        cyclicAssumptions.add(source.getPersistentPath());
-        assumedCyclicConsistency.put(dep, cyclicAssumptions);
-        
+      if (source != null && requireStack.isAlreadyRequired(source.getPersistentPath(), dep)) {
         return depResult;
       }
-      requireStack.push(dep);
+      requireStack.beginRequire(dep);
 
       try {
         if (!depResult.isConsistentNonrequirements())
@@ -415,24 +381,21 @@ public class BuildManager extends BuildUnitProvider {
           } else if (req instanceof BuildRequirement) {
             BuildRequirement<?> breq = (BuildRequirement<?>) req;
             BuildUnit<?> unit = require(depResult, breq.req);
-            Set<Path> depAssumptions = assumedCyclicConsistency.get(unit.getPersistentPath());
-            if (depAssumptions != null) {
-              cyclicAssumptions.addAll(depAssumptions);
-            }
-            if (this.consistentUnits.contains(dep))
+           requireStack.handleRequiredFinished(dep, unit.getPersistentPath());
+            if (requireStack.isConsistent(dep))
               return depResult;
           } else if (req instanceof BuildOutputRequirement) {
             if (!req.isConsistent())
               return executeBuilder(builder, dep, buildReq);
           }
         }
-        this.consistentUnits.add(dep);
+        requireStack.markConsistent(dep);
 
       } finally {
-        requireStack.pop();
+        requireStack.finishRequire(dep);
       }
       } finally {
-        Log.log.endTask();
+      //  Log.log.endTask();
       }
      
 
