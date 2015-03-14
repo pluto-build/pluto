@@ -319,7 +319,7 @@ public class BuildManager extends BuildUnitProvider {
 
   @Override
   //@formatter:off
-  protected
+  public
     <In extends Serializable,
      Out extends Serializable,
      B extends Builder<In, Out>,
@@ -327,50 +327,41 @@ public class BuildManager extends BuildUnitProvider {
   //@formatter:on
   BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
-    BuildUnit<Out> depResult = null;
-    Path dep = null;
-
     Builder<In, Out> builder = buildReq.createBuilder();
-    dep = builder.persistentPath();
-    depResult = BuildUnit.read(dep);
+    Path dep = builder.persistentPath();
+    BuildUnit<Out> depResult = BuildUnit.read(dep);
 
-    if (requireStack.isKnownInconsistent(dep))
-      return executeBuilder(builder, dep, buildReq);
+    boolean localInconsistent =
+        (requireStack.isKnownInconsistent(dep)) ||
+        (depResult == null) ||
+        (!depResult.getGeneratedBy().deepEquals(buildReq)) ||
+        (!depResult.isConsistentNonrequirements());
 
-    if (depResult == null)
+    if (localInconsistent) {
       return executeBuilder(builder, dep, buildReq);
-
-    if (!depResult.getGeneratedBy().deepEquals(buildReq))
-      return executeBuilder(builder, dep, buildReq);
+    }
 
     if (requireStack.isConsistent(dep))
       return depResult;
 
+    // Dont execute require because it is cyclic, requireStack keeps track of
+    // this
     if (source != null && requireStack.isAlreadyRequired(source.getPersistentPath(), dep)) {
       return depResult;
     }
 
     requireStack.beginRequire(dep);
-
     try {
-      if (!depResult.isConsistentNonrequirements())
-        return executeBuilder(builder, dep, buildReq);
 
       for (Requirement req : depResult.getRequirements()) {
-        if (req instanceof FileRequirement) {
-          if (!req.isConsistent())
-            return executeBuilder(builder, dep, buildReq);
-        } else if (req instanceof BuildRequirement) {
-          BuildRequirement<?> breq = (BuildRequirement<?>) req;
-          require(depResult, breq.req);
+        if (!req.isConsistentInBuild(depResult, this)) {
+          return executeBuilder(builder, dep, buildReq);
+        } else {
           // Could get consistent because it was part of a cycle which is
           // compiled now
           // TODO better remove that for security purpose?
           if (requireStack.isConsistent(dep))
             return depResult;
-        } else if (req instanceof BuildOutputRequirement) {
-          if (!req.isConsistent())
-            return executeBuilder(builder, dep, buildReq);
         }
       }
       requireStack.markConsistent(dep);

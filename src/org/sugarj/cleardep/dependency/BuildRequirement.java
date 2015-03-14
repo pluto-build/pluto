@@ -9,6 +9,7 @@ import java.util.Objects;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.BuildRequest;
+import org.sugarj.cleardep.build.BuildUnitProvider;
 import org.sugarj.cleardep.output.OutputStamp;
 import org.sugarj.common.path.Path;
 
@@ -34,6 +35,15 @@ public class BuildRequirement<Out extends Serializable> implements Requirement, 
   public boolean isConsistent() {
     boolean reqsEqual = unit.getGeneratedBy().deepEquals(req);
     return reqsEqual;
+  }
+  
+  @Override
+  public boolean isConsistentInBuild(BuildUnit<?> parent, BuildUnitProvider manager) throws IOException{
+
+    manager.require(parent, this.req);
+    
+   return true;
+   
   }
 
   @Override

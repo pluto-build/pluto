@@ -7,7 +7,7 @@ import org.sugarj.cleardep.BuildUnit;
 
 public abstract class BuildUnitProvider {
 
-  protected abstract
+  public abstract
   //@formatter:off
   <In extends Serializable,
    Out extends Serializable,

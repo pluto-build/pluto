@@ -9,6 +9,7 @@ import java.util.Objects;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.BuildRequest;
+import org.sugarj.cleardep.build.BuildUnitProvider;
 import org.sugarj.cleardep.output.OutputStamp;
 import org.sugarj.cleardep.output.OutputStamper;
 import org.sugarj.common.path.Path;
@@ -32,9 +33,12 @@ public class BuildOutputRequirement<Out extends Serializable> implements Require
     this.stamp = stamper.stampOf(unit.getBuildResult());
   }
 
-  @Override
   public boolean isConsistent() {
     return stamp.equals(stamp.getStamper().stampOf(this.unit.getBuildResult()));
+  }
+  @Override
+  public boolean isConsistentInBuild(BuildUnit<?> parent, BuildUnitProvider manager) {
+    return isConsistent();
   }
 
   @Override
