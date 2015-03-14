@@ -362,18 +362,19 @@ public class BuildManager extends BuildUnitProvider {
         cyclicAssumptions = new HashSet<Path>();
         assumedCyclicConsistency.put(dep, cyclicAssumptions);
       }
-  /*  
-     Log.log.beginTask("Require " + ((RelativePath)dep).getRelativePath(), Log.CORE);
+    
+     Log.log.beginTask("Require " + FileCommands.tryGetRelativePath(dep), Log.CORE);
       Log.log.log("Consistent:     " + consistentUnits.contains(dep), Log.CORE);
       Log.log.log("Not Consistent: " + knownInconsistentUnits.contains(dep), Log.CORE);
       Log.log.log("Assumptions:    " + cyclicAssumptions, Log.CORE);
       Log.log.log("Knon Consist:   " + consistentUnits, Log.CORE);
       Log.log.log("Knon Consist:   " + knownInconsistentUnits, Log.CORE);
-*/
+      try {
+      
 
       if (knownInconsistentUnits.contains(dep)) {
         depResult = BuildUnit.create(dep, buildReq);
-        depResult =null;
+        return executeBuilder(builder, dep, buildReq);
       }
 
       if (depResult == null)
@@ -397,7 +398,6 @@ public class BuildManager extends BuildUnitProvider {
         unitAssumptions.add(dep);
         cyclicAssumptions.addAll(unitAssumptions);
         cyclicAssumptions.add(source.getPersistentPath());
-        cyclicAssumptions.add(dep);
         assumedCyclicConsistency.put(dep, cyclicAssumptions);
         
         return depResult;
@@ -410,30 +410,19 @@ public class BuildManager extends BuildUnitProvider {
 
         for (Requirement req : depResult.getRequirements()) {
           if (req instanceof FileRequirement) {
-            FileRequirement freq = (FileRequirement) req;
-            if (!freq.isConsistent())
+            if (!req.isConsistent())
               return executeBuilder(builder, dep, buildReq);
           } else if (req instanceof BuildRequirement) {
             BuildRequirement<?> breq = (BuildRequirement<?>) req;
-            int numBefore = 0;
-            if (breq.unit != null && assumedCyclicConsistency.containsKey(breq.unit.getPersistentPath())) {
-              numBefore = assumedCyclicConsistency.get(breq.unit.getPersistentPath()).size();
-            }
-           
             BuildUnit<?> unit = require(depResult, breq.req);
             Set<Path> depAssumptions = assumedCyclicConsistency.get(unit.getPersistentPath());
             if (depAssumptions != null) {
-              int sizeAfter = depAssumptions.size();
               cyclicAssumptions.addAll(depAssumptions);
-              if (numBefore < sizeAfter) {
-                depAssumptions.add(dep);
-              }
-            
             }
             if (this.consistentUnits.contains(dep))
               return depResult;
           } else if (req instanceof BuildOutputRequirement) {
-            if (! req.isConsistent())
+            if (!req.isConsistent())
               return executeBuilder(builder, dep, buildReq);
           }
         }
@@ -442,7 +431,9 @@ public class BuildManager extends BuildUnitProvider {
       } finally {
         requireStack.pop();
       }
-      
+      } finally {
+        Log.log.endTask();
+      }
      
 
       return depResult;
