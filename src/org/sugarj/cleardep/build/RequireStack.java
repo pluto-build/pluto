@@ -54,7 +54,7 @@ public class RequireStack {
   
   public boolean isKnownInconsistent(Path dep) {
 
-    return knownInconsistentUnits.contains(dep);
+    return knownInconsistentUnits.contains(dep) || this.isAssumtionKnownInconsistent(dep);
   }
   
   public boolean isConsistent(Path dep) {
@@ -88,7 +88,9 @@ public class RequireStack {
     this.requireStack.push(dep);
   }
   
-  public void finishRequire(Path dep) {
+  public void finishRequire(Path source, Path dep) {
+    if (source != null)
+      this.handleRequiredFinished(source, dep);
     this.requireStack.pop();
   }
   

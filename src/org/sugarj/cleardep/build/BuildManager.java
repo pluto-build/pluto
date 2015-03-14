@@ -100,7 +100,7 @@ public class BuildManager extends BuildUnitProvider {
     this.editedSourceFiles = editedSourceFiles;
     this.executingStack = new ExecutingStack();
     // this.consistencyManager = new ConsistencyManager();
-  this.generatedFiles = new HashMap<Path, BuildUnit<?>>();
+    this.generatedFiles = new HashMap<Path, BuildUnit<?>>();
     this.requireStack = new RequireStack();
   }
 
@@ -124,9 +124,9 @@ public class BuildManager extends BuildUnitProvider {
         depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
 
         // TODO: needed?
-        //for (Path p : metaBuilder.getExternalFileDependencies()) {
-        //  depResult.requires(p, LastModifiedStamper.instance.stampOf(p));
-        //}
+        // for (Path p : metaBuilder.getExternalFileDependencies()) {
+        // depResult.requires(p, LastModifiedStamper.instance.stampOf(p));
+        // }
       }
     }
   }
@@ -150,11 +150,10 @@ public class BuildManager extends BuildUnitProvider {
 
     BuildStackEntry<Out> entry = null;
     // First step: cycle detection
-   
 
     if (taskDescription != null)
       Log.log.beginTask(taskDescription, Log.CORE);
-    
+
     entry = this.executingStack.push(depResult);
 
     depResult.setState(BuildUnit.State.IN_PROGESS);
@@ -198,7 +197,6 @@ public class BuildManager extends BuildUnitProvider {
       depResult.write();
       assertConsistency(depResult);
       requireStack.finishRebuild(dep);
-   
 
       if (taskDescription != null)
         Log.log.endTask();
@@ -238,9 +236,9 @@ public class BuildManager extends BuildUnitProvider {
       Log.log.beginTask("Compile cycle with: " + cycleSupport.getCycleDescription(cycle), Log.CORE);
       try {
         try {
-        BuildCycle.Result result = cycleSupport.compileCycle(this, cycle);
-        e.setCycleResult(result);
-        e.setCycleState(CycleState.RESOLVED);
+          BuildCycle.Result result = cycleSupport.compileCycle(this, cycle);
+          e.setCycleResult(result);
+          e.setCycleState(CycleState.RESOLVED);
         } catch (BuildCycleException cyclicEx) {
           e.setCycleState(cyclicEx.getCycleState());
           e.setCycleResult(cyclicEx.getCycleResult());
@@ -250,7 +248,7 @@ public class BuildManager extends BuildUnitProvider {
       } finally {
         Log.log.endTask();
         throw e;
-     }
+      }
     } else {
 
       throw e;
@@ -302,7 +300,7 @@ public class BuildManager extends BuildUnitProvider {
       throw e;
     }
   }
-  
+
 //@formatter:off
   protected
     <In extends Serializable,
@@ -310,7 +308,7 @@ public class BuildManager extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
-  BuildUnit<Out> requireInitially (BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildUnit<Out> requireInitially(BuildRequest<In, Out, B, F> buildReq) throws IOException {
     Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
     try {
       return require(null, buildReq);
@@ -328,79 +326,64 @@ public class BuildManager extends BuildUnitProvider {
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
   BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
-    
+
     BuildUnit<Out> depResult = null;
     Path dep = null;
-   
-    
-   
-      Builder<In, Out> builder = buildReq.createBuilder();
-      dep = builder.persistentPath();
-      depResult = BuildUnit.read(dep);
-    
-     /*Log.log.beginTask("Require " + FileCommands.tryGetRelativePath(dep), Log.CORE);
-      Log.log.log("Consistent:     " + consistentUnits.contains(dep), Log.CORE);
-      Log.log.log("Not Consistent: " + knownInconsistentUnits.contains(dep), Log.CORE);
-      Log.log.log("Assumptions:    " + cyclicAssumptions, Log.CORE);
-      Log.log.log("Knon Consist:   " + consistentUnits, Log.CORE);
-      Log.log.log("Knon Consist:   " + knownInconsistentUnits, Log.CORE);*/
-      try {
-      
 
-      if (requireStack.isKnownInconsistent(dep)) {
-        depResult = BuildUnit.create(dep, buildReq);
-        return executeBuilder(builder, dep, buildReq);
-      }
+    Builder<In, Out> builder = buildReq.createBuilder();
+    dep = builder.persistentPath();
+    depResult = BuildUnit.read(dep);
 
-      if (depResult == null)
-        return executeBuilder(builder, dep, buildReq);
+    if (requireStack.isKnownInconsistent(dep))
+      return executeBuilder(builder, dep, buildReq);
 
-      if (!depResult.getGeneratedBy().deepEquals(buildReq))
-        return executeBuilder(builder, dep, buildReq);
+    if (depResult == null)
+      return executeBuilder(builder, dep, buildReq);
 
-     if (requireStack.isAssumtionKnownInconsistent(dep))
-          return executeBuilder(builder, dep, buildReq);
-      
+    if (!depResult.getGeneratedBy().deepEquals(buildReq))
+      return executeBuilder(builder, dep, buildReq);
 
-      if (requireStack.isConsistent(dep))
-        return depResult;
-
-      if (source != null && requireStack.isAlreadyRequired(source.getPersistentPath(), dep)) {
-        return depResult;
-      }
-      requireStack.beginRequire(dep);
-
-      try {
-        if (!depResult.isConsistentNonrequirements())
-          return executeBuilder(builder, dep, buildReq);
-
-        for (Requirement req : depResult.getRequirements()) {
-          if (req instanceof FileRequirement) {
-            if (!req.isConsistent())
-              return executeBuilder(builder, dep, buildReq);
-          } else if (req instanceof BuildRequirement) {
-            BuildRequirement<?> breq = (BuildRequirement<?>) req;
-            BuildUnit<?> unit = require(depResult, breq.req);
-           requireStack.handleRequiredFinished(dep, unit.getPersistentPath());
-            if (requireStack.isConsistent(dep))
-              return depResult;
-          } else if (req instanceof BuildOutputRequirement) {
-            if (!req.isConsistent())
-              return executeBuilder(builder, dep, buildReq);
-          }
-        }
-        requireStack.markConsistent(dep);
-
-      } finally {
-        requireStack.finishRequire(dep);
-      }
-      } finally {
-      //  Log.log.endTask();
-      }
-     
-
+    if (requireStack.isConsistent(dep))
       return depResult;
-    
+
+    if (source != null && requireStack.isAlreadyRequired(source.getPersistentPath(), dep)) {
+      return depResult;
+    }
+
+    requireStack.beginRequire(dep);
+
+    try {
+      if (!depResult.isConsistentNonrequirements())
+        return executeBuilder(builder, dep, buildReq);
+
+      for (Requirement req : depResult.getRequirements()) {
+        if (req instanceof FileRequirement) {
+          if (!req.isConsistent())
+            return executeBuilder(builder, dep, buildReq);
+        } else if (req instanceof BuildRequirement) {
+          BuildRequirement<?> breq = (BuildRequirement<?>) req;
+          require(depResult, breq.req);
+          // Could get consistent because it was part of a cycle which is
+          // compiled now
+          // TODO better remove that for security purpose?
+          if (requireStack.isConsistent(dep))
+            return depResult;
+        } else if (req instanceof BuildOutputRequirement) {
+          if (!req.isConsistent())
+            return executeBuilder(builder, dep, buildReq);
+        }
+      }
+      requireStack.markConsistent(dep);
+
+    } finally {
+      if (source != null)
+        requireStack.finishRequire(source.getPersistentPath(), dep);
+      else
+        requireStack.finishRequire(null, dep);
+    }
+
+    return depResult;
+
   }
 
   private <Out extends Serializable> BuildUnit<Out> assertConsistency(BuildUnit<Out> depResult) {
