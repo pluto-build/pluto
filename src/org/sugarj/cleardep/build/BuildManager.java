@@ -312,7 +312,11 @@ public class BuildManager extends BuildUnitProvider {
     Path dep = builder.persistentPath();
     BuildUnit<Out> depResult = BuildUnit.read(dep);
 
-    boolean localInconsistent = (requireStack.isKnownInconsistent(dep)) || (depResult == null) || (!depResult.getGeneratedBy().deepEquals(buildReq)) || (!depResult.isConsistentNonrequirements());
+    boolean localInconsistent = 
+        (requireStack.isKnownInconsistent(dep)) ||
+        (depResult == null) ||
+        (!depResult.getGeneratedBy().deepEquals(buildReq)) ||
+        (!depResult.isConsistentNonrequirements());
 
     if (localInconsistent) {
       return executeBuilder(builder, dep, buildReq);
