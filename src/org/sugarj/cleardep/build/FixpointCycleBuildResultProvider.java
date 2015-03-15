@@ -84,8 +84,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
           } catch (BuildCycleException e) {
             Log.log.log("Stopped because of cycle", Log.CORE);
-            this.parentManager.tryCompileCycle(e);
-            throw e;
+            throw this.tryCompileCycle(e);
           }
         } catch (BuildCycleException e2) {
           throw e2;
@@ -101,8 +100,8 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
   }
 
   @Override
-  protected void tryCompileCycle(BuildCycleException e) throws Throwable {
-    this.parentManager.tryCompileCycle(e);
+  protected Throwable tryCompileCycle(BuildCycleException e) {
+    return this.parentManager.tryCompileCycle(e);
   }
 
 }

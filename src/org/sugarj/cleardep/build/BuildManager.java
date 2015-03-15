@@ -14,7 +14,6 @@ import java.util.Set;
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.BuildCycle.Result.UnitResultTuple;
 import org.sugarj.cleardep.build.BuildCycleException.CycleState;
-import org.sugarj.cleardep.build.RequiredBuilderFailed.BuilderResult;
 import org.sugarj.cleardep.dependency.BuildOutputRequirement;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.dependency.DuplicateBuildUnitPathException;
@@ -140,71 +139,58 @@ public class BuildManager extends BuildUnitProvider {
   // @formatter:on
   BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
-    requireStack.beginRebuild(dep);
+    this.requireStack.beginRebuild(dep);
 
     resetGenBy(dep, BuildUnit.read(dep));
     BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
-    int inputHash = DeepEquals.deepHashCode(builder.input);
-
-    String taskDescription = builder.taskDescription();
-
-    BuildStackEntry<Out> entry = null;
+    
     // First step: cycle detection
-
-    entry = this.executingStack.push(depResult);
-
+    BuildStackEntry<Out> entry = this.executingStack.push(depResult);
+    
+    int inputHash = DeepEquals.deepHashCode(builder.input);
+    
+    String taskDescription = builder.taskDescription();
     if (taskDescription != null)
       Log.log.beginTask(taskDescription, Log.CORE);
-
 
     depResult.setState(BuildUnit.State.IN_PROGESS);
 
     try {
       try {
-
         // setUpMetaDependency(builder, depResult);
 
         // call the actual builder
         Out out = builder.triggerBuild(depResult, this);
         depResult.setBuildResult(out);
-
         if (!depResult.isFinished())
           depResult.setState(BuildUnit.State.SUCCESS);
-        
       } catch (BuildCycleException e) {
-        tryCompileCycle(e);
+        throw this.tryCompileCycle(e);
       }
-      
     } catch (BuildCycleException e) {
       stopBuilderInCycle(builder, dep, buildReq, depResult, e);
+      
     } catch (RequiredBuilderFailed e) {
-      BuilderResult required = e.getLastAddedBuilder();
-      depResult.requires(required.result);
-      depResult.setState(BuildUnit.State.FAILURE);
-
-      e.addBuilder(builder, depResult);
       if (taskDescription != null)
         Log.log.logErr("Required builder failed", Log.CORE);
-      throw e;
+      throw RequiredBuilderFailed.enqueueBuilder(e, depResult, builder);
+      
     } catch (Throwable e) {
       depResult.setState(BuildUnit.State.FAILURE);
-
       Log.log.logErr(e.getMessage(), Log.CORE);
-      throw new RequiredBuilderFailed(builder, depResult, e);
+      throw RequiredBuilderFailed.init(builder, depResult, e);
+      
     } finally {
-
       if (inputHash != DeepEquals.deepHashCode(builder.input))
         throw new AssertionError("API Violation detected: Builder mutated its input.");
-      depResult.write();
       assertConsistency(depResult);
-      requireStack.finishRebuild(dep);
-
-      if (taskDescription != null) {
-        Log.log.endTask();
-      }
       
-      BuildStackEntry<?> poppedEntry = this.executingStack.pop();
-      assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
+      depResult.write();
+      if (taskDescription != null) 
+        Log.log.endTask();     
+      
+      this.executingStack.pop(entry);
+      this.requireStack.finishRebuild(dep);
     }
 
     if (depResult.getState() == BuildUnit.State.FAILURE)
@@ -212,40 +198,41 @@ public class BuildManager extends BuildUnitProvider {
 
     return depResult;
   }
-
-
+  
   @Override
-  protected void tryCompileCycle(BuildCycleException e) throws Throwable {
-    if (e.getCycleState() == CycleState.UNHANDLED) {
-
-      Log.log.log("Detected a dependency cycle with root " + e.getCycleComponents().get(0).unit.getPersistentPath(), Log.CORE);
-
-      e.setCycleState(CycleState.NOT_RESOLVED);
-      BuildCycle cycle = new BuildCycle(e.getCycleComponents());
-      CycleSupport cycleSupport = cycle.getCycleSupport();
-      if (cycleSupport == null) {
-        throw e;
-      }
-
-      Log.log.beginTask("Compile cycle with: " + cycleSupport.getCycleDescription(cycle), Log.CORE);
-      try {
-        try {
-          BuildCycle.Result result = cycleSupport.compileCycle(this, cycle);
-          e.setCycleResult(result);
-          e.setCycleState(CycleState.RESOLVED);
-        } catch (BuildCycleException cyclicEx) {
-          e.setCycleState(cyclicEx.getCycleState());
-          e.setCycleResult(cyclicEx.getCycleResult());
-        } catch (Throwable t) {
-          throw t;
-        }
-        throw e;
-      } finally {
-        Log.log.endTask();
-      }
-    } else {
-      throw e;
+  protected Throwable tryCompileCycle(BuildCycleException e) {
+    // Only try to compile a cycle which is unhandled
+    if (e.getCycleState() != CycleState.UNHANDLED) {
+      return e;
     }
+
+    Log.log.log("Detected a dependency cycle with root " + e.getCycleComponents().get(0).unit.getPersistentPath(), Log.CORE);
+
+    e.setCycleState(CycleState.NOT_RESOLVED);
+    BuildCycle cycle = new BuildCycle(e.getCycleComponents());
+    CycleSupport cycleSupport = cycle.getCycleSupport();
+    if (cycleSupport == null) {
+      return e;
+    }
+
+    Log.log.beginTask("Compile cycle with: " + cycleSupport.getCycleDescription(cycle), Log.CORE);
+    try {
+      BuildCycle.Result result = cycleSupport.compileCycle(this, cycle);
+      e.setCycleResult(result);
+      e.setCycleState(CycleState.RESOLVED);
+    } catch (BuildCycleException cyclicEx) {
+      // Now cycle in cycle detected, use result from it
+      // But keep throw away the new exception but use
+      // the existing ones to kill all builders of this
+      // cycle
+      e.setCycleState(cyclicEx.getCycleState());
+      e.setCycleResult(cyclicEx.getCycleResult());
+    } catch (Throwable t) {
+      Log.log.endTask("Cyclic compilation failed: " + t.getMessage());
+      return t;
+    }
+    Log.log.endTask();
+    return e;
   }
 
   // @formatter:off
@@ -284,7 +271,7 @@ public class BuildManager extends BuildUnitProvider {
 
         if (this.executingStack.getNumContains(e.getCycleComponents().get(0).unit) == 1) {
           Log.log.log("but cycle has been compiled", Log.CORE);
- 
+
         } else {
           throw e;
         }
@@ -325,11 +312,7 @@ public class BuildManager extends BuildUnitProvider {
     Path dep = builder.persistentPath();
     BuildUnit<Out> depResult = BuildUnit.read(dep);
 
-    boolean localInconsistent =
-        (requireStack.isKnownInconsistent(dep)) ||
-        (depResult == null) ||
-        (!depResult.getGeneratedBy().deepEquals(buildReq)) ||
-        (!depResult.isConsistentNonrequirements());
+    boolean localInconsistent = (requireStack.isKnownInconsistent(dep)) || (depResult == null) || (!depResult.getGeneratedBy().deepEquals(buildReq)) || (!depResult.isConsistentNonrequirements());
 
     if (localInconsistent) {
       return executeBuilder(builder, dep, buildReq);

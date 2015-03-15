@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.sugarj.cleardep.BuildUnit;
+import org.sugarj.cleardep.BuildUnit.State;
 
 public class RequiredBuilderFailed extends RuntimeException {
   private static final long serialVersionUID = 3080806736856580512L;
@@ -20,7 +21,7 @@ public class RequiredBuilderFailed extends RuntimeException {
   
   private List<BuilderResult> builders;
   
-  public <T> RequiredBuilderFailed(Builder<?, ?> builder, BuildUnit<?> result, Throwable cause) {
+  public RequiredBuilderFailed(Builder<?, ?> builder, BuildUnit<?> result, Throwable cause) {
     super(cause);
     builders = new ArrayList<>();
     builders.add(new BuilderResult(builder, result));
@@ -42,5 +43,18 @@ public class RequiredBuilderFailed extends RuntimeException {
   public String getMessage() {
     BuilderResult p = builders.get(0);
     return "Required builder failed. Error occurred in build step \"" + p.builder.taskDescription() + "\": " + getCause().getMessage();
+  }
+
+  static RequiredBuilderFailed enqueueBuilder(RequiredBuilderFailed e, BuildUnit<?> depResult, Builder<?,?> builder) {
+    BuilderResult required = e.getLastAddedBuilder();
+    depResult.requires(required.result);
+    depResult.setState(BuildUnit.State.FAILURE);
+  
+    e.addBuilder(builder, depResult);
+    return e;
+  }
+  
+  static RequiredBuilderFailed init(Builder<?, ?> builder, BuildUnit<?> result, Throwable cause) {
+    return new RequiredBuilderFailed(builder, result, cause);
   }
 }

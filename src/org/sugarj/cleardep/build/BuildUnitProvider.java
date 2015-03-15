@@ -16,6 +16,6 @@ public abstract class BuildUnitProvider {
   //@formatter:on
  BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException;
   
-  protected abstract void tryCompileCycle(BuildCycleException e) throws Throwable;
+  protected abstract Throwable tryCompileCycle(BuildCycleException e);
   
 }
