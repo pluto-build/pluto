@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.State;
+import org.sugarj.cleardep.dependency.IllegalDependencyException;
 import org.sugarj.cleardep.stamp.LastModifiedStamper;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.cleardep.stamp.Stamper;
@@ -102,14 +103,19 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
         requireBuild(req);
   }
   
-  public void require(Path p) {
-    result.requires(p, defaultStamper.stampOf(p));
+  public void require(Path p) throws IOException {
+    require(p, defaultStamper.stampOf(p));
   }
-  public void require(Path p, Stamper stamper) {
-    result.requires(p, stamper.stampOf(p));
+  public void require(Path p, Stamper stamper) throws IOException {
+    require(p, stamper.stampOf(p));
   }
-  public void require(Path p, Stamp stamp) {
-    result.requires(p, stamp);
+  public void require(Path p, Stamp stamp) throws IOException {
+    try {
+      result.requires(p, stamp);
+    } catch (IllegalDependencyException e) {
+      if (e.dep.equals(result.getPersistentPath()))
+        requireBuild(result.getGeneratedBy());
+    }
   }
   
   public void generate(Path p) {
