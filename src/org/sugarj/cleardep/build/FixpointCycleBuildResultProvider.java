@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.sugarj.cleardep.BuildUnit;
+import org.sugarj.cleardep.BuildUnit.State;
 import org.sugarj.cleardep.build.BuildCycle.Result;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.common.Log;
@@ -51,30 +52,40 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
   }
 
   @Override
-  public <In extends Serializable, Out extends Serializable, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  public
+    //@formatter:off
+    <In extends Serializable,
+     Out extends Serializable, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
     BuildUnit<Out> cycleUnit = getBuildUnitInCycle(buildReq);
     if (cycleUnit != null && (source == cycleUnit || this.requiredUnitsInIteration.contains(cycleUnit))) {
       return cycleUnit;
     } else {
       if (cycleUnit != null) {
-        this.requiredUnitsInIteration.add(cycleUnit);
-        Log.log.beginTask(this.parent.getBuilderForInput(buildReq.input).taskDescription(buildReq.input), Log.CORE);
-        try {
 
-          Out result = (Out) this.parent.getBuilderForInput(buildReq.input).compileRequest(this, (BuildRequest) buildReq);
-          cycleUnit.setBuildResult(result);
-          this.result.setBuildResult(cycleUnit, result);
-          return cycleUnit;
-        } catch (BuildCycleException e) {
-          Log.log.log("Stopped because of cycle", Log.CORE);
+        this.requiredUnitsInIteration.add(cycleUnit);
+        
+        Log.log.beginTask(buildReq.createBuilder().taskDescription(), Log.CORE);
+
+        try {
           try {
-            this.parentManager.tryCompileCycle(e);
-          } catch (BuildCycleException e2) {
-            throw e2;
-          } catch (Throwable e2) {
-            throw new RuntimeException(e2);
+
+            Builder<In, Out> builder = buildReq.createBuilder();
+            cycleUnit = BuildUnit.create(builder.persistentPath(), buildReq);
+            
+            Out result = builder.triggerBuild(cycleUnit, this);
+            cycleUnit.setBuildResult(result);
+            cycleUnit.setState(State.finished(true));
+            
+            this.result.setBuildResult(cycleUnit, result);
+            return cycleUnit;
+
+          } catch (BuildCycleException e) {
+            Log.log.log("Stopped because of cycle", Log.CORE);
+           this.parentManager.tryCompileCycle(e);
+            throw e;
           }
-          throw e;
+        } catch (BuildCycleException e2) {
+          throw e2;
         } catch (Throwable e) {
           throw new RequiredBuilderFailed(buildReq.factory.makeBuilder(buildReq.input), cycleUnit, e);
         } finally {
