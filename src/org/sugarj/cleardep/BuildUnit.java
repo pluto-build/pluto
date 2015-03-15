@@ -105,15 +105,10 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
         final Path dep = xattr.getGenBy(file);
         if (dep == null)
           return;
-        // Allow cyclic self references 
-        if (dep.equals(getPersistentPath()) && this.requiredUnits.contains(this))
-          return;
         
         boolean foundDep = visit(new ModuleVisitor<Boolean>() {
           @Override
           public Boolean visit(BuildUnit<?> mod) {
-            if (mod == BuildUnit.this)
-              return false;
             return dep.equals(mod.getPersistentPath());
           }
 
@@ -418,13 +413,14 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 	}
 	public <T> T visit(ModuleVisitor<T> visitor, Set<BuildUnit<?>> init) {
 	  Queue<BuildUnit<?>> queue = new ArrayDeque<>();
-	  if (init == null)
+	  if (init == null) {
 	    queue.add(this);
+	  }
 	  else
 	    queue.addAll(init);
 	  
 	  Set<BuildUnit<?>> seenUnits = new HashSet<>();
-    seenUnits.add(this);
+	  seenUnits.addAll(queue);
 	  
 	  T result = visitor.init();
 	  while(!queue.isEmpty()) {

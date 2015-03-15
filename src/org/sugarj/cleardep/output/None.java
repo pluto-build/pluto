@@ -1,22 +1,22 @@
 package org.sugarj.cleardep.output;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.Serializable;
 
-public class None implements Externalizable {
+public class None implements Serializable {
 
+  private static final long serialVersionUID = -4427485206308344655L;
+  
   public static None val = new None();
   
   public None() {}
   
   @Override
-  public void writeExternal(ObjectOutput out) throws IOException {
+  public boolean equals(Object obj) {
+    return obj instanceof None;
   }
-
+  
   @Override
-  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+  public int hashCode() {
+    return 0;
   }
-
 }
