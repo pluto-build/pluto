@@ -69,7 +69,6 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
         this.requiredUnitsInIteration.add(cycleUnit);
         
         if (cycleUnit.isConsistentShallow(null)) {
-          Log.log.log(FileCommands.tryGetRelativePath(cycleUnit.getPersistentPath()), Log.CORE);
           return cycleUnit;
         }
 
