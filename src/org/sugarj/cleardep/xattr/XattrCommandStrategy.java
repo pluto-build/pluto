@@ -4,18 +4,18 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.sugarj.common.CommandExecution;
+import org.sugarj.common.Exec;
 import org.sugarj.common.path.Path;
 
 public class XattrCommandStrategy implements XattrStrategy {
 
-  CommandExecution exec = new CommandExecution(true);
+  Exec exec = new Exec(true);
   
   @Override
   public void setXattr(Path p, String key, String value) throws IOException {
     try {
-      exec.execute("xattr", "-w", Xattr.PREFIX + ":" + key, value, p.getAbsolutePath());
-    } catch (CommandExecution.ExecutionError e) {
+      exec.exec("xattr", "-w", Xattr.PREFIX + ":" + key, value, p.getAbsolutePath());
+    } catch (Exec.ExecutionError e) {
       throw new IOException(e);
     }
   }
@@ -23,8 +23,8 @@ public class XattrCommandStrategy implements XattrStrategy {
   @Override
   public void removeXattr(Path p, String key) throws IOException {
     try {
-      exec.execute("xattr", "-d", Xattr.PREFIX + ":" + key, p.getAbsolutePath());
-    } catch (CommandExecution.ExecutionError e) {
+      exec.exec("xattr", "-d", Xattr.PREFIX + ":" + key, p.getAbsolutePath());
+    } catch (Exec.ExecutionError e) {
       throw new IOException(e);
     }
   }
@@ -32,11 +32,9 @@ public class XattrCommandStrategy implements XattrStrategy {
   @Override
   public String getXattr(Path p, String key) throws IOException {
     try {
-      String[][] out = exec.execute("xattr", "-p", Xattr.PREFIX + ":" + key, p.getAbsolutePath());
-      if (out[0].length > 0)
-        return out[0][0];
-      return null;
-    } catch (CommandExecution.ExecutionError e) {
+      Exec.ExecutionResult out = exec.exec("xattr", "-p", Xattr.PREFIX + ":" + key, p.getAbsolutePath());
+      return out.outMsgs[0];
+    } catch (Exec.ExecutionError e) {
       return null;
     }
   }
@@ -44,17 +42,17 @@ public class XattrCommandStrategy implements XattrStrategy {
   @Override
   public Map<String, String> getAllXattr(Path p) throws IOException {
     try {
-      String[][] out = exec.execute("xattr", "-l", p.getAbsolutePath());
+      Exec.ExecutionResult out = exec.exec("xattr", "-l", p.getAbsolutePath());
       
       Map<String, String> attrs = new HashMap<>();
-      for (String line : out[0]) {
+      for (String line : out.outMsgs) {
         int split = line.indexOf(": ");
         String key = line.substring(0, split);
         String val = line.substring(split + ": ".length());
         attrs.put(key, val);
       }
       return attrs;
-    } catch (CommandExecution.ExecutionError e) {
+    } catch (Exec.ExecutionError e) {
       return null;
     }
   }
