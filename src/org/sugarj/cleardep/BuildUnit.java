@@ -340,20 +340,23 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 	}
 	  
 	public InconsistenyReason isConsistentShallowReason(Map<? extends Path, Stamp> editedSourceFiles) {
-		if (hasPersistentVersionChanged())
-			return InconsistenyReason.OTHER;
+		if (hasPersistentVersionChanged()) {
+		  return InconsistenyReason.OTHER;
+		}
 		
-		if (!isFinished())
+		if (!isFinished()) {
       return InconsistenyReason.OTHER;
-
+		}
+		
 		for (FileRequirement freq : generatedFiles)
-      if (!freq.isConsistent())
-    		return InconsistenyReason.FILES_NOT_CONSISTENT;
+      if (!freq.isConsistent()) {
+        return InconsistenyReason.FILES_NOT_CONSISTENT;
+      }
 
 		for (Requirement req : requirements)
-		  if (req instanceof FileRequirement && !((FileRequirement) req).isConsistent())
+		  if (req instanceof FileRequirement && !((FileRequirement) req).isConsistent()) {
 		    return InconsistenyReason.FILES_NOT_CONSISTENT;
-		  else if (req instanceof BuildRequirement && !((BuildRequirement<?>) req).isConsistent()) {
+		  }else if (req instanceof BuildRequirement && !((BuildRequirement<?>) req).isConsistent()) {
 		    return InconsistenyReason.DEPENDENCIES_INCONSISTENT;
 		  } else if (req instanceof BuildOutputRequirement && !req.isConsistent()) {
 		    return InconsistenyReason.DEPENDENCIES_INCONSISTENT;

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.sugarj.cleardep.build.BuildCycle.Result;
 import org.sugarj.cleardep.dependency.BuildRequirement;
+import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 
 public abstract class FixpointCycleSupport implements CycleSupport {
@@ -41,14 +42,27 @@ public abstract class FixpointCycleSupport implements CycleSupport {
     FixpointCycleBuildResultProvider cycleManager = new FixpointCycleBuildResultProvider(manager, cycle);
 
     int numInterations = 1;
-    while (!cycle.isConsistent()) {
-      Log.log.beginTask("Compile cycle iteration " + numInterations, Log.CORE);
+    boolean cycleConsistent = false;
+    while (!cycleConsistent) {
+      boolean logStarted = false;
+      cycleConsistent = true;
       try {
-        
-        cycleManager.require(null, cycle.getInitialComponent().req);
+        // CycleComponents are in order if which they were required
+        // Require the first one which is not consistent to their input
+        for (BuildRequirement<?> req : cycle.getCycleComponents())
+          if(!req.unit.isConsistentShallow(null)) {
+            if (!logStarted) {
+              Log.log.beginTask("Compile cycle iteration " + numInterations, Log.CORE);
+              logStarted = true;
+            }
+            cycleConsistent = false;
+            cycleManager.require(null,req.req);
+          }
 
       } finally {
-        Log.log.endTask();
+        if (logStarted) {
+          Log.log.endTask();
+        }
       }
       numInterations++;
       cycleManager.nextIteration();

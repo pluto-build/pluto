@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.sugarj.cleardep.BuildUnit;
+import org.sugarj.cleardep.BuildUnit.InconsistenyReason;
+import org.sugarj.cleardep.BuildUnit.State;
 import org.sugarj.cleardep.build.BuildCycle.Result.UnitResultTuple;
 import org.sugarj.cleardep.build.BuildCycleException.CycleState;
 import org.sugarj.cleardep.dependency.BuildOutputRequirement;
@@ -181,13 +183,13 @@ public class BuildManager extends BuildUnitProvider {
       throw RequiredBuilderFailed.init(builder, depResult, e);
       
     } finally {
-      if (inputHash != DeepEquals.deepHashCode(builder.input))
-        throw new AssertionError("API Violation detected: Builder mutated its input.");
-      assertConsistency(depResult);
-      
       depResult.write();
       if (taskDescription != null) 
         Log.log.endTask();     
+      
+      if (inputHash != DeepEquals.deepHashCode(builder.input))
+        throw new AssertionError("API Violation detected: Builder mutated its input.");
+      assertConsistency(depResult);
       
       this.executingStack.pop(entry);
       this.requireStack.finishRebuild(dep);
@@ -225,6 +227,7 @@ public class BuildManager extends BuildUnitProvider {
       // But keep throw away the new exception but use
       // the existing ones to kill all builders of this
       // cycle
+      e.printStackTrace();
       e.setCycleState(cyclicEx.getCycleState());
       e.setCycleResult(cyclicEx.getCycleResult());
     } catch (Throwable t) {
@@ -260,6 +263,8 @@ public class BuildManager extends BuildUnitProvider {
         throw new AssertionError("Cyclic builder does not provide a result for " + depResult.getPersistentPath());
       }
       tuple.setOutputToUnit();
+    } else {
+      depResult.setState(State.FAILURE);
     }
     Log.log.log("Stopped because of cycle", Log.CORE);
     if (e.isUnitFirstInvokedOn(dep, buildReq.factory)) {
@@ -276,6 +281,7 @@ public class BuildManager extends BuildUnitProvider {
           throw e;
         }
       }
+      
     } else {
       // Kill depending builders
       throw e;
@@ -369,8 +375,9 @@ public class BuildManager extends BuildUnitProvider {
         throw new DuplicateFileGenerationException("Build unit " + depResult + " generates same file as build unit " + other);
     }
 
-    // if (!depResult.isConsistent(null))
-    // throw new AssertionError("Build manager does not guarantee soundness");
+    InconsistenyReason reason = depResult.isConsistentShallowReason(null);
+     if (reason != InconsistenyReason.NO_REASON)
+     throw new AssertionError("Build manager does not guarantee soundness " + reason + " for " + FileCommands.tryGetRelativePath(depResult.getPersistentPath()));
     return depResult;
   }
 

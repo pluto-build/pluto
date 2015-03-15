@@ -39,7 +39,7 @@ public class BuildCycleException extends RuntimeException {
   }
 
   public boolean isUnitFirstInvokedOn(Path path, BuilderFactory<?, ?, ?> factory) {
-    return cycleCause.getUnit().getPersistentPath().equals(path) && cycleCause.getUnit().getGeneratedBy().factory.equals(factory);
+    return cycleCause.getUnit().getPersistentPath().equals(path) ;//&& cycleCause.getUnit().getGeneratedBy().factory.equals(factory);
   }
 
   public void setCycleState(CycleState cycleState) {

@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.dependency.BuildRequirement;
+import org.sugarj.common.FileCommands;
+import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 
 public class BuildCycle {
@@ -61,15 +63,6 @@ public class BuildCycle {
       }
     }
     return null;
-  }
-  
-  // TODO get edited source files
-  public boolean isConsistent() {
-    for (BuildRequirement<?> req : this.cycleComponents){
-      if (!req.unit.isConsistent(null))
-        return false;
-    }
-    return true;
   }
   
   public BuildRequirement<?> getInitialComponent() {

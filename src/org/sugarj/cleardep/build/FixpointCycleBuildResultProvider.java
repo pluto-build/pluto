@@ -9,6 +9,7 @@ import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.State;
 import org.sugarj.cleardep.build.BuildCycle.Result;
 import org.sugarj.cleardep.dependency.BuildRequirement;
+import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 
@@ -66,6 +67,11 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
       if (cycleUnit != null) {
 
         this.requiredUnitsInIteration.add(cycleUnit);
+        
+        if (cycleUnit.isConsistentShallow(null)) {
+          Log.log.log(FileCommands.tryGetRelativePath(cycleUnit.getPersistentPath()), Log.CORE);
+          return cycleUnit;
+        }
 
         Log.log.beginTask(buildReq.createBuilder().taskDescription(), Log.CORE);
 
