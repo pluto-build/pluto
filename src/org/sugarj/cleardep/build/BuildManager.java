@@ -227,7 +227,6 @@ public class BuildManager extends BuildUnitProvider {
       // But keep throw away the new exception but use
       // the existing ones to kill all builders of this
       // cycle
-      e.printStackTrace();
       e.setCycleState(cyclicEx.getCycleState());
       e.setCycleResult(cyclicEx.getCycleResult());
     } catch (Throwable t) {
