@@ -52,6 +52,17 @@ public class BuildCycle {
     return cycleComponents;
   }
 
+
+  protected CycleSupport getCycleSupport() {
+    for (BuildRequirement<?> requirement : this.getCycleComponents()) {
+      CycleSupport support = requirement.req.createBuilder().getCycleSupport();
+      if (support != null && support.canCompileCycle(this)) {
+        return support;
+      }
+    }
+    return null;
+  }
+  
   // TODO get edited source files
   public boolean isConsistent() {
     for (BuildRequirement<?> req : this.cycleComponents){

@@ -169,11 +169,11 @@ public class BuildManager extends BuildUnitProvider {
 
         if (!depResult.isFinished())
           depResult.setState(BuildUnit.State.SUCCESS);
-        // build(depResult, input);
+        
       } catch (BuildCycleException e) {
         tryCompileCycle(e);
       }
-
+      
     } catch (BuildCycleException e) {
       stopBuilderInCycle(builder, dep, buildReq, depResult, e);
     } catch (RequiredBuilderFailed e) {
@@ -200,6 +200,7 @@ public class BuildManager extends BuildUnitProvider {
 
       if (taskDescription != null)
         Log.log.endTask();
+      
       BuildStackEntry<?> poppedEntry = this.executingStack.pop();
       assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
     }
@@ -210,15 +211,6 @@ public class BuildManager extends BuildUnitProvider {
     return depResult;
   }
 
-  protected CycleSupport searchForCycleSupport(BuildCycle cycle) {
-    for (BuildRequirement<?> requirement : cycle.getCycleComponents()) {
-      CycleSupport support = requirement.req.createBuilder().getCycleSupport();
-      if (support != null && support.canCompileCycle(cycle)) {
-        return support;
-      }
-    }
-    return null;
-  }
 
   @Override
   protected void tryCompileCycle(BuildCycleException e) throws Throwable {
@@ -228,7 +220,7 @@ public class BuildManager extends BuildUnitProvider {
 
       e.setCycleState(CycleState.NOT_RESOLVED);
       BuildCycle cycle = new BuildCycle(e.getCycleComponents());
-      CycleSupport cycleSupport = this.searchForCycleSupport(cycle);
+      CycleSupport cycleSupport = cycle.getCycleSupport();
       if (cycleSupport == null) {
         throw e;
       }
@@ -291,6 +283,7 @@ public class BuildManager extends BuildUnitProvider {
 
         if (this.executingStack.getNumContains(e.getCycleComponents().get(0).unit) == 1) {
           Log.log.log("but cycle has been compiled", Log.CORE);
+ 
         } else {
           throw e;
         }
