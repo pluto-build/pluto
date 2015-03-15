@@ -151,10 +151,11 @@ public class BuildManager extends BuildUnitProvider {
     BuildStackEntry<Out> entry = null;
     // First step: cycle detection
 
+    entry = this.executingStack.push(depResult);
+
     if (taskDescription != null)
       Log.log.beginTask(taskDescription, Log.CORE);
 
-    entry = this.executingStack.push(depResult);
 
     depResult.setState(BuildUnit.State.IN_PROGESS);
 
@@ -198,8 +199,9 @@ public class BuildManager extends BuildUnitProvider {
       assertConsistency(depResult);
       requireStack.finishRebuild(dep);
 
-      if (taskDescription != null)
+      if (taskDescription != null) {
         Log.log.endTask();
+      }
       
       BuildStackEntry<?> poppedEntry = this.executingStack.pop();
       assert poppedEntry == entry : "Got the wrong build stack entry from the requires stack";
@@ -237,12 +239,11 @@ public class BuildManager extends BuildUnitProvider {
         } catch (Throwable t) {
           throw t;
         }
+        throw e;
       } finally {
         Log.log.endTask();
-        throw e;
       }
     } else {
-
       throw e;
     }
   }

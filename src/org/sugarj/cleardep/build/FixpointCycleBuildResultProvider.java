@@ -14,7 +14,6 @@ import org.sugarj.common.path.Path;
 
 public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
-  private FixpointCycleSupport parent;
   private BuildUnitProvider parentManager;
 
   private BuildCycle cycle;
@@ -23,12 +22,11 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
   private Result result;
 
-  public FixpointCycleBuildResultProvider(FixpointCycleSupport parent, BuildUnitProvider parentManager, BuildCycle cycle) {
+  public FixpointCycleBuildResultProvider(BuildUnitProvider parentManager, BuildCycle cycle) {
     super();
     this.parentManager = parentManager;
     this.cycle = cycle;
     this.requiredUnitsInIteration = new HashSet<>();
-    this.parent = parent;
     this.result = new Result();
   }
 
@@ -53,9 +51,14 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
   @Override
   public
-    //@formatter:off
+//@formatter:off
     <In extends Serializable,
-     Out extends Serializable, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+     Out extends Serializable,
+     B extends Builder<In, Out>,
+     F extends BuilderFactory<In, Out, B>>
+//@formatter:on
+  BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+    
     BuildUnit<Out> cycleUnit = getBuildUnitInCycle(buildReq);
     if (cycleUnit != null && (source == cycleUnit || this.requiredUnitsInIteration.contains(cycleUnit))) {
       return cycleUnit;
@@ -63,7 +66,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
       if (cycleUnit != null) {
 
         this.requiredUnitsInIteration.add(cycleUnit);
-        
+
         Log.log.beginTask(buildReq.createBuilder().taskDescription(), Log.CORE);
 
         try {
@@ -71,17 +74,17 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
             Builder<In, Out> builder = buildReq.createBuilder();
             cycleUnit = BuildUnit.create(builder.persistentPath(), buildReq);
-            
+
             Out result = builder.triggerBuild(cycleUnit, this);
             cycleUnit.setBuildResult(result);
             cycleUnit.setState(State.finished(true));
-            
+
             this.result.setBuildResult(cycleUnit, result);
             return cycleUnit;
 
           } catch (BuildCycleException e) {
             Log.log.log("Stopped because of cycle", Log.CORE);
-           this.parentManager.tryCompileCycle(e);
+            this.parentManager.tryCompileCycle(e);
             throw e;
           }
         } catch (BuildCycleException e2) {
@@ -89,7 +92,6 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
         } catch (Throwable e) {
           throw new RequiredBuilderFailed(buildReq.factory.makeBuilder(buildReq.input), cycleUnit, e);
         } finally {
-
           Log.log.endTask();
         }
       } else {

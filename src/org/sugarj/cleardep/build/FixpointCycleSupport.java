@@ -9,7 +9,6 @@ import org.sugarj.common.Log;
 
 public abstract class FixpointCycleSupport implements CycleSupport {
 
-
   private List<BuilderFactory<?, ?, ?>> supportedBuilders;
 
   public FixpointCycleSupport(BuilderFactory<?, ?, ?>... supportedBuilders) {
@@ -33,20 +32,19 @@ public abstract class FixpointCycleSupport implements CycleSupport {
           return true;
         }
       }
-      
     }
     return true;
   }
 
   @Override
   public Result compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
-
-    FixpointCycleBuildResultProvider cycleManager = new FixpointCycleBuildResultProvider(this, manager, cycle);
+    FixpointCycleBuildResultProvider cycleManager = new FixpointCycleBuildResultProvider(manager, cycle);
 
     int numInterations = 1;
     while (!cycle.isConsistent()) {
       Log.log.beginTask("Compile cycle iteration " + numInterations, Log.CORE);
       try {
+        
         cycleManager.require(null, cycle.getInitialComponent().req);
 
       } finally {
