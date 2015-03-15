@@ -5,15 +5,17 @@ import java.io.Serializable;
 
 import org.sugarj.cleardep.BuildUnit;
 
-public interface BuildUnitProvider {
+public abstract class BuildUnitProvider {
 
-  public 
+  public abstract
+  //@formatter:off
   <In extends Serializable,
    Out extends Serializable,
    B extends Builder<In, Out>,
-   F extends BuilderFactory<In, Out, B>> 
+   F extends BuilderFactory<In, Out, B>>
+  //@formatter:on
  BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException;
   
-  public void tryCompileCycle(BuildCycleException e) throws Throwable;
+  protected abstract Throwable tryCompileCycle(BuildCycleException e);
   
 }

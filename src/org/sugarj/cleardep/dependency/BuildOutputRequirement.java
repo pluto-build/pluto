@@ -11,57 +11,53 @@ import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.build.BuildRequest;
 import org.sugarj.cleardep.build.BuildUnitProvider;
 import org.sugarj.cleardep.output.OutputStamp;
+import org.sugarj.cleardep.output.OutputStamper;
 import org.sugarj.common.path.Path;
 
 import com.cedarsoftware.util.DeepEquals;
 
-public class BuildRequirement<Out extends Serializable> implements Requirement, Externalizable {
+public class BuildOutputRequirement<Out extends Serializable> implements Requirement, Externalizable {
   private static final long serialVersionUID = 6148973732378610648L;
 
   public BuildUnit<Out> unit;
-  public BuildRequest<?, Out, ?, ?> req;
+  public OutputStamp<? super Out> stamp;
 
-  public BuildRequirement() {
+  public BuildOutputRequirement() {
 
   }
 
-  public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req) {
+  public BuildOutputRequirement(BuildUnit<Out> unit, OutputStamper<? super Out> stamper) {
     Objects.requireNonNull(unit);
+    Objects.requireNonNull(stamper);
     this.unit = unit;
-    this.req = req;
+    this.stamp = stamper.stampOf(unit.getBuildResult());
   }
 
-  @Override
   public boolean isConsistent() {
-    boolean reqsEqual = unit.getGeneratedBy().deepEquals(req);
-    return reqsEqual;
+    return stamp.equals(stamp.getStamper().stampOf(this.unit.getBuildResult()));
   }
-  
   @Override
-  public boolean isConsistentInBuild(BuildUnit<?> parent, BuildUnitProvider manager) throws IOException{
-
-    manager.require(parent, this.req);
-    
-   return true;
-   
+  public boolean isConsistentInBuild(BuildUnit<?> parent, BuildUnitProvider manager) {
+    return isConsistent();
   }
 
   @Override
   public String toString() {
-    return req.toString();
+    return stamp.toString();
   }
 
   @Override
   public void writeExternal(ObjectOutput out) throws IOException {
     out.writeObject(unit.getPersistentPath());
-    out.writeObject(req);
+    out.writeObject(stamp);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     Path unitPath = (Path) in.readObject();
-    req = (BuildRequest<?, Out, ?, ?>) in.readObject();
     unit = BuildUnit.read(unitPath);
+    stamp = (OutputStamp<? super Out>) in.readObject();
   }
+  
 }

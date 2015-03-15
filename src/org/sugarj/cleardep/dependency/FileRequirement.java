@@ -1,5 +1,7 @@
 package org.sugarj.cleardep.dependency;
 
+import org.sugarj.cleardep.BuildUnit;
+import org.sugarj.cleardep.build.BuildUnitProvider;
 import org.sugarj.cleardep.stamp.Stamp;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.path.Path;
@@ -18,6 +20,11 @@ public class FileRequirement implements Requirement {
   @Override
   public boolean isConsistent() {
     return stamp.equals(stamp.getStamper().stampOf(path));
+  }
+  
+  @Override
+  public boolean isConsistentInBuild(BuildUnit<?> parent, BuildUnitProvider manager) {
+    return isConsistent();
   }
   
   @Override

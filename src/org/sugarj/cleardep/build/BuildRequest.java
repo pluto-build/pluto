@@ -17,13 +17,13 @@ public class BuildRequest<
   
   public final F factory;
   public final In input;
-  public final OutputStamper<Out> stamper;
+  public final OutputStamper<? super Out> stamper;
 
   public BuildRequest(F factory, In input) {
-    this(factory, input, OutputEqualStamper.<Out>instance());
+    this(factory, input, OutputEqualStamper.instance());
   }
   
-  public BuildRequest(F factory, In input, OutputStamper<Out> stamper) {
+  public BuildRequest(F factory, In input, OutputStamper<? super Out> stamper) {
     this.factory = factory;
     this.input = input;
     this.stamper = stamper;

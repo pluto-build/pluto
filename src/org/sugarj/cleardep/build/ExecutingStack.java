@@ -43,9 +43,9 @@ public class ExecutingStack {
     return new BuildRequirement<>(unit, unit.getGeneratedBy());
   }
 
-  protected BuildStackEntry<?> pop() {
+  protected void pop(BuildStackEntry<?> required) {
     BuildStackEntry<?> poppedEntry = requireCallStack.remove(requireCallStack.size()-1);
-    return poppedEntry;
+    assert poppedEntry == required : "Got the wrong build stack entry from the requires stack";
   }
 
 }

@@ -15,6 +15,7 @@ import java.util.Queue;
 import java.util.Set;
 
 import org.sugarj.cleardep.build.BuildRequest;
+import org.sugarj.cleardep.dependency.BuildOutputRequirement;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.dependency.FileRequirement;
 import org.sugarj.cleardep.dependency.IllegalDependencyException;
@@ -104,6 +105,9 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
         final Path dep = xattr.getGenBy(file);
         if (dep == null)
           return;
+        // Allow cyclic self references 
+        if (dep.equals(getPersistentPath()) && this.requiredUnits.contains(this))
+          return;
         
         boolean foundDep = visit(new ModuleVisitor<Boolean>() {
           @Override
@@ -150,6 +154,7 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 	public <Out_ extends Serializable> void requires(BuildUnit<Out_> mod) {
 	  Objects.requireNonNull(mod);
 	  requirements.add(new BuildRequirement<Out_>(mod, mod.getGeneratedBy()));
+	  requirements.add(new BuildOutputRequirement<Out_>(mod, mod.generatedBy.stamper));
 	  requiredUnits.add(mod);
 	}
 
@@ -353,8 +358,11 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 		for (Requirement req : requirements)
 		  if (req instanceof FileRequirement && !((FileRequirement) req).isConsistent())
 		    return InconsistenyReason.FILES_NOT_CONSISTENT;
-		  else if (req instanceof BuildRequirement && !((BuildRequirement<?>) req).isConsistent())
+		  else if (req instanceof BuildRequirement && !((BuildRequirement<?>) req).isConsistent()) {
 		    return InconsistenyReason.DEPENDENCIES_INCONSISTENT;
+		  } else if (req instanceof BuildOutputRequirement && !req.isConsistent()) {
+		    return InconsistenyReason.DEPENDENCIES_INCONSISTENT;
+		  }
 		
 		return InconsistenyReason.NO_REASON;
 	}
