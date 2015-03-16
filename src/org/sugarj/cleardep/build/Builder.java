@@ -118,10 +118,10 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
     }
   }
   
-  public void generate(Path p) {
+  public void provide(Path p) {
     result.generates(p, LastModifiedStamper.instance.stampOf(p));
   }
-  public void generate(Path p, Stamper stamper) {
+  public void provide(Path p, Stamper stamper) {
     result.generates(p, stamper.stampOf(p));
   }
 

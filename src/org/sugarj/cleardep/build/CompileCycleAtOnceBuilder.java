@@ -46,7 +46,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   }
 
   @Override
-  public void generate(Path p) {throw new AssertionError();};
+  public void provide(Path p) {throw new AssertionError();};
   
   public void generates(In input, Path p) {
     for (int i = 0; i < this.input.size(); i++) {
