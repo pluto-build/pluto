@@ -103,18 +103,22 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
         requireBuild(req);
   }
   
-  public void require(Path p) throws IOException {
+  public void require(Path p) {
     require(p, defaultStamper.stampOf(p));
   }
-  public void require(Path p, Stamper stamper) throws IOException {
+  public void require(Path p, Stamper stamper) {
     require(p, stamper.stampOf(p));
   }
-  public void require(Path p, Stamp stamp) throws IOException {
+  public void require(Path p, Stamp stamp) {
     try {
       result.requires(p, stamp);
     } catch (IllegalDependencyException e) {
       if (e.dep.equals(result.getPersistentPath()))
-        requireBuild(result.getGeneratedBy());
+        try {
+          requireBuild(result.getGeneratedBy());
+        } catch (IOException e1) {
+          throw new RuntimeException(e1);
+        }
     }
   }
   
