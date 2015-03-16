@@ -133,7 +133,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
        inputs.addAll((ArrayList<In>) req.req.input);
      }
     CompileCycleAtOnceBuilder<In, Out > newBuilder = factory.makeBuilder(inputs);
-    return newBuilder.taskDescription();
+    return newBuilder.description();
   }
   
 

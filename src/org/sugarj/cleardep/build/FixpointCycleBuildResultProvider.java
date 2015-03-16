@@ -72,7 +72,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
           return cycleUnit;
         }
 
-        Log.log.beginTask(buildReq.createBuilder().taskDescription(), Log.CORE);
+        Log.log.beginTask(buildReq.createBuilder().description(), Log.CORE);
 
         try {
           try {

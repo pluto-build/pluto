@@ -8,7 +8,7 @@ import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 
-public abstract class FixpointCycleSupport implements CycleSupport {
+public class FixpointCycleSupport implements CycleSupport {
 
   private List<BuilderFactory<?, ?, ?>> supportedBuilders;
 
@@ -20,7 +20,7 @@ public abstract class FixpointCycleSupport implements CycleSupport {
   public String getCycleDescription(BuildCycle cycle) {
     String cycleName = "Cycle ";
     for (BuildRequirement<?> req : cycle.getCycleComponents()) {
-      cycleName += req.req.createBuilder().taskDescription();
+      cycleName += req.req.createBuilder().description();
     }
     return cycleName;
   }

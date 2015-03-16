@@ -151,7 +151,7 @@ public class BuildManager extends BuildUnitProvider {
     
     int inputHash = DeepEquals.deepHashCode(builder.input);
     
-    String taskDescription = builder.taskDescription();
+    String taskDescription = builder.description();
     if (taskDescription != null)
       Log.log.beginTask(taskDescription, Log.CORE);
 

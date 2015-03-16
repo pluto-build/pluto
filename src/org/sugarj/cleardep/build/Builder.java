@@ -30,7 +30,7 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
    * 
    * @return the task description or `null` if no logging is wanted.
    */
-  protected abstract String taskDescription();
+  protected abstract String description();
   
   protected abstract Path persistentPath();
   
