@@ -3,6 +3,7 @@ package org.sugarj.cleardep.build;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.State;
@@ -96,7 +97,11 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
     return e.getBuildResult();
   }
 
-    
+  protected void requireBuild(Collection<? extends BuildRequest<?, ?, ?, ?>> reqs) throws IOException {
+    if (reqs != null)
+      for (BuildRequest<?, ?, ?, ?> req : reqs)
+        requireBuild(req);
+  }
   protected void requireBuild(BuildRequest<?, ?, ?, ?>[] reqs) throws IOException {
     if (reqs != null)
       for (BuildRequest<?, ?, ?, ?> req : reqs)

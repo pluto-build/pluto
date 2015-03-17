@@ -5,19 +5,14 @@ import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.InconsistenyReason;
 import org.sugarj.cleardep.BuildUnit.State;
 import org.sugarj.cleardep.build.BuildCycle.Result.UnitResultTuple;
 import org.sugarj.cleardep.build.BuildCycleException.CycleState;
-import org.sugarj.cleardep.dependency.BuildOutputRequirement;
-import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.dependency.DuplicateBuildUnitPathException;
 import org.sugarj.cleardep.dependency.DuplicateFileGenerationException;
 import org.sugarj.cleardep.dependency.FileRequirement;
@@ -38,6 +33,10 @@ public class BuildManager extends BuildUnitProvider {
 
   public static <Out extends Serializable> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
     return build(buildReq, null);
+  }
+  
+  public static <Out extends Serializable> BuildUnit<Out> readResult(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
+    return BuildUnit.read(buildReq.createBuilder().persistentPath());
   }
 
   public static <Out extends Serializable> Out build(BuildRequest<?, Out, ?, ?> buildReq, Map<? extends Path, Stamp> editedSourceFiles) {
