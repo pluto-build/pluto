@@ -61,6 +61,7 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
     }
   }
   
+  
   protected <
   In_ extends Serializable, 
   Out_ extends Serializable, 
@@ -69,9 +70,7 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
   SubIn_ extends In_
   > Out_ requireBuild(F_ factory, SubIn_ input) throws IOException {
     BuildRequest<In_, Out_, B_, F_> req = new BuildRequest<In_, Out_, B_, F_>(factory, input);
-    BuildUnit<Out_> e = manager.require(result, req);
-    result.requires(e);
-    return e.getBuildResult();
+    return requireBuild(req);
   }
   
   protected <
@@ -99,13 +98,15 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
 
   protected void requireBuild(Collection<? extends BuildRequest<?, ?, ?, ?>> reqs) throws IOException {
     if (reqs != null)
-      for (BuildRequest<?, ?, ?, ?> req : reqs)
+      for (BuildRequest<?, ?, ?, ?> req : reqs) {
         requireBuild(req);
+      }
   }
   protected void requireBuild(BuildRequest<?, ?, ?, ?>[] reqs) throws IOException {
     if (reqs != null)
-      for (BuildRequest<?, ?, ?, ?> req : reqs)
+      for (BuildRequest<?, ?, ?, ?> req : reqs) {
         requireBuild(req);
+      }
   }
   
   public void require(Path p) {

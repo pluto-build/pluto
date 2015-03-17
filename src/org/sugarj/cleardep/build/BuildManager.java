@@ -1,6 +1,5 @@
 package org.sugarj.cleardep.build;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
@@ -97,6 +96,8 @@ public class BuildManager extends BuildUnitProvider {
   private transient RequireStack requireStack;
 
   private transient Map<Path, BuildUnit<?>> generatedFiles;
+  
+  private transient boolean initialRequest = true;
 
   protected BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
     this.editedSourceFiles = editedSourceFiles;
@@ -298,11 +299,19 @@ public class BuildManager extends BuildUnitProvider {
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
   BuildUnit<Out> requireInitially(BuildRequest<In, Out, B, F> buildReq) throws IOException {
-    Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
+    boolean wasInitial = false;
+	if (initialRequest) {
+      Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
+      initialRequest = false;
+      wasInitial = true;
+	}
     try {
       return require(null, buildReq);
     } finally {
-      Log.log.endTask();
+      if (wasInitial) {
+        Log.log.endTask();
+        initialRequest = true;
+      }
     }
   }
 
