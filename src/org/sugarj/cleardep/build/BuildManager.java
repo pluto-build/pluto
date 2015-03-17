@@ -1,5 +1,6 @@
 package org.sugarj.cleardep.build;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
@@ -8,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.core.runtime.FileLocator;
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.InconsistenyReason;
 import org.sugarj.cleardep.BuildUnit.State;
@@ -112,8 +114,10 @@ public class BuildManager extends BuildUnitProvider {
   void setUpMetaDependency(Builder<In, Out> builder, BuildUnit<Out> depResult) throws IOException {
     if (depResult != null) {
       // require the meta builder...
-      URL res = builder.getClass().getResource(builder.getClass().getSimpleName() + ".class");
-      Path builderClass = new AbsolutePath(res.getFile());
+      String className = builder.getClass().getName();
+      URL res = builder.getClass().getResource(className.substring(className.lastIndexOf(".")+1) + ".class");
+      URL resFile = FileLocator.resolve(res);
+      Path builderClass = new AbsolutePath(resFile.getFile());
       Path depFile = Xattr.getDefault().getGenBy(builderClass);
       if (!FileCommands.exists(depFile)) {
         Log.log.logErr("Warning: Builder was not built using meta builder. Consistency for builder changes are not tracked...", Log.DETAIL);
@@ -124,9 +128,9 @@ public class BuildManager extends BuildUnitProvider {
         depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
 
         // TODO: needed?
-        // for (Path p : metaBuilder.getExternalFileDependencies()) {
+        //for (Path p : metaBuilder.getExternalFileDependencies()) {
         // depResult.requires(p, LastModifiedStamper.instance.stampOf(p));
-        // }
+        //}
       }
     }
   }

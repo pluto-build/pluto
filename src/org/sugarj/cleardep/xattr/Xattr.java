@@ -44,15 +44,15 @@ public class Xattr {
   }
  
   public void setGenBy(Path p, BuildUnit<?> unit) throws IOException {
-    strategy.setXattr(p, "genBy", unit.getPersistentPath().getAbsolutePath());
+    strategy.setXattr(new AbsolutePath(p.getFile().getCanonicalPath()), "genBy", unit.getPersistentPath().getAbsolutePath());
   }
   
   public void removeGenBy(Path p) throws IOException {
-    strategy.removeXattr(p, "genBy");
+    strategy.removeXattr(new AbsolutePath(p.getFile().getCanonicalPath()), "genBy");
   }
   
   public Path getGenBy(Path p) throws IOException {
-    String val = strategy.getXattr(p, "genBy");
+    String val = strategy.getXattr(new AbsolutePath(p.getFile().getCanonicalPath()), "genBy");
     if (val == null)
       return null;
     return new AbsolutePath(val);
