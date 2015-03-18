@@ -34,6 +34,8 @@ public class BuildOutputRequirement<Out extends Serializable> implements Require
   }
 
   public boolean isConsistent() {
+    if (unit == null)
+      return false;
     return stamp.equals(stamp.getStamper().stampOf(this.unit.getBuildResult()));
   }
   @Override
