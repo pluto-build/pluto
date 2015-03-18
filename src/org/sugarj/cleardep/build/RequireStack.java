@@ -25,11 +25,11 @@ public class RequireStack {
 
   public void beginRebuild(Path dep) {
     this.knownInconsistentUnits.add(dep);
-    for (Path assumed : this.requireStack) {
-      // This could be too strict
-      this.knownInconsistentUnits.add(assumed);
-      this.consistentUnits.remove(assumed);
-    }
+//    for (Path assumed : this.requireStack) {
+//      // This could be too strict
+//      this.knownInconsistentUnits.add(assumed);
+//      this.consistentUnits.remove(assumed);
+//    }
   }
 
   private Set<Path> getCyclicConsistentAssumtion(Path dep) {
