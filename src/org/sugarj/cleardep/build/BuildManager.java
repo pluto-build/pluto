@@ -117,7 +117,12 @@ public class BuildManager extends BuildUnitProvider {
       // require the meta builder...
       String className = builder.getClass().getName();
       URL res = builder.getClass().getResource(className.substring(className.lastIndexOf(".")+1) + ".class");
-      URL resFile = FileLocator.resolve(res);
+      URL resFile;
+      if (res.getProtocol().equals("file")) {
+        resFile = res;
+      } else {
+        resFile = FileLocator.resolve(res);
+      }
       Path builderClass = new AbsolutePath(resFile.getFile());
       Path depFile = Xattr.getDefault().getGenBy(builderClass);
       if (!FileCommands.exists(depFile)) {
@@ -163,7 +168,7 @@ public class BuildManager extends BuildUnitProvider {
 
     try {
       try {
-        // setUpMetaDependency(builder, depResult);
+        setUpMetaDependency(builder, depResult);
 
         // call the actual builder
         Out out = builder.triggerBuild(depResult, this);
