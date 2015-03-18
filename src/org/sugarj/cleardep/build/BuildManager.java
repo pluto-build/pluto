@@ -117,8 +117,6 @@ public class BuildManager extends BuildUnitProvider {
       // require the meta builder...
       String className = builder.getClass().getName();
       URL res = builder.getClass().getResource(className.substring(className.lastIndexOf(".")+1) + ".class");
-      System.out.println(res);
-      System.out.println(className);
       URL resFile;
       if (res.getProtocol().equals("file")) {
         resFile = res;
