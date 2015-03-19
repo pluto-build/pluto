@@ -7,6 +7,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
+import org.sugarj.common.FileCommands;
+import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 
 public class RequireStack {
@@ -16,6 +18,8 @@ public class RequireStack {
   private Set<Path> consistentUnits;
   private Map<Path, Set<Path>> assumedCyclicConsistency;
 
+  private final boolean LOG_REQUIRE = false;
+
   public RequireStack() {
     this.assumedCyclicConsistency = new HashMap<>();
     this.consistentUnits = new HashSet<>();
@@ -24,12 +28,16 @@ public class RequireStack {
   }
 
   public void beginRebuild(Path dep) {
+    if (LOG_REQUIRE) {
+      Log.log.log("Rebuild " + FileCommands.tryGetRelativePath(dep), Log.CORE);
+      Log.log.log("Assumptions: " + getCyclicConsistentAssumtion(dep), Log.CORE);
+    }
     this.knownInconsistentUnits.add(dep);
-//    for (Path assumed : this.requireStack) {
-//      // This could be too strict
-//      this.knownInconsistentUnits.add(assumed);
-//      this.consistentUnits.remove(assumed);
-//    }
+    for (Path assumed : this.requireStack) {
+      // This could be too strict
+      // this.knownInconsistentUnits.add(assumed);
+      this.consistentUnits.remove(assumed);
+    }
   }
 
   private Set<Path> getCyclicConsistentAssumtion(Path dep) {
@@ -45,13 +53,13 @@ public class RequireStack {
     this.consistentUnits.add(dep);
     this.knownInconsistentUnits.remove(dep);
     // Allowed to do that in any case?
-    this.assumedCyclicConsistency.remove(dep);
+    // this.assumedCyclicConsistency.remove(dep);
   }
 
   public boolean isKnownInconsistent(Path dep) {
     return knownInconsistentUnits.contains(dep) || this.isAssumtionKnownInconsistent(dep);
   }
-  
+
   private boolean isAssumtionKnownInconsistent(Path dep) {
     for (Path p : this.getCyclicConsistentAssumtion(dep)) {
       if (this.knownInconsistentUnits.contains(p)) {
@@ -67,12 +75,14 @@ public class RequireStack {
 
   public boolean isAlreadyRequired(Path source, Path dep) {
     if (this.requireStack.contains(dep)) {
+      if (LOG_REQUIRE)
+        Log.log.log("Already required " + FileCommands.tryGetRelativePath(dep), Log.CORE);
       Set<Path> cyclicAssumptions = this.getCyclicConsistentAssumtion(dep);
       Set<Path> unitAssumptions = this.getCyclicConsistentAssumtion(source);
-      unitAssumptions.addAll(cyclicAssumptions);
       unitAssumptions.add(dep);
-      cyclicAssumptions.addAll(unitAssumptions);
       cyclicAssumptions.add(source);
+      cyclicAssumptions.addAll(unitAssumptions);
+      unitAssumptions.addAll(cyclicAssumptions);
       return true;
     }
     return false;
@@ -80,6 +90,8 @@ public class RequireStack {
 
   public void beginRequire(Path dep) {
     this.requireStack.push(dep);
+    if (LOG_REQUIRE)
+      Log.log.beginTask("Require " + FileCommands.tryGetRelativePath(dep), Log.CORE);
   }
 
   public void finishRequire(Path source, Path dep) {
@@ -87,6 +99,8 @@ public class RequireStack {
       this.handleRequiredFinished(source, dep);
     }
     this.requireStack.pop();
+    if (LOG_REQUIRE)
+      Log.log.endTask();
   }
 
   private void handleRequiredFinished(Path dep, Path required) {

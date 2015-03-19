@@ -76,9 +76,9 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
         try {
           try {
-
             Builder<In, Out> builder = buildReq.createBuilder();
-            cycleUnit = BuildUnit.create(builder.persistentPath(), buildReq);
+            Path dep =  builder.persistentPath();
+            cycleUnit = BuildUnit.create(dep, buildReq);
 
             Out result = builder.triggerBuild(cycleUnit, this);
             cycleUnit.setBuildResult(result);
@@ -96,6 +96,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
         } catch (Throwable e) {
           throw new RequiredBuilderFailed(buildReq.factory.makeBuilder(buildReq.input), cycleUnit, e);
         } finally {
+          
           Log.log.endTask();
         }
       } else {

@@ -35,7 +35,7 @@ public class BuildManager extends BuildUnitProvider {
   public static <Out extends Serializable> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
     return build(buildReq, null);
   }
-  
+
   public static <Out extends Serializable> BuildUnit<Out> readResult(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
     return BuildUnit.read(buildReq.createBuilder().persistentPath());
   }
@@ -96,7 +96,7 @@ public class BuildManager extends BuildUnitProvider {
   private transient RequireStack requireStack;
 
   private transient Map<Path, BuildUnit<?>> generatedFiles;
-  
+
   private transient boolean initialRequest = true;
 
   protected BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
@@ -116,7 +116,7 @@ public class BuildManager extends BuildUnitProvider {
     if (depResult != null) {
       // require the meta builder...
       String className = builder.getClass().getName();
-      URL res = builder.getClass().getResource(className.substring(className.lastIndexOf(".")+1) + ".class");
+      URL res = builder.getClass().getResource(className.substring(className.lastIndexOf(".") + 1) + ".class");
       URL resFile;
       if (res.getProtocol().equals("file")) {
         resFile = res;
@@ -134,9 +134,9 @@ public class BuildManager extends BuildUnitProvider {
         depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
 
         // TODO: needed?
-        //for (Path p : metaBuilder.getExternalFileDependencies()) {
+        // for (Path p : metaBuilder.getExternalFileDependencies()) {
         // depResult.requires(p, LastModifiedStamper.instance.stampOf(p));
-        //}
+        // }
       }
     }
   }
@@ -154,12 +154,12 @@ public class BuildManager extends BuildUnitProvider {
 
     resetGenBy(dep, BuildUnit.read(dep));
     BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
-    
+
     // First step: cycle detection
     BuildStackEntry<Out> entry = this.executingStack.push(depResult);
-    
+
     int inputHash = DeepEquals.deepHashCode(builder.input);
-    
+
     String taskDescription = builder.description();
     if (taskDescription != null)
       Log.log.beginTask(taskDescription, Log.CORE);
@@ -180,26 +180,26 @@ public class BuildManager extends BuildUnitProvider {
       }
     } catch (BuildCycleException e) {
       stopBuilderInCycle(builder, dep, buildReq, depResult, e);
-      
+
     } catch (RequiredBuilderFailed e) {
       if (taskDescription != null)
         Log.log.logErr("Required builder failed", Log.CORE);
       throw RequiredBuilderFailed.enqueueBuilder(e, depResult, builder);
-      
+
     } catch (Throwable e) {
       depResult.setState(BuildUnit.State.FAILURE);
       Log.log.logErr(e.getMessage(), Log.CORE);
       throw RequiredBuilderFailed.init(builder, depResult, e);
-      
+
     } finally {
       depResult.write();
-      if (taskDescription != null) 
-        Log.log.endTask();     
-      
+      if (taskDescription != null)
+        Log.log.endTask();
+
       if (inputHash != DeepEquals.deepHashCode(builder.input))
         throw new AssertionError("API Violation detected: Builder mutated its input.");
       assertConsistency(depResult);
-      
+
       this.executingStack.pop(entry);
       this.requireStack.finishRebuild(dep);
     }
@@ -209,7 +209,7 @@ public class BuildManager extends BuildUnitProvider {
 
     return depResult;
   }
-  
+
   @Override
   protected Throwable tryCompileCycle(BuildCycleException e) {
     // Only try to compile a cycle which is unhandled
@@ -289,7 +289,7 @@ public class BuildManager extends BuildUnitProvider {
           throw e;
         }
       }
-      
+
     } else {
       // Kill depending builders
       throw e;
@@ -305,11 +305,11 @@ public class BuildManager extends BuildUnitProvider {
   //@formatter:on
   BuildUnit<Out> requireInitially(BuildRequest<In, Out, B, F> buildReq) throws IOException {
     boolean wasInitial = false;
-	if (initialRequest) {
+    if (initialRequest) {
       Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
       initialRequest = false;
       wasInitial = true;
-	}
+    }
     try {
       return require(null, buildReq);
     } finally {
@@ -334,27 +334,32 @@ public class BuildManager extends BuildUnitProvider {
     Path dep = builder.persistentPath();
     BuildUnit<Out> depResult = BuildUnit.read(dep);
 
-    boolean localInconsistent = 
-        (requireStack.isKnownInconsistent(dep)) ||
-        (depResult == null) ||
-        (!depResult.getGeneratedBy().deepEquals(buildReq)) ||
-        (!depResult.isConsistentNonrequirements());
-
-    if (localInconsistent) {
-      return executeBuilder(builder, dep, buildReq);
-    }
-
-    if (requireStack.isConsistent(dep))
-      return depResult;
-
     // Dont execute require because it is cyclic, requireStack keeps track of
     // this
-    if (source != null && requireStack.isAlreadyRequired(source.getPersistentPath(), dep)) {
-      return depResult;
-    }
+
+    // Need to check that before putting dep on the requires Stack because
+    // otherwise dep has always been required
+    boolean alreadyRequired = false;
+    if (source != null)
+      alreadyRequired = requireStack.isAlreadyRequired(source.getPersistentPath(), dep);
 
     requireStack.beginRequire(dep);
     try {
+      boolean localInconsistent = (requireStack.isKnownInconsistent(dep)) || (depResult == null) || (!depResult.getGeneratedBy().deepEquals(buildReq)) || (!depResult.isConsistentNonrequirements());
+
+      if (localInconsistent) {
+        // Local inconsistency should execute the builder regardless whether it
+        // has been required to detect the cycle
+        // TODO should inconsistent file requirements trigger the same, they should i think
+        return executeBuilder(builder, dep, buildReq);
+      }
+
+      if (alreadyRequired) {
+        return depResult;
+      }
+
+      if (requireStack.isConsistent(dep))
+        return depResult;
 
       for (Requirement req : depResult.getRequirements()) {
         if (!req.isConsistentInBuild(depResult, this)) {
@@ -392,8 +397,8 @@ public class BuildManager extends BuildUnitProvider {
     }
 
     InconsistenyReason reason = depResult.isConsistentShallowReason(null);
-     if (reason != InconsistenyReason.NO_REASON)
-     throw new AssertionError("Build manager does not guarantee soundness " + reason + " for " + FileCommands.tryGetRelativePath(depResult.getPersistentPath()));
+    if (reason != InconsistenyReason.NO_REASON)
+      throw new AssertionError("Build manager does not guarantee soundness " + reason + " for " + FileCommands.tryGetRelativePath(depResult.getPersistentPath()));
     return depResult;
   }
 
