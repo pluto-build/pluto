@@ -19,6 +19,7 @@ import org.sugarj.cleardep.dependency.BuildOutputRequirement;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.cleardep.dependency.FileRequirement;
 import org.sugarj.cleardep.dependency.IllegalDependencyException;
+import org.sugarj.cleardep.dependency.MetaBuildRequirement;
 import org.sugarj.cleardep.dependency.Requirement;
 import org.sugarj.cleardep.stamp.LastModifiedStamper;
 import org.sugarj.cleardep.stamp.Stamp;
@@ -151,6 +152,13 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 	  requirements.add(new BuildRequirement<Out_>(mod, mod.getGeneratedBy()));
 	  requirements.add(new BuildOutputRequirement<Out_>(mod, mod.generatedBy.stamper));
 	  requiredUnits.add(mod);
+	}
+	
+	public <Out_ extends Serializable> void requireMeta(BuildUnit<Out_> mod) {
+	  Objects.requireNonNull(mod);
+	  requirements.add(new MetaBuildRequirement<Out_>(mod, mod.getGeneratedBy()));
+	  requirements.add(new BuildOutputRequirement<Out_>(mod, mod.generatedBy.stamper));
+    requiredUnits.add(mod);
 	}
 
 	/**

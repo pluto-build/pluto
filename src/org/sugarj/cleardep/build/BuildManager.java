@@ -129,8 +129,8 @@ public class BuildManager extends BuildUnitProvider {
         Log.log.logErr("Warning: Builder was not built using meta builder. Consistency for builder changes are not tracked...", Log.DETAIL);
       } else {
         BuildUnit<Serializable> metaBuilder = BuildUnit.read(depFile);
-
-        depResult.requires(metaBuilder);
+        
+        depResult.requireMeta(metaBuilder);
         depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
 
         // TODO: needed?
