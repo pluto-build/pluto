@@ -28,15 +28,15 @@ public class BuildCycle {
       }
     }
     
-    private Map<Path, UnitResultTuple<?>> cycleOutpus = new HashMap<>();
+    private Map<Path, UnitResultTuple<?>> cycleOutputs = new HashMap<>();
     
     
     public <Out extends Serializable> void setBuildResult(BuildUnit<Out> unit, Out result) {
-      this.cycleOutpus.put(unit.getPersistentPath(), new UnitResultTuple<Out>(unit, result));
+      this.cycleOutputs.put(unit.getPersistentPath(), new UnitResultTuple<Out>(unit, result));
     }
     
     public <Out extends Serializable>  UnitResultTuple<Out> getUnitResult(BuildUnit<Out> unit) {
-      UnitResultTuple<Out> tuple = (UnitResultTuple<Out>) this.cycleOutpus.get(unit.getPersistentPath());
+      UnitResultTuple<Out> tuple = (UnitResultTuple<Out>) this.cycleOutputs.get(unit.getPersistentPath());
       return tuple;
     }
     

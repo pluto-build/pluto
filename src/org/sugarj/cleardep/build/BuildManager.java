@@ -108,7 +108,7 @@ public class BuildManager extends BuildUnitProvider {
   }
 
   // @formatter:off
-  private 
+  protected static 
     <In extends Serializable,
      Out extends Serializable>
   // @formatter:on
@@ -155,6 +155,8 @@ public class BuildManager extends BuildUnitProvider {
     resetGenBy(dep, BuildUnit.read(dep));
     BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
 
+    setUpMetaDependency(builder, depResult);
+    
     // First step: cycle detection
     BuildStackEntry<Out> entry = this.executingStack.push(depResult);
 
@@ -168,8 +170,6 @@ public class BuildManager extends BuildUnitProvider {
 
     try {
       try {
-        setUpMetaDependency(builder, depResult);
-
         // call the actual builder
         Out out = builder.triggerBuild(depResult, this);
         depResult.setBuildResult(out);
