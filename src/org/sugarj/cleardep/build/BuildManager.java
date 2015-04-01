@@ -124,19 +124,12 @@ public class BuildManager extends BuildUnitProvider {
         resFile = FileLocator.resolve(res);
       }
       Path builderClass = new AbsolutePath(resFile.getFile());
+      depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
+      
       Path depFile = Xattr.getDefault().getGenBy(builderClass);
-      if (!FileCommands.exists(depFile)) {
-        Log.log.logErr("Warning: Builder was not built using meta builder. Consistency for builder changes are not tracked...", Log.DETAIL);
-      } else {
+      if (FileCommands.exists(depFile)) {
         BuildUnit<Serializable> metaBuilder = BuildUnit.read(depFile);
-        
         depResult.requireMeta(metaBuilder);
-        depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
-
-        // TODO: needed?
-        // for (Path p : metaBuilder.getExternalFileDependencies()) {
-        // depResult.requires(p, LastModifiedStamper.instance.stampOf(p));
-        // }
       }
     }
   }
