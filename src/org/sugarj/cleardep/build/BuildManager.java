@@ -188,7 +188,7 @@ public class BuildManager extends BuildUnitProvider {
 
     } catch (Throwable e) {
       depResult.setState(BuildUnit.State.FAILURE);
-      Log.log.logErr(e.getMessage(), Log.CORE);
+      Log.log.logErr(e.getClass() + ": " + e.getMessage(), Log.CORE);
       throw RequiredBuilderFailed.init(builder, depResult, e);
 
     } finally {
