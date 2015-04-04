@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.core.runtime.FileLocator;
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.BuildUnit.InconsistenyReason;
 import org.sugarj.cleardep.BuildUnit.State;
@@ -117,12 +116,13 @@ public class BuildManager extends BuildUnitProvider {
       // require the meta builder...
       String className = builder.getClass().getName();
       URL res = builder.getClass().getResource(className.substring(className.lastIndexOf(".") + 1) + ".class");
-      URL resFile;
-      if (res.getProtocol().equals("file")) {
-        resFile = res;
-      } else {
-        resFile = FileLocator.resolve(res);
-      }
+      URL resFile = res;
+      // TODO support class ressources at different protocosl (bundle, http, jar)
+//      if (res.getProtocol().equals("file")) {
+//        resFile = res;
+//      } else {
+//        resFile = FileLocator.resolve(res);
+//      }
       Path builderClass = new AbsolutePath(resFile.getFile());
       depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
       
