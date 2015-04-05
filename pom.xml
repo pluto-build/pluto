@@ -10,7 +10,6 @@
 		<groupId>org.sugarj</groupId>
 		<artifactId>maven-config-java</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
-		<relativePath>../deployment/maven-config-java</relativePath>
 	</parent>
 
 	<packaging>jar</packaging>
