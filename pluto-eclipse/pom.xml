@@ -7,9 +7,10 @@
 	<version>1.0.0-SNAPSHOT</version>
 
 	<parent>
-		<groupId>org.sugarj</groupId>
+		<groupId>build.pluto</groupId>
 		<artifactId>maven-config-java-bundle</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
+		<relativePath></relativePath>
 	</parent>
 
 	<packaging>jar</packaging>
@@ -21,4 +22,17 @@
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
+
+	<repositories>
+		<repository>
+			<id>pluto-build</id>
+			<url>http://pluto-build.github.io/mvnrepository/</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
 </project>
