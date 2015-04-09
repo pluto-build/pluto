@@ -1,4 +1,4 @@
 language: java
 install: true
-after_success: "mvn deploy"
+script: "mvn deploy"
 
