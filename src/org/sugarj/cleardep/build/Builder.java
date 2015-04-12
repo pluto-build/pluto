@@ -46,7 +46,7 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
   }
 
   transient BuildUnit<Out> result;
-  private transient BuildUnitProvider manager;
+  transient BuildUnitProvider manager;
   private transient Stamper defaultStamper;
   Out triggerBuild(BuildUnit<Out> result, BuildUnitProvider manager) throws Throwable {
     this.result = result;

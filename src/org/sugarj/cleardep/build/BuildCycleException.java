@@ -1,9 +1,9 @@
 package org.sugarj.cleardep.build;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.dependency.BuildRequirement;
 import org.sugarj.common.path.Path;
 
@@ -22,12 +22,12 @@ public class BuildCycleException extends RuntimeException {
    * The list of the stack entries which form a dependency cycle in order of the
    * stack.
    */
-  private final BuildStackEntry<?> cycleCause;
+  private final BuildUnit<?> cycleCause;
   private final List<BuildRequirement<?>> cycleComponents;
   private CycleState cycleState = CycleState.UNHANDLED;
   private BuildCycle.Result cycleResult = null;
 
-  public BuildCycleException(String message, BuildStackEntry<?> cycleCause, List<BuildRequirement<?>> cycleComponents) {
+  public BuildCycleException(String message, BuildUnit<?> cycleCause, List<BuildRequirement<?>> cycleComponents) {
     super(message);
     Objects.requireNonNull(cycleCause);
     this.cycleCause = cycleCause;
@@ -38,8 +38,8 @@ public class BuildCycleException extends RuntimeException {
     return cycleComponents;
   }
 
-  public boolean isUnitFirstInvokedOn(Path path, BuilderFactory<?, ?, ?> factory) {
-    return cycleCause.getUnit().getPersistentPath().equals(path) ;//&& cycleCause.getUnit().getGeneratedBy().factory.equals(factory);
+  public boolean isUnitFirstInvokedOn(BuildUnit<?> path) {
+    return cycleCause == path ;//&& cycleCause.getUnit().getGeneratedBy().factory.equals(factory);
   }
 
   public void setCycleState(CycleState cycleState) {
@@ -50,7 +50,7 @@ public class BuildCycleException extends RuntimeException {
     return cycleState;
   }
 
-  public BuildStackEntry<?> getCycleCause() {
+  public BuildUnit<?> getCycleCause() {
     return cycleCause;
   }
   

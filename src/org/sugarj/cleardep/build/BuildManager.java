@@ -151,7 +151,7 @@ public class BuildManager extends BuildUnitProvider {
     setUpMetaDependency(builder, depResult);
     
     // First step: cycle detection
-    BuildStackEntry<Out> entry = this.executingStack.push(depResult);
+    this.executingStack.push(depResult);
 
     int inputHash = DeepEquals.deepHashCode(builder.input);
 
@@ -193,7 +193,7 @@ public class BuildManager extends BuildUnitProvider {
         throw new AssertionError("API Violation detected: Builder mutated its input.");
       assertConsistency(depResult);
 
-      this.executingStack.pop(entry);
+      this.executingStack.pop(depResult);
       this.requireStack.finishRebuild(dep);
     }
 
@@ -210,7 +210,7 @@ public class BuildManager extends BuildUnitProvider {
       return e;
     }
 
-    Log.log.log("Detected a dependency cycle with root " + e.getCycleComponents().get(0).unit.getPersistentPath(), Log.CORE);
+    Log.log.log("Detected a dependency cycle with root " + e.getCycleCause().getPersistentPath(), Log.CORE);
 
     e.setCycleState(CycleState.NOT_RESOLVED);
     BuildCycle cycle = new BuildCycle(e.getCycleComponents());
@@ -268,17 +268,18 @@ public class BuildManager extends BuildUnitProvider {
       depResult.setState(State.FAILURE);
     }
     Log.log.log("Stopped because of cycle", Log.CORE);
-    if (e.isUnitFirstInvokedOn(dep, buildReq.factory)) {
+    if (e.isUnitFirstInvokedOn(depResult)) {
       if (e.getCycleState() != CycleState.RESOLVED) {
         Log.log.log("Unable to find builder which can compile the cycle", Log.CORE);
         // Cycle cannot be handled
         throw new RequiredBuilderFailed(builder, depResult, e);
       } else {
 
-        if (this.executingStack.getNumContains(e.getCycleComponents().get(0).unit) == 1) {
+        if (this.executingStack.getNumContains(e.getCycleCause()) == 1) {
           Log.log.log("but cycle has been compiled", Log.CORE);
 
         } else {
+          Log.log.log("too much entries left", Log.CORE);
           throw e;
         }
       }

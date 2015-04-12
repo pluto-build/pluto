@@ -111,8 +111,12 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
      }
      
      CompileCycleAtOnceBuilder<In, Out > newBuilder = factory.makeBuilder(inputs);
+     newBuilder.manager = manager;
+     for (BuildUnit<Out> unit : cyclicResults) {
+       BuildUnit.create(unit.getPersistentPath(), unit.getGeneratedBy());
+     }
      newBuilder.cyclicResults = cyclicResults;
-     
+  
      List<Out> outputs = newBuilder.buildAll();
      if (outputs.size() != inputs.size()) {
        throw new AssertionError("buildAll needs to return one output for one input");
