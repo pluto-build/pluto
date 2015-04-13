@@ -305,7 +305,7 @@ public class BuildManager extends BuildUnitProvider {
       wasInitial = true;
     }
     try {
-      return require(null, buildReq);
+      return require(buildReq);
     } finally {
       if (wasInitial) {
         Log.log.endTask();
@@ -322,7 +322,7 @@ public class BuildManager extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
-  BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     Builder<In, Out> builder = buildReq.createBuilder();
     Path dep = builder.persistentPath();
@@ -334,8 +334,8 @@ public class BuildManager extends BuildUnitProvider {
     // Need to check that before putting dep on the requires Stack because
     // otherwise dep has always been required
     boolean alreadyRequired = false;
-    if (source != null)
-      alreadyRequired = requireStack.isAlreadyRequired(dep);
+    
+    alreadyRequired = requireStack.isAlreadyRequired(dep);
 
     requireStack.beginRequire(dep);
     try {
@@ -356,7 +356,7 @@ public class BuildManager extends BuildUnitProvider {
         return depResult;
 
       for (Requirement req : depResult.getRequirements()) {
-        if (!req.isConsistentInBuild(depResult, this)) {
+        if (!req.isConsistentInBuild(this)) {
           return executeBuilder(builder, dep, buildReq);
         } else {
           // Could get consistent because it was part of a cycle which is

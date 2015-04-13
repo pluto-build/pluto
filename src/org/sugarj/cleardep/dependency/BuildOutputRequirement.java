@@ -39,7 +39,7 @@ public class BuildOutputRequirement<Out extends Serializable> implements Require
     return stamp.equals(stamp.getStamper().stampOf(this.unit.getBuildResult()));
   }
   @Override
-  public boolean isConsistentInBuild(BuildUnit<?> parent, BuildUnitProvider manager) {
+  public boolean isConsistentInBuild(BuildUnitProvider manager) {
     return isConsistent();
   }
 

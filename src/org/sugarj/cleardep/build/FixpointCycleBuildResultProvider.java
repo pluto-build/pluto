@@ -58,10 +58,10 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
 //@formatter:on
-  BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
     
     BuildUnit<Out> cycleUnit = getBuildUnitInCycle(buildReq);
-    if (cycleUnit != null && (source == cycleUnit || this.requiredUnitsInIteration.contains(cycleUnit))) {
+    if (cycleUnit != null && (this.requiredUnitsInIteration.contains(cycleUnit))) {
       return cycleUnit;
     } else {
       if (cycleUnit != null) {
@@ -101,7 +101,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
           Log.log.endTask();
         }
       } else {
-        return this.parentManager.require(source, buildReq);
+        return this.parentManager.require(buildReq);
       }
     }
   }

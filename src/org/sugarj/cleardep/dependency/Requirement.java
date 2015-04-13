@@ -8,5 +8,5 @@ import org.sugarj.cleardep.build.BuildUnitProvider;
 
 public interface Requirement extends Serializable {
   public boolean isConsistent();
-  public boolean isConsistentInBuild(BuildUnit<?> parent, BuildUnitProvider manager) throws IOException;
+  public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException;
 }
