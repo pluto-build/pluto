@@ -59,7 +59,7 @@ public class InputParser<In> {
 
   private Option makeOption(String name, Class<?> paramClass) {
     String optName = makeOptionName(name);
-    String desc = "Value for constructor parameter " + name + " of type " + paramClass;
+    String desc = "Value for constructor parameter " + name + " of type " + pretty(paramClass);
     
     if (paramClass.equals(boolean.class) || paramClass.equals(Boolean.class))
       return new Option(null, optName, false, desc);
@@ -111,7 +111,7 @@ public class InputParser<In> {
       return collection;
     
     if (vals.length > 1)
-      throw new IllegalArgumentException("Too many values for option " + opt + " of type " + paramClass);
+      throw new IllegalArgumentException("Too many values for option " + opt + " of type " + pretty(paramClass));
     String val = vals[0];
     
     // primitive types
@@ -145,7 +145,7 @@ public class InputParser<In> {
     if (paramClass.equals(Path.class) || paramClass.equals(RelativePath.class))
       return new RelativePath(new AbsolutePath("."), val);
     
-    throw new UnsupportedOperationException("Cannot parse value of type " + paramClass + " for option " + opt);
+    throw new UnsupportedOperationException("Cannot parse value of type " + pretty(paramClass) + " for option " + opt);
   }
 
   @SuppressWarnings("unchecked")
@@ -168,7 +168,7 @@ public class InputParser<In> {
           try {
             col = (Collection<Object>) paramClass.getConstructor(Integer.class).newInstance(vals.length);
           } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e2) {
-            throw new UnsupportedOperationException("Cannot instantiate collection of type " + paramClass);
+            throw new UnsupportedOperationException("Cannot instantiate collection of type " + pretty(paramClass));
           }
         }
       }
@@ -273,5 +273,11 @@ public class InputParser<In> {
       return Double.class;
     
     return null;
+  }
+  
+  private String pretty(Class<?> cl) {
+    if (cl.isArray())
+      return cl.getComponentType().getName() + "[]";
+    return cl.getName();
   }
 }
