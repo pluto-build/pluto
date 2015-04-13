@@ -3,9 +3,7 @@ package org.sugarj.cleardep.build;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.sugarj.cleardep.BuildUnit;
 import org.sugarj.cleardep.dependency.BuildRequirement;
@@ -18,7 +16,6 @@ public class ExecutingStack {
   
   private UniteSets<BuildUnit<?>> sccs = new UniteSets<>();
   
-
   protected void push(BuildUnit<?> unit) throws IOException{
     int index = this.requireCallStack.indexOf(unit);
     if (index != -1) {

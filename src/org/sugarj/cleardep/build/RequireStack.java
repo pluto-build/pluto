@@ -3,10 +3,12 @@ package org.sugarj.cleardep.build;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
+import org.sugarj.cleardep.util.UniteSets;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
@@ -16,12 +18,12 @@ public class RequireStack {
   private Deque<Path> requireStack;
   private Set<Path> knownInconsistentUnits;
   private Set<Path> consistentUnits;
-  private Map<Path, Set<Path>> assumedCyclicConsistency;
+  private UniteSets<Path> sccAssumedConsistent;
 
-  private final boolean LOG_REQUIRE = false;
+  private final boolean LOG_REQUIRE = true;
 
   public RequireStack() {
-    this.assumedCyclicConsistency = new HashMap<>();
+    this.sccAssumedConsistent = new UniteSets<>();
     this.consistentUnits = new HashSet<>();
     this.knownInconsistentUnits = new HashSet<>();
     this.requireStack = new LinkedList<>();
@@ -30,23 +32,27 @@ public class RequireStack {
   public void beginRebuild(Path dep) {
     if (LOG_REQUIRE) {
       Log.log.log("Rebuild " + FileCommands.tryGetRelativePath(dep), Log.CORE);
-      Log.log.log("Assumptions: " + getCyclicConsistentAssumtion(dep), Log.CORE);
+      Log.log.log("Assumptions: " + printCyclicConsistentAssumtion(dep), Log.CORE);
     }
     this.knownInconsistentUnits.add(dep);
+    // TODO: Need to forget the scc where dep is in, because the graph structure may change?
     for (Path assumed : this.requireStack) {
       // This could be too strict
       // this.knownInconsistentUnits.add(assumed);
       this.consistentUnits.remove(assumed);
     }
   }
-
-  private Set<Path> getCyclicConsistentAssumtion(Path dep) {
-    Set<Path> cyclicAssumptions = assumedCyclicConsistency.get(dep);
-    if (cyclicAssumptions == null) {
-      cyclicAssumptions = new HashSet<Path>();
-      assumedCyclicConsistency.put(dep, cyclicAssumptions);
+  
+  private String printCyclicConsistentAssumtion(Path dep) {
+    UniteSets<Path>.Key key = this.sccAssumedConsistent.getSet(dep);
+    if (key == null) {
+      return "";
     }
-    return cyclicAssumptions;
+    String s = "";
+    for (Path p : this.sccAssumedConsistent.getSetMembers(key)) {
+      s += FileCommands.tryGetRelativePath(p) + ", ";
+    }
+    return s;
   }
 
   public void finishRebuild(Path dep) {
@@ -61,7 +67,11 @@ public class RequireStack {
   }
 
   private boolean isAssumtionKnownInconsistent(Path dep) {
-    for (Path p : this.getCyclicConsistentAssumtion(dep)) {
+    UniteSets<Path>.Key key = this.sccAssumedConsistent.getSet(dep);
+    if (key == null) {
+      return false;
+    }
+    for (Path p : this.sccAssumedConsistent.getSetMembers(key)) {
       if (this.knownInconsistentUnits.contains(p)) {
         return true;
       }
@@ -73,16 +83,21 @@ public class RequireStack {
     return this.consistentUnits.contains(dep);
   }
 
-  public boolean isAlreadyRequired(Path source, Path dep) {
+  public boolean isAlreadyRequired(Path dep) {
     if (this.requireStack.contains(dep)) {
       if (LOG_REQUIRE)
         Log.log.log("Already required " + FileCommands.tryGetRelativePath(dep), Log.CORE);
-      Set<Path> cyclicAssumptions = this.getCyclicConsistentAssumtion(dep);
-      Set<Path> unitAssumptions = this.getCyclicConsistentAssumtion(source);
-      unitAssumptions.add(dep);
-      cyclicAssumptions.add(source);
-      cyclicAssumptions.addAll(unitAssumptions);
-      unitAssumptions.addAll(cyclicAssumptions);
+      
+      // Union the sccs which are connected by a cycle
+      // In the cycle are all units from the top of the stack until the occurence of
+      // dep is found
+      UniteSets<Path>.Key scc = this.sccAssumedConsistent.getOrCreateSet(dep);
+      for (Path cycleDep : requireStack) { 
+        if (cycleDep.equals(dep)) {
+          break;
+        }
+        scc = this.sccAssumedConsistent.uniteOrAdd(scc, cycleDep);
+      }
       return true;
     }
     return false;
@@ -94,18 +109,10 @@ public class RequireStack {
       Log.log.beginTask("Require " + FileCommands.tryGetRelativePath(dep), Log.CORE);
   }
 
-  public void finishRequire(Path source, Path dep) {
-    if (source != null) {
-      this.handleRequiredFinished(source, dep);
-    }
+  public void finishRequire(Path dep) {
     this.requireStack.pop();
     if (LOG_REQUIRE)
       Log.log.endTask();
-  }
-
-  private void handleRequiredFinished(Path dep, Path required) {
-    Set<Path> depAssumptions = this.getCyclicConsistentAssumtion(required);
-    this.getCyclicConsistentAssumtion(dep).addAll(depAssumptions);
   }
 
   public void markConsistent(Path dep) {

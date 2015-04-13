@@ -335,7 +335,7 @@ public class BuildManager extends BuildUnitProvider {
     // otherwise dep has always been required
     boolean alreadyRequired = false;
     if (source != null)
-      alreadyRequired = requireStack.isAlreadyRequired(source.getPersistentPath(), dep);
+      alreadyRequired = requireStack.isAlreadyRequired(dep);
 
     requireStack.beginRequire(dep);
     try {
@@ -369,10 +369,7 @@ public class BuildManager extends BuildUnitProvider {
       requireStack.markConsistent(dep);
 
     } finally {
-      if (source != null)
-        requireStack.finishRequire(source.getPersistentPath(), dep);
-      else
-        requireStack.finishRequire(null, dep);
+      requireStack.finishRequire( dep);
     }
 
     return depResult;
