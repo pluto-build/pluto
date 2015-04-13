@@ -46,7 +46,7 @@
 			<id>pluto-build</id>
 			<url>http://pluto-build.github.io/mvnrepository/</url>
 			<releases>
-				<enabled>true</enabled>
+				<enabled>false</enabled>
 			</releases>
 			<snapshots>
 				<enabled>true</enabled>
