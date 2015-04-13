@@ -64,7 +64,13 @@ public class InputParser<In> {
     if (paramClass.equals(boolean.class) || paramClass.equals(Boolean.class))
       return new Option(null, optName, false, desc);
     
-    return new Option(null, optName, true, desc);
+    Option opt = new Option(null, optName, true, desc);
+    if (paramClass.isArray() || Collection.class.isAssignableFrom(paramClass)) {
+      opt.setArgs(Option.UNLIMITED_VALUES);
+      opt.setValueSeparator(' ');
+//      opt.setDescription(desc + ", separate values by '" + File.pathSeparatorChar + "'");
+    }
+    return opt;
   }
 
   private String makeOptionName(String s) {
@@ -86,13 +92,13 @@ public class InputParser<In> {
     Object[] inputs = new Object[inputOptions.length];
     for (int i = 0; i < inputs.length; i++) {
       Option opt = inputOptions[i];
+      Class<?> paramClass = inputConstructor.getParameters()[i].getType();
       if (line.hasOption(opt.getLongOpt())) {
-        Class<?> paramClass = inputConstructor.getParameters()[i].getType();
         Object paramVal = parseParamFromCommandLine(opt.getLongOpt(), paramClass, line.getOptionValues(opt.getLongOpt()));
         inputs[i] = paramVal;
       }
       else
-        inputs[i] = null;
+        inputs[i] = defaultParamValue(paramClass);
     }
     
     try {
@@ -279,5 +285,25 @@ public class InputParser<In> {
     if (cl.isArray())
       return cl.getComponentType().getName() + "[]";
     return cl.getName();
+  }
+  
+  private Object defaultParamValue(Class<?> paramClass) {
+    if (paramClass.equals(boolean.class) || paramClass.equals(Boolean.class))
+      return false;
+    if (paramClass.equals(byte.class) || paramClass.equals(Byte.class))
+      return (byte) 0;
+    if (paramClass.equals(short.class) || paramClass.equals(Short.class))
+      return (short) 0;
+    if (paramClass.equals(int.class) || paramClass.equals(Integer.class))
+      return (int) 0;
+    if (paramClass.equals(long.class) || paramClass.equals(Long.class))
+      return (long) 0;
+    if (paramClass.equals(float.class) || paramClass.equals(Float.class))
+      return (float) 0;
+    if (paramClass.equals(double.class) || paramClass.equals(Double.class))
+      return (double) 0;
+    if (paramClass.equals(char.class) || paramClass.equals(Character.class))
+      return (char) 0;
+    return null;
   }
 }
