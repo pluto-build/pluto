@@ -1,7 +1,7 @@
 package build.pluto.test.build;
 
 import static build.pluto.test.CompilationUnitTestUtils.set;
-import static build.pluto.test.build.SimpleBuildUtilities.inputToFileList;
+import static build.pluto.test.build.once.SimpleBuildUtilities.inputToFileList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

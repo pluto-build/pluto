@@ -1,4 +1,4 @@
-package build.pluto.test.build;
+package build.pluto.test.build.once;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -15,7 +15,7 @@ import build.pluto.builder.CompileCycleAtOnceBuilder;
 import build.pluto.output.None;
 import build.pluto.stamp.FileContentStamper;
 import build.pluto.stamp.Stamper;
-import build.pluto.test.build.SimpleBuilder.TestBuilderInput;
+import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 
 public class SimpleCyclicAtOnceBuilder extends
 		CompileCycleAtOnceBuilder<TestBuilderInput, None> {
@@ -42,7 +42,7 @@ public class SimpleCyclicAtOnceBuilder extends
 	protected Path singletonPersistencePath(TestBuilderInput input) {
 		return FileCommands.addExtension(input.getInputPath(), "dep");
 	}
-
+	
 	@Override
 	protected List<None> buildAll() throws Throwable {
 
@@ -50,7 +50,7 @@ public class SimpleCyclicAtOnceBuilder extends
 
 		Set<RelativePath> cyclicDependencies = new HashSet<>();
 		for (TestBuilderInput input : this.input) {
-			//System.out.println(input.getInputPath().getRelativePath());
+			// System.out.println(input.getInputPath().getRelativePath());
 			cyclicDependencies.add(input.getInputPath());
 			require(input.getInputPath());
 		}

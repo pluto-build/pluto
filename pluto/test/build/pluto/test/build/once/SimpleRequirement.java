@@ -1,13 +1,13 @@
-package build.pluto.test.build;
+package build.pluto.test.build.once;
 
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuilderFactory;
 import build.pluto.output.None;
-import build.pluto.test.build.SimpleBuilder.TestBuilderInput;
+import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 
-public class TestRequirement extends BuildRequest<TestBuilderInput, None, SimpleBuilder, BuilderFactory<TestBuilderInput, None, SimpleBuilder>> {
+public class SimpleRequirement extends BuildRequest<TestBuilderInput, None, SimpleBuilder, BuilderFactory<TestBuilderInput, None, SimpleBuilder>> {
 
-	public TestRequirement(
+	public SimpleRequirement(
 			BuilderFactory<TestBuilderInput, None, SimpleBuilder> factory,
 			TestBuilderInput input) {
 		super(factory, input);

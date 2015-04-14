@@ -1,6 +1,4 @@
-package build.pluto.test.build;
-
-import static org.junit.Assert.fail;
+package build.pluto.test.build.once;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -13,8 +11,10 @@ import org.sugarj.common.path.RelativePath;
 
 import build.pluto.BuildUnit;
 import build.pluto.output.None;
-import build.pluto.test.build.SimpleBuilder.TestBuilderInput;
 import build.pluto.test.build.cycle.fixpoint.FileInput;
+import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
+
+import static org.junit.Assert.*;
 
 public class SimpleBuildUtilities {
 	
@@ -31,10 +31,17 @@ public class SimpleBuildUtilities {
 		lines.add("Dep:"+dep.getRelativePath());
 		FileCommands.writeLinesFile(path, lines);
 	}
+	
+	public static void removeInputFileDep(RelativePath path, RelativePath dep)
+			throws IOException {
+		List<String> lines = FileCommands.readFileLines(path);
+		lines.remove("Dep:"+dep.getRelativePath());
+		FileCommands.writeLinesFile(path, lines);
+	}
 
 	public static BuildUnit<None> unitForFile(RelativePath path, Path testBasePath)
 			throws IOException {
-		TestRequirement req = new TestRequirement(SimpleBuilder.factory,new TestBuilderInput(testBasePath, path));
+		SimpleRequirement req = new SimpleRequirement(SimpleBuilder.factory,new TestBuilderInput(testBasePath, path));
 		
 		BuildUnit<None> unit = BuildUnit.read(req.factory.makeBuilder(req.input).persistentPath());
 		return unit;
@@ -47,8 +54,10 @@ public class SimpleBuildUtilities {
 				fileList.add(((TestBuilderInput) s).getInputPath());
 			} else if (s instanceof FileInput){
 				fileList.add(((FileInput) s).getFile());
+			} else if (s instanceof ArrayList) {
+				fileList.addAll(inputToFileList((ArrayList<Serializable>) s));
 			} else {
-				fail("Illegal input");
+				fail("Illegal input " + s.getClass());
 			}
 		}
 		return fileList;

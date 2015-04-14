@@ -8,10 +8,11 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
-import org.sugarj.cleardep.util.UniteSets;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
+
+import build.pluto.util.UniteSets;
 
 public class RequireStack {
 
@@ -20,7 +21,7 @@ public class RequireStack {
   private Set<Path> consistentUnits;
   private UniteSets<Path> sccAssumedConsistent;
 
-  private final boolean LOG_REQUIRE = true;
+  private final boolean LOG_REQUIRE = false;
 
   public RequireStack() {
     this.sccAssumedConsistent = new UniteSets<>();

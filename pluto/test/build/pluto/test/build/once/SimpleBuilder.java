@@ -1,4 +1,4 @@
-package build.pluto.test.build;
+package build.pluto.test.build.once;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -16,7 +16,7 @@ import build.pluto.builder.BuilderFactory;
 import build.pluto.output.None;
 import build.pluto.stamp.FileHashStamper;
 import build.pluto.stamp.Stamper;
-import build.pluto.test.build.SimpleBuilder.TestBuilderInput;
+import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 
 public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 
@@ -96,7 +96,7 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 				TestBuilderInput depInput = new TestBuilderInput(
 						input.basePath, new RelativePath(input.getBasePath(),
 								depFile));
-				TestRequirement req = new TestRequirement(factory, depInput);
+				SimpleRequirement req = new SimpleRequirement(factory, depInput);
 				requireBuild(req);
 			} else {
 				contentLines.add(line);

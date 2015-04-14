@@ -1,3 +1,5 @@
 target/
 META-INF
 
+pluto/testdata/NestedCycleAtOnceTest/testCleanRebuild
+pluto/testdata/NestedCycleAtOnceTest/testRebuildWithChangedCycleStructure

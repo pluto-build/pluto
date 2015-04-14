@@ -52,7 +52,7 @@ public class GCDMultipleCyclesTest extends ScopedBuildTest{
 
 	private TrackingBuildManager build() throws IOException {
 		TrackingBuildManager manager = new TrackingBuildManager();
-		manager.require(null, ModuloBuilder.factory, new FileInput(testBasePath, main));
+		manager.require(ModuloBuilder.factory, new FileInput(testBasePath, main));
 		
 		validateThat(unitsForPath(mainDep, cycle1Dep, cycle2Dep, cycle3Dep, leafDep).areConsistent());
 		validateThat(unitsForPath(mainDep).dependsOn(cycle1Dep));
