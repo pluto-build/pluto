@@ -220,6 +220,35 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 	  }
 		return requiredUnits;
 	}
+	
+	public Set<BuildUnit<?>> getTransitiveModuleDependencies() {
+    final Set<BuildUnit<?>> transitiveUnits = new HashSet<>();
+    visit(new ModuleVisitor<Void>() {
+      @Override
+      public Void visit(BuildUnit<?> mod) {
+        transitiveUnits.add(mod);
+        return null;
+      }
+
+      @Override
+      public Void combine(Void t1, Void t2) {
+        return null;
+      }
+
+      @Override
+      public Void init() {
+        return null;
+      }
+
+      @Override
+      public boolean cancel(Void t) {
+        return false;
+      }
+    });
+    return transitiveUnits;
+  }
+  
+  
 
 	public Set<Path> getExternalFileDependencies() {
 	  if (requiredFiles == null) {
@@ -445,14 +474,12 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
       for (BuildUnit<?> dep : toVisit.getModuleDependencies()) {
         if (!seenUnits.contains(dep)) {
           queue.add(dep);
-          if (dep.getModuleDependencies() == null)
-            System.out.println(dep);
           seenUnits.add(dep);
         }
       }
 	  }
 	  
-	return result;
+	  return result;
 	}
 
 	

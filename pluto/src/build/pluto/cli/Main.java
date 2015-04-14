@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Set;
 
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -12,6 +13,9 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.sugarj.common.FileCommands;
+import org.sugarj.common.Log;
+import org.sugarj.common.path.Path;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildManager;
@@ -48,6 +52,11 @@ public class Main {
     Options options = new Options();
     Option helpOption = new Option("h", "help", false, "Display usage information");
     options.addOption(helpOption);
+    Option cleanOption = new Option(null, "clean", false, "Clean all generated artifacts");
+    options.addOption(cleanOption);
+    Option dryCleanOption = new Option(null, "dry-clean", false, "Clean all generated artifacts (dry run)");
+    options.addOption(dryCleanOption);
+    
     
     InputParser<Serializable> inputParser = new InputParser<Serializable>(inputClass);
     inputParser.registerOptions(options);
@@ -63,8 +72,13 @@ public class Main {
       }
         
       Serializable input = inputParser.parseCommandLine(line);
-      
       BuildRequest<?, ?, ?, ?> req = new BuildRequest<Serializable, Serializable, Builder<Serializable, Serializable>, BuilderFactory<Serializable, Serializable, Builder<Serializable, Serializable>>>(factory, input);
+      
+      if (line.hasOption(cleanOption.getLongOpt()) || line.hasOption(dryCleanOption.getLongOpt())) {
+        clean(line.hasOption(dryCleanOption.getLongOpt()), req);
+        return;
+      }
+      
       BuildManager.build(req);
       BuildUnit<?> unit = BuildManager.readResult(req);
       System.exit(unit.hasFailed() ? 1 : 0);
@@ -90,5 +104,21 @@ public class Main {
     formatter.printHelp(command, options);
   }
   
+  private static void clean(boolean dryRun, BuildRequest<?, ?, ?, ?> req) throws IOException {
+    BuildUnit<?> unit = BuildManager.readResult(req);
+    Set<BuildUnit<?>> allUnits = unit.getTransitiveModuleDependencies();
+    for (BuildUnit<?> next : allUnits) {
+      for (Path p : next.getGeneratedFiles())
+        deleteFile(p, dryRun);
+      deleteFile(next.getPersistentPath(), dryRun);
+    }
+  }
+
+  private static void deleteFile(Path p, boolean dryRun) throws IOException {
+    Log.log.log("Delete " + p + (dryRun ? " (dry run)" : ""), Log.CORE);
+    if (!dryRun)
+      FileCommands.delete(p);
+  }
+
 
 }
