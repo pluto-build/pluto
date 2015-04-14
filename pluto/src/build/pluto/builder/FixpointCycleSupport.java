@@ -57,7 +57,7 @@ public class FixpointCycleSupport implements CycleSupport {
               logStarted = true;
             }
             cycleConsistent = false;
-            cycleManager.require(null,req.req);
+            cycleManager.require(req.req);
           }
 
       } finally {

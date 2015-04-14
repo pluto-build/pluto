@@ -152,7 +152,7 @@ public class BuildManager extends BuildUnitProvider {
     setUpMetaDependency(builder, depResult);
     
     // First step: cycle detection
-    BuildStackEntry<Out> entry = this.executingStack.push(depResult);
+    this.executingStack.push(depResult);
 
     int inputHash = DeepEquals.deepHashCode(builder.input);
 
@@ -194,7 +194,7 @@ public class BuildManager extends BuildUnitProvider {
         throw new AssertionError("API Violation detected: Builder mutated its input.");
       assertConsistency(depResult);
 
-      this.executingStack.pop(entry);
+      this.executingStack.pop(depResult);
       this.requireStack.finishRebuild(dep);
     }
 
@@ -211,7 +211,7 @@ public class BuildManager extends BuildUnitProvider {
       return e;
     }
 
-    Log.log.log("Detected a dependency cycle with root " + e.getCycleComponents().get(0).unit.getPersistentPath(), Log.CORE);
+    Log.log.log("Detected a dependency cycle with root " + e.getCycleCause().getPersistentPath(), Log.CORE);
 
     e.setCycleState(CycleState.NOT_RESOLVED);
     BuildCycle cycle = new BuildCycle(e.getCycleComponents());
@@ -269,17 +269,18 @@ public class BuildManager extends BuildUnitProvider {
       depResult.setState(State.FAILURE);
     }
     Log.log.log("Stopped because of cycle", Log.CORE);
-    if (e.isUnitFirstInvokedOn(dep, buildReq.factory)) {
+    if (e.isUnitFirstInvokedOn(depResult)) {
       if (e.getCycleState() != CycleState.RESOLVED) {
         Log.log.log("Unable to find builder which can compile the cycle", Log.CORE);
         // Cycle cannot be handled
         throw new RequiredBuilderFailed(builder, depResult, e);
       } else {
 
-        if (this.executingStack.getNumContains(e.getCycleComponents().get(0).unit) == 1) {
+        if (this.executingStack.getNumContains(e.getCycleCause()) == 1) {
           Log.log.log("but cycle has been compiled", Log.CORE);
 
         } else {
+          Log.log.log("too much entries left", Log.CORE);
           throw e;
         }
       }
@@ -305,7 +306,7 @@ public class BuildManager extends BuildUnitProvider {
       wasInitial = true;
     }
     try {
-      return require(null, buildReq);
+      return require(buildReq);
     } finally {
       if (wasInitial) {
         Log.log.endTask();
@@ -322,7 +323,7 @@ public class BuildManager extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
-  BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     Builder<In, Out> builder = buildReq.createBuilder();
     Path dep = builder.persistentPath();
@@ -334,8 +335,8 @@ public class BuildManager extends BuildUnitProvider {
     // Need to check that before putting dep on the requires Stack because
     // otherwise dep has always been required
     boolean alreadyRequired = false;
-    if (source != null)
-      alreadyRequired = requireStack.isAlreadyRequired(source.getPersistentPath(), dep);
+    
+    alreadyRequired = requireStack.isAlreadyRequired(dep);
 
     requireStack.beginRequire(dep);
     try {
@@ -356,7 +357,7 @@ public class BuildManager extends BuildUnitProvider {
         return depResult;
 
       for (Requirement req : depResult.getRequirements()) {
-        if (!req.isConsistentInBuild(depResult, this)) {
+        if (!req.isConsistentInBuild(this)) {
           return executeBuilder(builder, dep, buildReq);
         } else {
           // Could get consistent because it was part of a cycle which is
@@ -369,10 +370,7 @@ public class BuildManager extends BuildUnitProvider {
       requireStack.markConsistent(dep);
 
     } finally {
-      if (source != null)
-        requireStack.finishRequire(source.getPersistentPath(), dep);
-      else
-        requireStack.finishRequire(null, dep);
+      requireStack.finishRequire( dep);
     }
 
     return depResult;

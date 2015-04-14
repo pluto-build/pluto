@@ -14,7 +14,7 @@ public abstract class BuildUnitProvider {
    B extends Builder<In, Out>,
    F extends BuilderFactory<In, Out, B>>
   //@formatter:on
- BuildUnit<Out> require(BuildUnit<?> source, BuildRequest<In, Out, B, F> buildReq) throws IOException;
+ BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException;
   
   protected abstract Throwable tryCompileCycle(BuildCycleException e);
   

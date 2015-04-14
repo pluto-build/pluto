@@ -47,7 +47,7 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
   }
 
   transient BuildUnit<Out> result;
-  private transient BuildUnitProvider manager;
+  transient BuildUnitProvider manager;
   private transient Stamper defaultStamper;
   Out triggerBuild(BuildUnit<Out> result, BuildUnitProvider manager) throws Throwable {
     this.result = result;
@@ -80,19 +80,7 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
   B_ extends Builder<In_,Out_>,
   F_ extends BuilderFactory<In_, Out_, B_>
   > Out_ requireBuild(BuildRequest<In_, Out_, B_, F_> req) throws IOException {
-    BuildUnit<Out_> e = manager.require(result, req);
-    result.requires(e);
-    return e.getBuildResult();
-  }
-  
-  protected <
-  In_ extends Serializable, 
-  Out_ extends Serializable, 
-  B_ extends Builder<ArrayList<In_>, Out_>,
-  F_ extends BuilderFactory<ArrayList<In_>, Out_, B_>
-  > Out_ requireCyclicable(F_ factory, In_ input) throws IOException {
-    BuildRequest<ArrayList<In_>, Out_, B_, F_> req = new BuildRequest<ArrayList<In_>, Out_, B_, F_>(factory, CompileCycleAtOnceBuilder.singletonArrayList(input));
-    BuildUnit<Out_> e = manager.require(result, req);
+    BuildUnit<Out_> e = manager.require(req);
     result.requires(e);
     return e.getBuildResult();
   }
