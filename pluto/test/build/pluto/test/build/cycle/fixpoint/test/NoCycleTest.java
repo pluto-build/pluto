@@ -1,10 +1,9 @@
 package build.pluto.test.build.cycle.fixpoint.test;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
 
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 import build.pluto.BuildUnit;
 import build.pluto.test.build.ScopedBuildTest;
@@ -22,7 +21,7 @@ public class NoCycleTest extends ScopedBuildTest{
 	
 	@Test
 	public void testBuildNoCycle() throws IOException {
-		BuildUnit<IntegerOutput> resultUnit = new TrackingBuildManager().require(null, ModuloBuilder.factory, new FileInput(testBasePath, "main1.modulo"));
+		BuildUnit<IntegerOutput> resultUnit = new TrackingBuildManager().require(ModuloBuilder.factory, new FileInput(testBasePath, "main1.modulo"));
 		assertEquals("No cycle produced wrong output", 1, resultUnit.getBuildResult().getResult());
 	}
 

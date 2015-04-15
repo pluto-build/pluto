@@ -39,9 +39,9 @@ public class BuildRequirement<Out extends Serializable> implements Requirement, 
   }
   
   @Override
-  public boolean isConsistentInBuild(BuildUnit<?> parent, BuildUnitProvider manager) throws IOException{
+  public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException{
 
-    manager.require(parent, this.req);
+    manager.require(this.req);
     
    return true;
    

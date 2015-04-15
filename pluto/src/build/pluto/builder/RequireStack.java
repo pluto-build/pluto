@@ -1,52 +1,51 @@
 package build.pluto.builder;
 
-import java.util.Deque;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Map;
 import java.util.Set;
 
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 
-public class RequireStack {
+import build.pluto.util.UniteSets;
 
-  private Deque<Path> requireStack;
+public class RequireStack extends CycleDetectionStack<Path, Boolean> {
+
   private Set<Path> knownInconsistentUnits;
   private Set<Path> consistentUnits;
-  private Map<Path, Set<Path>> assumedCyclicConsistency;
 
   private final boolean LOG_REQUIRE = false;
 
   public RequireStack() {
-    this.assumedCyclicConsistency = new HashMap<>();
     this.consistentUnits = new HashSet<>();
     this.knownInconsistentUnits = new HashSet<>();
-    this.requireStack = new LinkedList<>();
   }
 
   public void beginRebuild(Path dep) {
     if (LOG_REQUIRE) {
       Log.log.log("Rebuild " + FileCommands.tryGetRelativePath(dep), Log.CORE);
-      Log.log.log("Assumptions: " + getCyclicConsistentAssumtion(dep), Log.CORE);
+      Log.log.log("Assumptions: " + printCyclicConsistentAssumtion(dep), Log.CORE);
     }
     this.knownInconsistentUnits.add(dep);
-    for (Path assumed : this.requireStack) {
+    // TODO: Need to forget the scc where dep is in, because the graph structure
+    // may change?
+   // for (Path assumed : this.requireStack) {
       // This could be too strict
       // this.knownInconsistentUnits.add(assumed);
-      this.consistentUnits.remove(assumed);
-    }
+     // this.consistentUnits.remove(assumed);
+    //}
   }
 
-  private Set<Path> getCyclicConsistentAssumtion(Path dep) {
-    Set<Path> cyclicAssumptions = assumedCyclicConsistency.get(dep);
-    if (cyclicAssumptions == null) {
-      cyclicAssumptions = new HashSet<Path>();
-      assumedCyclicConsistency.put(dep, cyclicAssumptions);
+  private String printCyclicConsistentAssumtion(Path dep) {
+    UniteSets<Path>.Key key = this.sccs.getSet(dep);
+    if (key == null) {
+      return "";
     }
-    return cyclicAssumptions;
+    String s = "";
+    for (Path p : this.sccs.getSetMembers(key)) {
+      s += FileCommands.tryGetRelativePath(p) + ", ";
+    }
+    return s;
   }
 
   public void finishRebuild(Path dep) {
@@ -61,7 +60,11 @@ public class RequireStack {
   }
 
   private boolean isAssumtionKnownInconsistent(Path dep) {
-    for (Path p : this.getCyclicConsistentAssumtion(dep)) {
+    UniteSets<Path>.Key key = this.sccs.getSet(dep);
+    if (key == null) {
+      return false;
+    }
+    for (Path p : this.sccs.getSetMembers(key)) {
       if (this.knownInconsistentUnits.contains(p)) {
         return true;
       }
@@ -73,43 +76,34 @@ public class RequireStack {
     return this.consistentUnits.contains(dep);
   }
 
-  public boolean isAlreadyRequired(Path source, Path dep) {
-    if (this.requireStack.contains(dep)) {
-      if (LOG_REQUIRE)
-        Log.log.log("Already required " + FileCommands.tryGetRelativePath(dep), Log.CORE);
-      Set<Path> cyclicAssumptions = this.getCyclicConsistentAssumtion(dep);
-      Set<Path> unitAssumptions = this.getCyclicConsistentAssumtion(source);
-      unitAssumptions.add(dep);
-      cyclicAssumptions.add(source);
-      cyclicAssumptions.addAll(unitAssumptions);
-      unitAssumptions.addAll(cyclicAssumptions);
-      return true;
-    }
-    return false;
-  }
-
-  public void beginRequire(Path dep) {
-    this.requireStack.push(dep);
+  @Override
+  protected Boolean push(Path dep) {
     if (LOG_REQUIRE)
       Log.log.beginTask("Require " + FileCommands.tryGetRelativePath(dep), Log.CORE);
+    return super.push(dep);
   }
 
-  public void finishRequire(Path source, Path dep) {
-    if (source != null) {
-      this.handleRequiredFinished(source, dep);
-    }
-    this.requireStack.pop();
+  @Override
+  public void pop(Path dep) {
+    super.pop(dep);
     if (LOG_REQUIRE)
       Log.log.endTask();
   }
 
-  private void handleRequiredFinished(Path dep, Path required) {
-    Set<Path> depAssumptions = this.getCyclicConsistentAssumtion(required);
-    this.getCyclicConsistentAssumtion(dep).addAll(depAssumptions);
-  }
-
   public void markConsistent(Path dep) {
     this.consistentUnits.add(dep);
+  }
+
+  @Override
+  protected Boolean cycleResult(Path call, Set<Path> scc) {
+    if (LOG_REQUIRE)
+      Log.log.log("Already required " + FileCommands.tryGetRelativePath(call), Log.CORE);
+    return true;
+  }
+
+  @Override
+  protected Boolean noCycleResult() {
+    return false;
   }
 
 }

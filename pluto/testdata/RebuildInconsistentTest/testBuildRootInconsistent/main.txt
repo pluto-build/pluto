@@ -1,6 +1,0 @@
-Main Content
-Dep:dep1.txt
-Dep:dep2.txt
-New content
-New content
-New content

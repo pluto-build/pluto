@@ -1,18 +1,15 @@
 package build.pluto.test.build;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assert.*;
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.AbsolutePath;
 import org.sugarj.common.path.Path;
+import org.sugarj.common.path.AbsolutePath;
 import org.sugarj.common.path.RelativePath;
 
 import build.pluto.builder.BuildCycleException;
@@ -96,36 +93,44 @@ public class BuildManagerCycleDetectionTest {
 	}
 
 	private RelativePath getDepPathWithNumber(int num) {
-		return new RelativePath(baseDir,"Test" + num + ".dep");
+		return new RelativePath(baseDir, "Test" + num + ".dep");
 	}
 
 	private RelativePath getPathWithNumber(int num) {
-		return new RelativePath(baseDir,"Test" + num + ".txt");
+		return new RelativePath(baseDir, "Test" + num + ".txt");
 	}
 
 	@Test
 	public void testCyclesDetected() throws IOException {
 
 		try {
-			BuildManager.build(new BuildRequest<Path, EmptyBuildOutput, TestBuilder, BuilderFactory<Path, EmptyBuildOutput, TestBuilder>>(
-					testFactory, getPathWithNumber(0)));
+			BuildManager
+					.build(new BuildRequest<Path, EmptyBuildOutput, TestBuilder, BuilderFactory<Path, EmptyBuildOutput, TestBuilder>>(
+							testFactory, getPathWithNumber(0)));
 		} catch (RequiredBuilderFailed e) {
 			assertTrue("Cause is not a cycle",
 					e.getCause() instanceof BuildCycleException);
 			BuildCycleException cycle = (BuildCycleException) e.getCause();
-			
-			assertEquals("Wrong cause path", getDepPathWithNumber(0), cycle.getCycleCause().getUnit().getPersistentPath());
-			
-			List<BuildRequirement<?>> cyclicUnits = cycle
-					.getCycleComponents();
+
+			assertEquals("Wrong cause path", getDepPathWithNumber(0), cycle
+					.getCycleCause().getPersistentPath());
+
+			List<BuildRequirement<?>> cyclicUnits = cycle.getCycleComponents();
 			assertEquals("Wrong number of units in cycle", 10,
 					cyclicUnits.size());
+
 			for (int i = 0; i < 10; i++) {
-				BuildRequirement<?> requirement = cyclicUnits
-						.get(i);
+				BuildRequirement<?> requirement = null;
+				for (BuildRequirement<?> req : cyclicUnits) {
+					if (req.unit.getPersistentPath().equals(
+							getDepPathWithNumber(i))) {
+						requirement = req;
+					}
+				}
 				assertTrue(requirement.unit != null);
 				assertEquals("Wrong persistence path for unit",
-						getDepPathWithNumber(i), requirement.unit.getPersistentPath());
+						getDepPathWithNumber(i),
+						requirement.unit.getPersistentPath());
 				assertEquals("Wrong factory for unit", testFactory,
 						requirement.req.factory);
 				assertEquals("Wrong input for unit", getPathWithNumber(i),

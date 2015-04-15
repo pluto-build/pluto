@@ -1,16 +1,5 @@
 package build.pluto.test.build;
 
-import static build.pluto.test.build.SimpleBuildUtilities.addInputFileContent;
-import static build.pluto.test.build.SimpleBuildUtilities.addInputFileDep;
-import static build.pluto.test.build.SimpleBuildUtilities.unitForFile;
-import static build.pluto.test.build.Validators.executedFilesOf;
-import static build.pluto.test.build.Validators.in;
-import static build.pluto.test.build.Validators.requiredFilesOf;
-import static build.pluto.test.build.Validators.validateThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -21,7 +10,13 @@ import org.sugarj.common.path.RelativePath;
 
 import build.pluto.BuildUnit;
 import build.pluto.output.None;
-import build.pluto.test.build.SimpleBuilder.TestBuilderInput;
+import build.pluto.test.build.once.SimpleBuilder;
+import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
+import build.pluto.test.build.once.SimpleRequirement;
+
+import static org.junit.Assert.*;
+import static build.pluto.test.build.once.SimpleBuildUtilities.*;
+import static build.pluto.test.build.Validators.*;
 
 public class RebuildInconsistentTest extends SimpleBuildTest{
 
@@ -44,8 +39,8 @@ public class RebuildInconsistentTest extends SimpleBuildTest{
 	
 
 	@Override
-	protected TestRequirement requirementForInput(TestBuilderInput input) {
-		return new TestRequirement(SimpleBuilder.factory, input);
+	protected SimpleRequirement requirementForInput(TestBuilderInput input) {
+		return new SimpleRequirement(SimpleBuilder.factory, input);
 	}
 
 	
