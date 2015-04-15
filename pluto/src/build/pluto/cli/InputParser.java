@@ -41,6 +41,15 @@ public class InputParser<In> {
         inputConstructor = (Constructor<In>) c;
     }
     
+    if (inputConstructor == null)
+      try { // try to use default constructor
+        inputConstructor = inputClass.getConstructor();
+      } catch (NoSuchMethodException | SecurityException e) {
+      }
+    
+    if (inputConstructor == null)
+      throw new IllegalArgumentException("Could not find callable constructor in class " + inputClass);
+    
     return inputConstructor;
   }
   
