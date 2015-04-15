@@ -6,8 +6,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
@@ -166,16 +168,22 @@ public class InputParser<In> {
   @SuppressWarnings("unchecked")
   private Object parseCollectionParamFromCommandLine(String opt, Class<?> paramClass, String[] vals) {
     if (paramClass.isArray()) {
-      Object[] ar = (Object[]) Array.newInstance(paramClass.getComponentType(), vals.length);
+      Object arObj = Array.newInstance(paramClass.getComponentType(), vals.length);
       for (int i = 0; i < vals.length; i++)
-        ar[i] = parseParamFromCommandLine(opt, paramClass.getComponentType(), new String[] {vals[i]});
-      return ar;
+        Array.set(arObj, i, parseParamFromCommandLine(opt, paramClass.getComponentType(), new String[] {vals[i]}));
+      return arObj;
     }
     
     if (Collection.class.isAssignableFrom(paramClass)) {
       Collection<Object> col;
+      
       try {
-        col = (Collection<Object>) paramClass.getConstructor().newInstance();
+        if (paramClass.equals(Collection.class) || paramClass.equals(List.class))
+          col = new ArrayList<>();
+        else if (paramClass.equals(Set.class))
+          col = new HashSet<>();
+        else
+          col = (Collection<Object>) paramClass.getConstructor().newInstance();
       } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
         try {
           col = (Collection<Object>) paramClass.getConstructor(int.class).newInstance(vals.length);
@@ -248,6 +256,10 @@ public class InputParser<In> {
       return null;
     
     Class<?> cl = elems.get(0).b;
+    if (cl.equals(Byte.class) || cl.equals(Short.class))
+      cl = Integer.class;
+    else if (cl.equals(Float.class))
+      cl = Double.class;
     
     for (int i = 1; i < elems.size(); i++) {
       Class<?> next = elems.get(i).b;
@@ -277,14 +289,14 @@ public class InputParser<In> {
 
   private Class<?> meetPrimitiveTypes(Class<?> cl1, Class<?> cl2) {
     if (cl1.equals(Short.class) && cl2.equals(Byte.class))
-      return Short.class;
+      return Integer.class;
     if (cl1.equals(Integer.class) && (cl2.equals(Byte.class) || cl2.equals(Short.class)))
         return Integer.class;
     if (cl1.equals(Long.class) && (cl2.equals(Byte.class) || cl2.equals(Short.class) || cl2.equals(Integer.class)))
-      return Integer.class;
-    if (cl1.equals(Float.class) || (cl2.equals(Byte.class) || cl2.equals(Short.class) || cl2.equals(Integer.class) || cl2.equals(Long.class)))
-      return Float.class;
-    if (cl1.equals(Double.class) || (cl2.equals(Byte.class) || cl2.equals(Short.class) || cl2.equals(Integer.class) || cl2.equals(Long.class) || cl2.equals(Float.class)))
+      return Long.class;
+    if (cl1.equals(Float.class) && (cl2.equals(Byte.class) || cl2.equals(Short.class) || cl2.equals(Integer.class) || cl2.equals(Long.class)))
+      return Double.class;
+    if (cl1.equals(Double.class) && (cl2.equals(Byte.class) || cl2.equals(Short.class) || cl2.equals(Integer.class) || cl2.equals(Long.class) || cl2.equals(Float.class)))
       return Double.class;
     
     return null;
