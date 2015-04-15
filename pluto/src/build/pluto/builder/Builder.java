@@ -2,7 +2,6 @@ package build.pluto.builder;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
 
 import org.sugarj.common.path.Path;

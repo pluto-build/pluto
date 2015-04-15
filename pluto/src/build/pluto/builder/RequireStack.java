@@ -14,20 +14,16 @@ import org.sugarj.common.path.Path;
 
 import build.pluto.util.UniteSets;
 
-public class RequireStack {
+public class RequireStack extends CycleDetectionStack<Path, Boolean> {
 
-  private Deque<Path> requireStack;
   private Set<Path> knownInconsistentUnits;
   private Set<Path> consistentUnits;
-  private UniteSets<Path> sccAssumedConsistent;
 
   private final boolean LOG_REQUIRE = false;
 
   public RequireStack() {
-    this.sccAssumedConsistent = new UniteSets<>();
     this.consistentUnits = new HashSet<>();
     this.knownInconsistentUnits = new HashSet<>();
-    this.requireStack = new LinkedList<>();
   }
 
   public void beginRebuild(Path dep) {
@@ -36,21 +32,22 @@ public class RequireStack {
       Log.log.log("Assumptions: " + printCyclicConsistentAssumtion(dep), Log.CORE);
     }
     this.knownInconsistentUnits.add(dep);
-    // TODO: Need to forget the scc where dep is in, because the graph structure may change?
-    for (Path assumed : this.requireStack) {
+    // TODO: Need to forget the scc where dep is in, because the graph structure
+    // may change?
+   // for (Path assumed : this.requireStack) {
       // This could be too strict
       // this.knownInconsistentUnits.add(assumed);
-      this.consistentUnits.remove(assumed);
-    }
+     // this.consistentUnits.remove(assumed);
+    //}
   }
-  
+
   private String printCyclicConsistentAssumtion(Path dep) {
-    UniteSets<Path>.Key key = this.sccAssumedConsistent.getSet(dep);
+    UniteSets<Path>.Key key = this.sccs.getSet(dep);
     if (key == null) {
       return "";
     }
     String s = "";
-    for (Path p : this.sccAssumedConsistent.getSetMembers(key)) {
+    for (Path p : this.sccs.getSetMembers(key)) {
       s += FileCommands.tryGetRelativePath(p) + ", ";
     }
     return s;
@@ -68,11 +65,11 @@ public class RequireStack {
   }
 
   private boolean isAssumtionKnownInconsistent(Path dep) {
-    UniteSets<Path>.Key key = this.sccAssumedConsistent.getSet(dep);
+    UniteSets<Path>.Key key = this.sccs.getSet(dep);
     if (key == null) {
       return false;
     }
-    for (Path p : this.sccAssumedConsistent.getSetMembers(key)) {
+    for (Path p : this.sccs.getSetMembers(key)) {
       if (this.knownInconsistentUnits.contains(p)) {
         return true;
       }
@@ -84,40 +81,34 @@ public class RequireStack {
     return this.consistentUnits.contains(dep);
   }
 
-  public boolean isAlreadyRequired(Path dep) {
-    if (this.requireStack.contains(dep)) {
-      if (LOG_REQUIRE)
-        Log.log.log("Already required " + FileCommands.tryGetRelativePath(dep), Log.CORE);
-      
-      // Union the sccs which are connected by a cycle
-      // In the cycle are all units from the top of the stack until the occurence of
-      // dep is found
-      UniteSets<Path>.Key scc = this.sccAssumedConsistent.getOrCreateSet(dep);
-      for (Path cycleDep : requireStack) { 
-        if (cycleDep.equals(dep)) {
-          break;
-        }
-        scc = this.sccAssumedConsistent.uniteOrAdd(scc, cycleDep);
-      }
-      return true;
-    }
-    return false;
-  }
-
-  public void beginRequire(Path dep) {
-    this.requireStack.push(dep);
+  @Override
+  protected Boolean push(Path dep) {
     if (LOG_REQUIRE)
       Log.log.beginTask("Require " + FileCommands.tryGetRelativePath(dep), Log.CORE);
+    return super.push(dep);
   }
 
-  public void finishRequire(Path dep) {
-    this.requireStack.pop();
+  @Override
+  public void pop(Path dep) {
+    super.pop(dep);
     if (LOG_REQUIRE)
       Log.log.endTask();
   }
 
   public void markConsistent(Path dep) {
     this.consistentUnits.add(dep);
+  }
+
+  @Override
+  protected Boolean cycleResult(Path call, Set<Path> scc) {
+    if (LOG_REQUIRE)
+      Log.log.log("Already required " + FileCommands.tryGetRelativePath(call), Log.CORE);
+    return true;
+  }
+
+  @Override
+  protected Boolean noCycleResult() {
+    return false;
   }
 
 }

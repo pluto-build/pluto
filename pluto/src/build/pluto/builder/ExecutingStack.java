@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.sugarj.common.FileCommands;
 
@@ -11,50 +12,25 @@ import build.pluto.BuildUnit;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.util.UniteSets;
 
-public class ExecutingStack {
-
-  private List<BuildUnit<?>> requireCallStack = new ArrayList<>();
+public class ExecutingStack extends CycleDetectionStack<BuildUnit<?>, Void>{
   
-  private UniteSets<BuildUnit<?>> sccs = new UniteSets<>();
-  
-  protected void push(BuildUnit<?> unit) throws IOException{
-    int index = this.requireCallStack.indexOf(unit);
-    if (index != -1) {
-      UniteSets<BuildUnit<?>>.Key scc = sccs.getOrCreateSet(unit);     
-      // All units on the cyclic stack area are in one scc, this may merge existing ones
-      for (int i = index; scc != null && i < requireCallStack.size(); i ++) {
-        scc = sccs.uniteOrAdd(scc, requireCallStack.get(i));
-      }
-      
-      // Get all elements of the scc
-      List<BuildRequirement<?>>  cycleComponents = new ArrayList<>();
-      for (BuildUnit<?> p : sccs.getSetMembers(scc)) {
-        cycleComponents.add(requirementForEntry(p));
-      }
-      
-      BuildCycleException ex = new BuildCycleException("Build contains a dependency cycle on " + FileCommands.tryGetRelativePath(unit.getPersistentPath()), unit, cycleComponents);
-     throw ex;
+  protected Void cycleResult(BuildUnit<?> unit, Set<BuildUnit<?>> scc) {
+ // Get all elements of the scc
+    List<BuildRequirement<?>>  cycleComponents = new ArrayList<>();
+    for (BuildUnit<?> p : scc) {
+      cycleComponents.add(requirementForEntry(p));
     }
-    this.requireCallStack.add(unit);
+    
+    BuildCycleException ex = new BuildCycleException("Build contains a dependency cycle on " + FileCommands.tryGetRelativePath(unit.getPersistentPath()), unit, cycleComponents);
+   throw ex;
+  }
+  protected Void noCycleResult() {
+    return null;
   }
   
-  public int getNumContains(BuildUnit<?> path) {
-    int num = 0;
-    for (BuildUnit<?> p  : requireCallStack) {
-      if (p == path) {
-        num ++;
-      }
-    }
-    return num;
-  }
   
-  private <Out extends Serializable> BuildRequirement<Out> requirementForEntry(BuildUnit<Out> unit) throws IOException{
+  private <Out extends Serializable> BuildRequirement<Out> requirementForEntry(BuildUnit<Out> unit) {
     return new BuildRequirement<>(unit, unit.getGeneratedBy());
-  }
-
-  protected void pop(BuildUnit<?> required) {
-    BuildUnit<?> poppedEntry = requireCallStack.remove(requireCallStack.size()-1);
-    assert poppedEntry == required : "Got the wrong build stack entry from the requires stack";
   }
 
 }

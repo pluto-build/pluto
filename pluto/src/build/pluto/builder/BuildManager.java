@@ -334,11 +334,8 @@ public class BuildManager extends BuildUnitProvider {
 
     // Need to check that before putting dep on the requires Stack because
     // otherwise dep has always been required
-    boolean alreadyRequired = false;
-    
-    alreadyRequired = requireStack.isAlreadyRequired(dep);
+    boolean alreadyRequired = requireStack.push(dep);
 
-    requireStack.beginRequire(dep);
     try {
       boolean localInconsistent = (requireStack.isKnownInconsistent(dep)) || (depResult == null) || (!depResult.getGeneratedBy().deepEquals(buildReq)) || (!depResult.isConsistentNonrequirements());
 
@@ -370,7 +367,8 @@ public class BuildManager extends BuildUnitProvider {
       requireStack.markConsistent(dep);
 
     } finally {
-      requireStack.finishRequire( dep);
+      if (!alreadyRequired)
+        requireStack.pop( dep);
     }
 
     return depResult;
