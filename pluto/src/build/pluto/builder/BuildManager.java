@@ -114,17 +114,7 @@ public class BuildManager extends BuildUnitProvider {
   // @formatter:on
   void setUpMetaDependency(Builder<In, Out> builder, BuildUnit<Out> depResult) throws IOException {
     if (depResult != null) {
-      // require the meta builder...
-      String className = builder.getClass().getName();
-      URL res = builder.getClass().getResource(className.substring(className.lastIndexOf(".") + 1) + ".class");
-      URL resFile = res;
-      // TODO support class ressources at different protocosl (bundle, http, jar)
-//      if (res.getProtocol().equals("file")) {
-//        resFile = res;
-//      } else {
-//        resFile = FileLocator.resolve(res);
-//      }
-      Path builderClass = new AbsolutePath(resFile.getFile());
+      Path builderClass = FileCommands.getRessourcePath(builder.getClass());
       depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
       
       Path depFile = Xattr.getDefault().getGenBy(builderClass);
@@ -161,7 +151,7 @@ public class BuildManager extends BuildUnitProvider {
       Log.log.beginTask(taskDescription, Log.CORE);
 
     depResult.setState(BuildUnit.State.IN_PROGESS);
-
+    
     try {
       try {
         // call the actual builder
@@ -188,7 +178,7 @@ public class BuildManager extends BuildUnitProvider {
     } finally {
       depResult.write();
       if (taskDescription != null)
-        Log.log.endTask();
+        Log.log.endTask(depResult.getState() == BuildUnit.State.SUCCESS);
 
       if (inputHash != DeepEquals.deepHashCode(builder.input))
         throw new AssertionError("API Violation detected: Builder mutated its input.");

@@ -99,7 +99,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
           throw new RequiredBuilderFailed(buildReq.factory.makeBuilder(buildReq.input), cycleUnit, e);
         } finally {
           
-          Log.log.endTask();
+          Log.log.endTask(cycleUnit.getState() == BuildUnit.State.SUCCESS);
         }
       } else {
         return this.parentManager.require(buildReq);
