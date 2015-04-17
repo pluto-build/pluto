@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.sugarj.common.FileCommands;
@@ -101,5 +102,27 @@ public class BuildFailureTest extends SimpleBuildTest {
     }
     
     validateThat(requiredFilesOf(manager).containsSameElements(mainFile, dep1File));
+  }
+  
+  @Test
+  public void testFailureAfterFailureBuild() throws IOException {
+    FileCommands.copyFile(dep1FileFail, dep1File);
+    TrackingBuildManager manager = new TrackingBuildManager();
+    boolean failed = false;
+    try {
+      buildMainFile(manager);
+    } catch (Exception e) {
+      failed = true;
+    }
+    Assert.assertTrue(failed);
+    
+    manager = new TrackingBuildManager();
+    failed = false;
+    try {
+      buildMainFile(manager);
+    } catch (Exception e) {
+      failed = true;
+    }
+    Assert.assertTrue(failed);
   }
 }

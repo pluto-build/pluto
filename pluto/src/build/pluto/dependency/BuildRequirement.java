@@ -39,7 +39,7 @@ public class BuildRequirement<Out extends Serializable> implements Requirement, 
   
   @Override
   public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException{
-    boolean wasFailed = hasFailed;
+    boolean wasFailed = hasFailed || unit != null && unit.hasFailed();
     BuildUnit<Out> newUnit = manager.require(this.req);
     hasFailed = newUnit.hasFailed();
 

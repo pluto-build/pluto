@@ -2,7 +2,6 @@ package build.pluto.builder;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,7 +9,6 @@ import java.util.Map;
 
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
-import org.sugarj.common.path.AbsolutePath;
 import org.sugarj.common.path.Path;
 
 import build.pluto.BuildUnit;
@@ -337,11 +335,11 @@ public class BuildManager extends BuildUnitProvider {
       }
 
       if (alreadyRequired) {
-        return depResult;
+        return yield(builder, depResult);
       }
 
       if (requireStack.isConsistent(dep))
-        return depResult;
+        return yield(builder, depResult);
 
       for (Requirement req : depResult.getRequirements()) {
         if (!req.isConsistentInBuild(this)) {
@@ -351,7 +349,7 @@ public class BuildManager extends BuildUnitProvider {
           // compiled now
           // TODO better remove that for security purpose?
           if (requireStack.isConsistent(dep))
-            return depResult;
+            return yield(builder, depResult);
         }
       }
       requireStack.markConsistent(dep);
@@ -361,8 +359,13 @@ public class BuildManager extends BuildUnitProvider {
         requireStack.pop( dep);
     }
 
-    return depResult;
-
+    return yield(builder, depResult);
+  }
+  
+  private <In extends Serializable, Out extends Serializable> BuildUnit<Out> yield(Builder<In, Out> builder, BuildUnit<Out> unit) {
+    if (unit.hasFailed())
+      throw new RequiredBuilderFailed(builder, unit, null);
+    return unit;
   }
 
   private <Out extends Serializable> BuildUnit<Out> assertConsistency(BuildUnit<Out> depResult) {
