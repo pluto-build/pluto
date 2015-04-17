@@ -166,14 +166,15 @@ public class BuildManager extends BuildUnitProvider {
     } catch (RequiredBuilderFailed e) {
       if (taskDescription != null)
         Log.log.logErr("Required builder failed", Log.CORE);
-      throw RequiredBuilderFailed.enqueueBuilder(e, depResult, builder);
+      throw e.enqueueBuilder(depResult, builder);
 
     } catch (Throwable e) {
-      depResult.setState(BuildUnit.State.FAILURE);
       Log.log.logErr(e.getClass() + ": " + e.getMessage(), Log.CORE);
       throw RequiredBuilderFailed.init(builder, depResult, e);
 
     } finally {
+      if (!depResult.isFinished())
+        depResult.setState(BuildUnit.State.FAILURE);
       depResult.write();
       if (taskDescription != null)
         Log.log.endTask(depResult.getState() == BuildUnit.State.SUCCESS);
@@ -323,6 +324,7 @@ public class BuildManager extends BuildUnitProvider {
     // Need to check that before putting dep on the requires Stack because
     // otherwise dep has always been required
     boolean alreadyRequired = requireStack.push(dep);
+    boolean executed = false;
 
     try {
       boolean localInconsistent = (requireStack.isKnownInconsistent(dep)) || (depResult == null) || (!depResult.getGeneratedBy().deepEquals(buildReq)) || (!depResult.isConsistentNonrequirements());
@@ -331,6 +333,7 @@ public class BuildManager extends BuildUnitProvider {
         // Local inconsistency should execute the builder regardless whether it
         // has been required to detect the cycle
         // TODO should inconsistent file requirements trigger the same, they should i think
+        executed = true;
         return executeBuilder(builder, dep, buildReq);
       }
 
@@ -343,6 +346,7 @@ public class BuildManager extends BuildUnitProvider {
 
       for (Requirement req : depResult.getRequirements()) {
         if (!req.isConsistentInBuild(this)) {
+          executed = true;
           return executeBuilder(builder, dep, buildReq);
         } else {
           // Could get consistent because it was part of a cycle which is
@@ -354,17 +358,32 @@ public class BuildManager extends BuildUnitProvider {
       }
       requireStack.markConsistent(dep);
 
+    } catch (RequiredBuilderFailed e) {
+      if (executed || e.getLastAddedBuilder().result.getPersistentPath().equals(depResult.getPersistentPath()))
+        throw e;
+
+      String desc = builder.description();
+      if (desc != null)
+        Log.log.log("Build was triggered by \"" + desc + "\"", Log.CORE);
+      throw e.enqueueBuilder(depResult, builder, false);
     } finally {
       if (!alreadyRequired)
-        requireStack.pop( dep);
+        requireStack.pop(dep);
+//      
+//      if (!executed && depResult.hasFailed()) {
+//        Log.log.log("Required builder \"" + builder.description() + "\" failed.", Log.CORE);
+//        throw new RequiredBuilderFailed(builder, depResult, "no rebuild of failing builder");
+//      }
     }
 
     return yield(builder, depResult);
   }
   
   private <In extends Serializable, Out extends Serializable> BuildUnit<Out> yield(Builder<In, Out> builder, BuildUnit<Out> unit) {
-    if (unit.hasFailed())
-      throw new RequiredBuilderFailed(builder, unit, null);
+    if (unit.hasFailed()) {
+      Log.log.log("Required builder \"" + builder.description() + "\" failed.", Log.CORE);
+      throw new RequiredBuilderFailed(builder, unit, "no rebuild of failing builder");
+    }
     return unit;
   }
 
@@ -381,7 +400,7 @@ public class BuildManager extends BuildUnitProvider {
 
     InconsistenyReason reason = depResult.isConsistentShallowReason(null);
     if (reason != InconsistenyReason.NO_REASON)
-      throw new AssertionError("Build manager does not guarantee soundness " + reason + " for " + FileCommands.tryGetRelativePath(depResult.getPersistentPath()));
+      throw new AssertionError("Build manager does not guarantee soundness, got consistency status " + reason + " for " + FileCommands.tryGetRelativePath(depResult.getPersistentPath()));
     return depResult;
   }
 

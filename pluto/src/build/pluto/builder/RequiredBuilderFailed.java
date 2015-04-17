@@ -26,7 +26,13 @@ public class RequiredBuilderFailed extends RuntimeException {
     builders.add(new BuilderResult(builder, result));
   }
   
-  public void addBuilder(Builder<?, ?> builder, BuildUnit<?> result) {
+  public RequiredBuilderFailed(Builder<?, ?> builder, BuildUnit<?> result, String message) {
+    super(message);
+    builders = new ArrayList<>();
+    builders.add(new BuilderResult(builder, result));
+  }
+  
+  private void addBuilder(Builder<?, ?> builder, BuildUnit<?> result) {
     builders.add(new BuilderResult(builder, result));
   }
   
@@ -41,16 +47,20 @@ public class RequiredBuilderFailed extends RuntimeException {
   @Override
   public String getMessage() {
     BuilderResult p = builders.get(0);
-    return "Required builder failed. Error occurred in build step \"" + p.builder.description() + (getCause() == null ? "" : "\": " + getCause().getMessage());
+    return "Required builder failed. Error occurred in build step \"" + p.builder.description() + "\": " + (getCause() == null ? super.getMessage() : getCause().getMessage());
   }
 
-  static RequiredBuilderFailed enqueueBuilder(RequiredBuilderFailed e, BuildUnit<?> depResult, Builder<?,?> builder) {
-    BuilderResult required = e.getLastAddedBuilder();
-    depResult.requires(required.result);
+  protected RequiredBuilderFailed enqueueBuilder(BuildUnit<?> depResult, Builder<?,?> builder) {
+    return enqueueBuilder(depResult, builder, true);
+  }
+  protected RequiredBuilderFailed enqueueBuilder(BuildUnit<?> depResult, Builder<?,?> builder, boolean addDependency) {
+    BuilderResult required = getLastAddedBuilder();
+    if (addDependency)
+      depResult.requires(required.result);
     depResult.setState(BuildUnit.State.FAILURE);
   
-    e.addBuilder(builder, depResult);
-    return e;
+    addBuilder(builder, depResult);
+    return this;
   }
   
   static RequiredBuilderFailed init(Builder<?, ?> builder, BuildUnit<?> result, Throwable cause) {
