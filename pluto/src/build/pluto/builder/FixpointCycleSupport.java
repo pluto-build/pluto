@@ -21,7 +21,7 @@ public class FixpointCycleSupport implements CycleSupport {
   public String getCycleDescription(BuildCycle cycle) {
     String cycleName = "Cycle ";
     for (BuildRequirement<?> req : cycle.getCycleComponents()) {
-      cycleName += req.req.createBuilder().description();
+      cycleName += req.getRequest().createBuilder().description();
     }
     return cycleName;
   }
@@ -30,7 +30,7 @@ public class FixpointCycleSupport implements CycleSupport {
   public boolean canCompileCycle(BuildCycle cycle) {
     for (BuildRequirement<?> req : cycle.getCycleComponents()) {
       for (BuilderFactory<?, ?, ?> supportedBuilder : supportedBuilders) {
-        if (req.req.factory == supportedBuilder){
+        if (req.getRequest().factory == supportedBuilder){
           return true;
         }
       }
@@ -51,13 +51,13 @@ public class FixpointCycleSupport implements CycleSupport {
         // CycleComponents are in order if which they were required
         // Require the first one which is not consistent to their input
         for (BuildRequirement<?> req : cycle.getCycleComponents())
-          if(!req.unit.isConsistentShallow(null)) {
+          if(!req.getUnit().isConsistentShallow(null)) {
             if (!logStarted) {
               Log.log.beginTask("Compile cycle iteration " + numInterations, Log.CORE);
               logStarted = true;
             }
             cycleConsistent = false;
-            cycleManager.require(req.req);
+            cycleManager.require(req.getRequest());
           }
 
       } finally {

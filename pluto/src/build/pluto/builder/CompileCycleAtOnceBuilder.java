@@ -103,11 +103,11 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   @Override
   public boolean canCompileCycle(BuildCycle cycle) {
     for (BuildRequirement<?> req : cycle.getCycleComponents()) {
-      if (req.req.factory != this.factory) {
+      if (req.getRequest().factory != this.factory) {
         System.out.println("Not the same factory");
         return false;
       }
-      if (!(req.req.input instanceof ArrayList<?>)) {
+      if (!(req.getRequest().input instanceof ArrayList<?>)) {
         System.out.println("No array list input");
         return false;
       }
@@ -121,8 +121,8 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
     ArrayList<In> inputs = new ArrayList<>();
     
      for (BuildRequirement<?> req : cycle.getCycleComponents()) {
-       cyclicResults.add((BuildUnit<Out>) req.unit);
-       inputs.addAll((ArrayList<In>) req.req.input);
+       cyclicResults.add((BuildUnit<Out>) req.getUnit());
+       inputs.addAll((ArrayList<In>) req.getRequest().input);
      }
      
      CompileCycleAtOnceBuilder<In, Out > newBuilder = factory.makeBuilder(inputs);
@@ -149,7 +149,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
     ArrayList<In> inputs = new ArrayList<>();
     
      for (BuildRequirement<?> req : cycle.getCycleComponents()) {
-       inputs.addAll((ArrayList<In>) req.req.input);
+       inputs.addAll((ArrayList<In>) req.getRequest().input);
      }
     CompileCycleAtOnceBuilder<In, Out > newBuilder = factory.makeBuilder(inputs);
     return newBuilder.description();

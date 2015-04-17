@@ -88,6 +88,9 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 		require(input.inputPath);
 		List<String> allLines = FileCommands.readFileLines(input.inputPath);
 
+		if (!allLines.isEmpty() && allLines.get(0).equals("#fail"))
+		  throw new RuntimeException("#fail detected in source file");
+		
 		List<String> contentLines = new ArrayList<String>();
 
 		for (String line : allLines) {

@@ -214,8 +214,8 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 	    requiredUnits = new HashSet<>();
 	    for (Requirement req : requirements)
 	      if (req instanceof BuildRequirement)
-	        if (((BuildRequirement<?>) req).unit != null) {
-	        requiredUnits.add(((BuildRequirement<?>) req).unit);
+	        if (((BuildRequirement<?>) req).getUnit() != null) {
+	        requiredUnits.add(((BuildRequirement<?>) req).getUnit());
 	        }
 	  }
 		return requiredUnits;

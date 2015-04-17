@@ -44,8 +44,8 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
     Path depPath = buildReq.createBuilder().persistentPath();
     for (BuildRequirement<?> req : this.cycle.getCycleComponents()) {
-      if (req.unit.getPersistentPath().equals(depPath)) {
-        return (BuildUnit<Out>) req.unit;
+      if (req.getUnit().getPersistentPath().equals(depPath)) {
+        return (BuildUnit<Out>) req.getUnit();
       }
     }
     return null;

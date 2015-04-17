@@ -20,7 +20,7 @@ public class MetaBuildRequirement<Out extends Serializable> extends BuildRequire
   @Override
   public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException{
     // try to set metaBuilding
-    IMetaBuildingEnabled meta = (IMetaBuildingEnabled)this.req.input;
+    IMetaBuildingEnabled meta = (IMetaBuildingEnabled)this.getRequest().input;
     if (meta != null)
     {
       meta.setMetaBuilding(true);
@@ -28,7 +28,7 @@ public class MetaBuildRequirement<Out extends Serializable> extends BuildRequire
       throw new IOException("Could not enable Metabuilding...");
     }
     
-    manager.require(this.req);
+    manager.require(this.getRequest());
     
    return true;
    

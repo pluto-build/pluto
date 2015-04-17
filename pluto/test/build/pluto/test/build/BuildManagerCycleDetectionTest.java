@@ -122,19 +122,19 @@ public class BuildManagerCycleDetectionTest {
 			for (int i = 0; i < 10; i++) {
 				BuildRequirement<?> requirement = null;
 				for (BuildRequirement<?> req : cyclicUnits) {
-					if (req.unit.getPersistentPath().equals(
+					if (req.getUnit().getPersistentPath().equals(
 							getDepPathWithNumber(i))) {
 						requirement = req;
 					}
 				}
-				assertTrue(requirement.unit != null);
+				assertTrue(requirement.getUnit() != null);
 				assertEquals("Wrong persistence path for unit",
 						getDepPathWithNumber(i),
-						requirement.unit.getPersistentPath());
+						requirement.getUnit().getPersistentPath());
 				assertEquals("Wrong factory for unit", testFactory,
-						requirement.req.factory);
+						requirement.getRequest().factory);
 				assertEquals("Wrong input for unit", getPathWithNumber(i),
-						requirement.req.input);
+						requirement.getRequest().input);
 			}
 		}
 

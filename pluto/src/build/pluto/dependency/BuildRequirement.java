@@ -12,15 +12,13 @@ import org.sugarj.common.path.Path;
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuildUnitProvider;
-import build.pluto.output.OutputStamp;
-
-import com.cedarsoftware.util.DeepEquals;
 
 public class BuildRequirement<Out extends Serializable> implements Requirement, Externalizable {
   private static final long serialVersionUID = 6148973732378610648L;
 
-  public BuildUnit<Out> unit;
-  public BuildRequest<?, Out, ?, ?> req;
+  private BuildUnit<Out> unit;
+  private boolean hasFailed;
+  private BuildRequest<?, Out, ?, ?> req;
 
   public BuildRequirement() {
 
@@ -40,8 +38,12 @@ public class BuildRequirement<Out extends Serializable> implements Requirement, 
   
   @Override
   public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException{
+    boolean wasFailed = hasFailed;
+    BuildUnit<Out> newUnit = manager.require(this.req);
+    hasFailed = newUnit.hasFailed();
 
-    manager.require(this.req);
+    if (wasFailed && !hasFailed)
+      return false;
     
    return true;
    
@@ -64,5 +66,13 @@ public class BuildRequirement<Out extends Serializable> implements Requirement, 
     Path unitPath = (Path) in.readObject();
     req = (BuildRequest<?, Out, ?, ?>) in.readObject();
     unit = BuildUnit.read(unitPath);
+  }
+
+  public BuildUnit<Out> getUnit() {
+    return unit;
+  }
+
+  public BuildRequest<?, Out, ?, ?> getRequest() {
+    return req;
   }
 }

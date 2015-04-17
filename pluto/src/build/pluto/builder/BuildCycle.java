@@ -58,7 +58,7 @@ public class BuildCycle {
 
   protected CycleSupport getCycleSupport() {
     for (BuildRequirement<?> requirement : this.getCycleComponents()) {
-      CycleSupport support = requirement.req.createBuilder().getCycleSupport();
+      CycleSupport support = requirement.getRequest().createBuilder().getCycleSupport();
       if (support != null && support.canCompileCycle(this)) {
         return support;
       }
