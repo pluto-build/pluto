@@ -14,8 +14,9 @@ import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuildUnitProvider;
 
 public class BuildRequirement<Out extends Serializable> implements Requirement, Externalizable {
-  private static final long serialVersionUID = 6148973732378610648L;
 
+  private static final long serialVersionUID = -5059819155907677962L;
+  
   private BuildUnit<Out> unit;
   private boolean hasFailed;
   private BuildRequest<?, Out, ?, ?> req;
@@ -57,6 +58,7 @@ public class BuildRequirement<Out extends Serializable> implements Requirement, 
   @Override
   public void writeExternal(ObjectOutput out) throws IOException {
     out.writeObject(unit.getPersistentPath());
+    out.writeBoolean(hasFailed);
     out.writeObject(req);
   }
 
@@ -64,6 +66,7 @@ public class BuildRequirement<Out extends Serializable> implements Requirement, 
   @SuppressWarnings("unchecked")
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     Path unitPath = (Path) in.readObject();
+    hasFailed = in.readBoolean();
     req = (BuildRequest<?, Out, ?, ?>) in.readObject();
     unit = BuildUnit.read(unitPath);
   }
