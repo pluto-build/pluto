@@ -294,11 +294,14 @@ public class BuildManager extends BuildUnitProvider {
       initialRequest = false;
       wasInitial = true;
     }
+    boolean successful = false;
     try {
-      return require(buildReq);
+      BuildUnit<Out> result = require(buildReq);
+      successful = !result.hasFailed();
+      return result;
     } finally {
       if (wasInitial) {
-        Log.log.endTask();
+        Log.log.endTask(successful);
         initialRequest = true;
       }
     }
@@ -364,7 +367,7 @@ public class BuildManager extends BuildUnitProvider {
 
       String desc = builder.description();
       if (desc != null)
-        Log.log.log("Build was triggered by \"" + desc + "\"", Log.CORE);
+        Log.log.log("Failing builder was required by \"" + desc + "\".", Log.CORE);
       throw e.enqueueBuilder(depResult, builder, false);
     } finally {
       if (!alreadyRequired)
@@ -381,8 +384,9 @@ public class BuildManager extends BuildUnitProvider {
   
   private <In extends Serializable, Out extends Serializable> BuildUnit<Out> yield(Builder<In, Out> builder, BuildUnit<Out> unit) {
     if (unit.hasFailed()) {
-      Log.log.log("Required builder \"" + builder.description() + "\" failed.", Log.CORE);
-      throw new RequiredBuilderFailed(builder, unit, "no rebuild of failing builder");
+      RequiredBuilderFailed e = new RequiredBuilderFailed(builder, unit, "no rebuild of failing builder");
+      Log.log.logErr(e.getMessage(), Log.CORE);
+      throw e;
     }
     return unit;
   }

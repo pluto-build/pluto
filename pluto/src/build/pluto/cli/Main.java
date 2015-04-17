@@ -22,6 +22,7 @@ import build.pluto.builder.BuildManager;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.RequiredBuilderFailed;
 
 public class Main {
 
@@ -82,8 +83,12 @@ public class Main {
       BuildManager.build(req);
       BuildUnit<?> unit = BuildManager.readResult(req);
       System.exit(unit.hasFailed() ? 1 : 0);
+    } catch (RequiredBuilderFailed e) {
+//      Log.log.logErr(e.getMessage(), Log.CORE);
+      System.exit(1);
     } catch (ParseException e) {
       showUsage(command, options);
+      System.exit(1);
     }
   }
 
