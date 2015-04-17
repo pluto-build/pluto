@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import build.pluto.BuildUnit;
-import build.pluto.BuildUnit.State;
 
 public class RequiredBuilderFailed extends RuntimeException {
   private static final long serialVersionUID = 3080806736856580512L;
@@ -42,7 +41,7 @@ public class RequiredBuilderFailed extends RuntimeException {
   @Override
   public String getMessage() {
     BuilderResult p = builders.get(0);
-    return "Required builder failed. Error occurred in build step \"" + p.builder.description() + "\": " + getCause().getMessage();
+    return "Required builder failed. Error occurred in build step \"" + p.builder.description() + (getCause() == null ? "" : "\": " + getCause().getMessage());
   }
 
   static RequiredBuilderFailed enqueueBuilder(RequiredBuilderFailed e, BuildUnit<?> depResult, Builder<?,?> builder) {
