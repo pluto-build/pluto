@@ -122,7 +122,8 @@ public class Main {
   private static void deleteFile(Path p, boolean dryRun) throws IOException {
     Log.log.log("Delete " + p + (dryRun ? " (dry run)" : ""), Log.CORE);
     if (!dryRun)
-      FileCommands.delete(p);
+      if (!p.getFile().isDirectory() || p.getFile().list().length == 0)
+        FileCommands.delete(p);
   }
 
 
