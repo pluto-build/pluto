@@ -115,6 +115,8 @@ public class Main {
   
   private static void clean(boolean dryRun, BuildRequest<?, ?, ?, ?> req) throws IOException {
     BuildUnit<?> unit = BuildManager.readResult(req);
+    if (unit == null)
+      return;
     Set<BuildUnit<?>> allUnits = unit.getTransitiveModuleDependencies();
     for (BuildUnit<?> next : allUnits) {
       for (Path p : next.getGeneratedFiles())
