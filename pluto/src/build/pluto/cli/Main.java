@@ -57,6 +57,8 @@ public class Main {
     options.addOption(cleanOption);
     Option dryCleanOption = new Option(null, "dry-clean", false, "Clean all generated artifacts (dry run)");
     options.addOption(dryCleanOption);
+    Option cleanBuildOption = new Option(null, "clean-build", false, "Clean all generated artifacts and build afterwards");
+    options.addOption(cleanBuildOption);
     
     
     InputParser<Serializable> inputParser = new InputParser<Serializable>(inputClass);
@@ -79,12 +81,14 @@ public class Main {
         clean(line.hasOption(dryCleanOption.getLongOpt()), req);
         return;
       }
+      if (line.hasOption(cleanBuildOption.getLongOpt()))
+        clean(false, req);
       
       BuildManager.build(req);
       BuildUnit<?> unit = BuildManager.readResult(req);
       System.exit(unit.hasFailed() ? 1 : 0);
     } catch (RequiredBuilderFailed e) {
-//      Log.log.logErr(e.getMessage(), Log.CORE);
+      e.printStackTrace();
       System.exit(1);
     } catch (ParseException e) {
       showUsage(command, options);
