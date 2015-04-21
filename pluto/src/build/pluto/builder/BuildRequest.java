@@ -1,6 +1,9 @@
 package build.pluto.builder;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.util.Objects;
 
 import build.pluto.output.OutputEqualStamper;
 import build.pluto.output.OutputStamper;
@@ -13,11 +16,11 @@ public class BuildRequest<
   B extends Builder<In, Out>,
   F extends BuilderFactory<In, Out, B>
 > implements Serializable {
-  private static final long serialVersionUID = -1598265221666746521L;
+  private static final long serialVersionUID = 6839071650576011805L;
   
   public final F factory;
   public final In input;
-  public final transient OutputStamper<? super Out> stamper;
+  public final OutputStamper<? super Out> stamper;
 
   public BuildRequest(F factory, In input) {
     this(factory, input, OutputEqualStamper.instance());
