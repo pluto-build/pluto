@@ -254,6 +254,7 @@ public class BuildManager extends BuildUnitProvider {
         throw new AssertionError("Cyclic builder does not provide a result for " + depResult.getPersistentPath());
       }
       tuple.setOutputToUnit();
+      requireStack.markConsistent(depResult.getPersistentPath());
     } else {
       depResult.setState(State.FAILURE);
     }
@@ -350,13 +351,12 @@ public class BuildManager extends BuildUnitProvider {
       for (Requirement req : depResult.getRequirements()) {
         if (!req.isConsistentInBuild(this)) {
           executed = true;
-          return executeBuilder(builder, dep, buildReq);
-        } else {
           // Could get consistent because it was part of a cycle which is
           // compiled now
           // TODO better remove that for security purpose?
           if (requireStack.isConsistent(dep))
             return yield(builder, depResult);
+          return executeBuilder(builder, dep, buildReq);
         }
       }
       requireStack.markConsistent(dep);
@@ -370,7 +370,7 @@ public class BuildManager extends BuildUnitProvider {
         Log.log.log("Failing builder was required by \"" + desc + "\".", Log.CORE);
       throw e.enqueueBuilder(depResult, builder, false);
     } finally {
-      if (!alreadyRequired)
+     // if (!alreadyRequired)
         requireStack.pop(dep);
 //      
 //      if (!executed && depResult.hasFailed()) {

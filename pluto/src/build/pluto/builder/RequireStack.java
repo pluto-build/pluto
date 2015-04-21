@@ -14,7 +14,7 @@ public class RequireStack extends CycleDetectionStack<Path, Boolean> {
   private Set<Path> knownInconsistentUnits;
   private Set<Path> consistentUnits;
 
-  private final boolean LOG_REQUIRE = false;
+  private final boolean LOG_REQUIRE = true;
 
   public RequireStack() {
     this.consistentUnits = new HashSet<>();
@@ -98,6 +98,7 @@ public class RequireStack extends CycleDetectionStack<Path, Boolean> {
   protected Boolean cycleResult(Path call, Set<Path> scc) {
     if (LOG_REQUIRE)
       Log.log.log("Already required " + FileCommands.tryGetRelativePath(call), Log.CORE);
+    this.callStack.add(call);
     return true;
   }
 

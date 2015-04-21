@@ -9,7 +9,7 @@ import build.pluto.util.UniteSets;
 
 public abstract class CycleDetectionStack<C, P> {
 
-private List<C> callStack = new ArrayList<>();
+ protected List<C> callStack = new ArrayList<>();
   
   protected UniteSets<C> sccs = new UniteSets<>();
   

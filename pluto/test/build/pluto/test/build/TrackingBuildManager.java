@@ -52,8 +52,8 @@ public class TrackingBuildManager extends BuildManager {
   		successfullyExecutedInputs.add(buildReq.input);
   		return result;
 		} catch (BuildCycleException e) {
-		  if (e.getCycleState() == CycleState.RESOLVED)
-		    successfullyExecutedInputs.add(buildReq.input);
+		//  if (e.getCycleState() == CycleState.RESOLVED)
+		 //   successfullyExecutedInputs.add(buildReq.input);
 		  throw e;
 		}
 	}
