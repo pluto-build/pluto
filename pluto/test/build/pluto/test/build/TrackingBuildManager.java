@@ -8,6 +8,8 @@ import java.util.List;
 import org.sugarj.common.path.Path;
 
 import build.pluto.BuildUnit;
+import build.pluto.builder.BuildCycleException;
+import build.pluto.builder.BuildCycleException.CycleState;
 import build.pluto.builder.BuildManager;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
@@ -45,9 +47,15 @@ public class TrackingBuildManager extends BuildManager {
   // @formatter:on
   BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 		executedInputs.add(buildReq.input);
-		BuildUnit<Out> result = super.executeBuilder(builder, dep, buildReq);
-		successfullyExecutedInputs.add(buildReq.input);
-		return result;
+		try {
+  		BuildUnit<Out> result = super.executeBuilder(builder, dep, buildReq);
+  		successfullyExecutedInputs.add(buildReq.input);
+  		return result;
+		} catch (BuildCycleException e) {
+		  if (e.getCycleState() == CycleState.RESOLVED)
+		    successfullyExecutedInputs.add(buildReq.input);
+		  throw e;
+		}
 	}
 
 	public List<Serializable> getRequiredInputs() {
