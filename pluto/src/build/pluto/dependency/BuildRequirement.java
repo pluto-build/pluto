@@ -12,6 +12,7 @@ import org.sugarj.common.path.Path;
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuildUnitProvider;
+import build.pluto.output.OutputStamp;
 
 public class BuildRequirement<Out extends Serializable> implements Requirement, Externalizable {
 
@@ -20,21 +21,28 @@ public class BuildRequirement<Out extends Serializable> implements Requirement, 
   private BuildUnit<Out> unit;
   private boolean hasFailed;
   private BuildRequest<?, Out, ?, ?> req;
+  private OutputStamp<? super Out> stamp;
 
-  public BuildRequirement() {
-
-  }
+  public BuildRequirement() { }
 
   public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req) {
     Objects.requireNonNull(unit);
     this.unit = unit;
     this.req = req;
+    this.stamp = req.stamper.stampOf(unit.getBuildResult());
   }
 
   @Override
   public boolean isConsistent() {
     boolean reqsEqual = unit.getGeneratedBy().deepEquals(req);
-    return reqsEqual;
+    if (!reqsEqual)
+      return false;
+    
+    boolean stampOK = stamp.equals(stamp.getStamper().stampOf(this.unit.getBuildResult()));
+    if (!stampOK)
+      return false;
+    
+    return true;
   }
   
   @Override
@@ -46,7 +54,11 @@ public class BuildRequirement<Out extends Serializable> implements Requirement, 
     if (wasFailed && !hasFailed)
       return false;
     
-   return true;
+    boolean stampOK = stamp.equals(stamp.getStamper().stampOf(newUnit.getBuildResult()));
+    if (!stampOK)
+      return false;
+    
+    return true;
    
   }
 
@@ -60,6 +72,7 @@ public class BuildRequirement<Out extends Serializable> implements Requirement, 
     out.writeObject(unit.getPersistentPath());
     out.writeBoolean(hasFailed);
     out.writeObject(req);
+    out.writeObject(stamp);
   }
 
   @Override
@@ -68,6 +81,7 @@ public class BuildRequirement<Out extends Serializable> implements Requirement, 
     Path unitPath = (Path) in.readObject();
     hasFailed = in.readBoolean();
     req = (BuildRequest<?, Out, ?, ?>) in.readObject();
+    stamp = (OutputStamp<? super Out>) in.readObject();
     unit = BuildUnit.read(unitPath);
   }
 

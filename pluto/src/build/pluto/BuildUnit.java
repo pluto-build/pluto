@@ -19,7 +19,6 @@ import org.sugarj.common.Log;
 import org.sugarj.common.path.Path;
 
 import build.pluto.builder.BuildRequest;
-import build.pluto.dependency.BuildOutputRequirement;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.FileRequirement;
 import build.pluto.dependency.IllegalDependencyException;
@@ -151,14 +150,12 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 	public <Out_ extends Serializable> void requires(BuildUnit<Out_> mod) {
 	  Objects.requireNonNull(mod);
 	  requirements.add(new BuildRequirement<Out_>(mod, mod.getGeneratedBy()));
-	  requirements.add(new BuildOutputRequirement<Out_>(mod, mod.generatedBy.stamper));
 	  requiredUnits.add(mod);
 	}
 	
 	public <Out_ extends Serializable> void requireMeta(BuildUnit<Out_> mod) {
 	  Objects.requireNonNull(mod);
 	  requirements.add(new MetaBuildRequirement<Out_>(mod, mod.getGeneratedBy()));
-	  requirements.add(new BuildOutputRequirement<Out_>(mod, mod.generatedBy.stamper));
     requiredUnits.add(mod);
 	}
 
@@ -395,8 +392,6 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 		  if (req instanceof FileRequirement && !((FileRequirement) req).isConsistent()) {
 		    return InconsistenyReason.FILES_NOT_CONSISTENT;
 		  }else if (req instanceof BuildRequirement && !((BuildRequirement<?>) req).isConsistent()) {
-		    return InconsistenyReason.DEPENDENCIES_INCONSISTENT;
-		  } else if (req instanceof BuildOutputRequirement && !req.isConsistent()) {
 		    return InconsistenyReason.DEPENDENCIES_INCONSISTENT;
 		  }
 		

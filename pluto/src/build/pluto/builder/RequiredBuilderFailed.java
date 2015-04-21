@@ -47,7 +47,7 @@ public class RequiredBuilderFailed extends RuntimeException {
   @Override
   public String getMessage() {
     BuilderResult p = builders.get(0);
-    return "Required builder failed. Error occurred in build step \"" + p.builder.description() + "\": " + (getCause() == null ? super.getMessage() : getCause().getMessage() + ".");
+    return "Required builder failed. Error occurred in build step \"" + p.builder.description() + "\": " + (getCause() == null ? super.getMessage() : getCause().getMessage());
   }
 
   protected RequiredBuilderFailed enqueueBuilder(BuildUnit<?> depResult, Builder<?,?> builder) {

@@ -17,7 +17,7 @@ public class BuildRequest<
   
   public final F factory;
   public final In input;
-  public final OutputStamper<? super Out> stamper;
+  public final transient OutputStamper<? super Out> stamper;
 
   public BuildRequest(F factory, In input) {
     this(factory, input, OutputEqualStamper.instance());
