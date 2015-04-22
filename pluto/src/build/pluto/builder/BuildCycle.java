@@ -7,32 +7,27 @@ import java.util.stream.Collectors;
 
 import org.sugarj.common.Log;
 
-import build.pluto.dependency.BuildRequirement;
-
 public class BuildCycle {
 
-  private Set<BuildRequirement<?>> cycle;
+  private Set<BuildRequest<?, ?, ?, ?>> cycle;
 
-  public BuildCycle(Set<BuildRequirement<?>> cycleComponents) {
+  public BuildCycle(Set<BuildRequest<?, ?, ?, ?>> cycleComponents) {
     super();
     this.cycle = cycleComponents;
   }
 
-  public Set<BuildRequirement<?>> getCycleComponents() {
+  public Set<BuildRequest<?, ?, ?, ?>> getCycleComponents() {
     return cycle;
   }
 
   protected Optional<CycleSupport> findCycleSupport() {
-    List<CycleSupport> matchingSupports = this.cycle.stream()
-      .map((BuildRequirement<?> req) -> req.getRequest().createBuilder().getCycleSupport())
-      .filter((CycleSupport c) -> c != null && c.canCompileCycle(this))
-      .collect(Collectors.toList());
+    List<CycleSupport> matchingSupports = this.cycle.stream().map((BuildRequest<?, ?, ?, ?> req) -> req.createBuilder().getCycleSupport()).filter((CycleSupport c) -> c != null && c.canCompileCycle(this)).collect(Collectors.toList());
 
     if (matchingSupports.size() > 1) {
-      Log.log.log("Found " + matchingSupports.size() +" matching cycle supports for cycle.", Log.CORE);
+      Log.log.log("Found " + matchingSupports.size() + " matching cycle supports for cycle.", Log.CORE);
     }
-    
-   return matchingSupports.stream().findAny();
+
+    return matchingSupports.stream().findAny();
   }
 
 }

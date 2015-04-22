@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
@@ -16,7 +15,6 @@ import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.InconsistenyReason;
 import build.pluto.BuildUnit.State;
 import build.pluto.builder.BuildCycleException.CycleState;
-import build.pluto.builder.BuildCycleResult.UnitResultTuple;
 import build.pluto.dependency.DuplicateBuildUnitPathException;
 import build.pluto.dependency.DuplicateFileGenerationException;
 import build.pluto.dependency.FileRequirement;
@@ -129,7 +127,7 @@ public class BuildManager extends BuildUnitProvider {
     setUpMetaDependency(builder, depResult);
     
     // First step: cycle detection
-    this.executingStack.push(depResult);
+    this.executingStack.push(buildReq);
 
     int inputHash = DeepEquals.deepHashCode(builder.input);
 
@@ -172,7 +170,7 @@ public class BuildManager extends BuildUnitProvider {
         throw new AssertionError("API Violation detected: Builder mutated its input.");
       assertConsistency(depResult);
 
-      this.executingStack.pop(depResult);
+      this.executingStack.pop(buildReq);
       this.requireStack.finishRebuild(dep);
     }
 
@@ -189,7 +187,7 @@ public class BuildManager extends BuildUnitProvider {
       return e;
     }
 
-    Log.log.log("Detected a dependency cycle with root " + e.getCycleCause().getPersistentPath(), Log.CORE);
+    Log.log.log("Detected a dependency cycle with root " + e.getCycleCause().createBuilder().persistentPath(), Log.CORE);
 
     e.setCycleState(CycleState.NOT_RESOLVED);
     BuildCycle cycle = new BuildCycle(e.getCycleComponents());
@@ -229,23 +227,24 @@ public class BuildManager extends BuildUnitProvider {
     // where normal
     // units are compiled too
 
+    Log.log.log("CycleCause: " + e.getCycleCause().input, Log.CORE);
     // Set the result to the unit
     if (e.getCycleState() == CycleState.RESOLVED) {
       if (e.getCycleResult() == null) {
         Log.log.log("Error: Cyclic builder does not provide a cycleResult " + e.hashCode(), Log.CORE);
         throw new AssertionError("Cyclic builder does not provide a cycleResult");
       }
-      UnitResultTuple<Out> tuple = e.getCycleResult().getUnitResult(depResult);
-      if (tuple == null) {
+      Out result = e.getCycleResult().getResult(buildReq);
+      if (result == null) {
         throw new AssertionError("Cyclic builder does not provide a result for " + depResult.getPersistentPath());
       }
-      tuple.setOutputToUnit();
+      depResult.setBuildResult(result);
       requireStack.markConsistent(depResult.getPersistentPath());
     } else {
       depResult.setState(State.FAILURE);
     }
     Log.log.log("Stopped because of cycle", Log.CORE);
-    if (e.isUnitFirstInvokedOn(depResult)) {
+    if (e.isUnitFirstInvokedOn(buildReq)) {
       if (e.getCycleState() != CycleState.RESOLVED) {
         Log.log.log("Unable to find builder which can compile the cycle", Log.CORE);
         // Cycle cannot be handled

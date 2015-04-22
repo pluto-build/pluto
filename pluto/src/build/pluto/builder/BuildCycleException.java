@@ -4,7 +4,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import build.pluto.BuildUnit;
-import build.pluto.dependency.BuildRequirement;
 
 public class BuildCycleException extends RuntimeException {
 
@@ -21,7 +20,7 @@ public class BuildCycleException extends RuntimeException {
   /**
    * The {@link BuildUnit} that caused the cycle.
    */
-  private final BuildUnit<?> cycleCause;
+  private final BuildRequest<?, ?, ?, ?> cycleCause;
   /**
    * The set 
    */
@@ -29,19 +28,19 @@ public class BuildCycleException extends RuntimeException {
   private CycleState cycleState = CycleState.UNHANDLED;
   private BuildCycleResult cycleResult = null;
 
-  public BuildCycleException(String message, BuildUnit<?> cycleCause, BuildCycle cycle) {
+  public BuildCycleException(String message, BuildRequest<?, ?, ?, ?> cycleCause, BuildCycle cycle) {
     super(message);
     Objects.requireNonNull(cycleCause);
     this.cycleCause = cycleCause;
     this.cycle = cycle;
   }
 
-  public Set<BuildRequirement<?>> getCycleComponents() {
+  public Set<BuildRequest<?, ?, ?, ?>> getCycleComponents() {
     return cycle.getCycleComponents();
   }
 
-  public boolean isUnitFirstInvokedOn(BuildUnit<?> unit) {
-    return cycleCause == unit;
+  public boolean isUnitFirstInvokedOn(BuildRequest<?, ?, ?, ?> unit) {
+    return cycleCause.equals(unit);
   }
 
   public void setCycleState(CycleState cycleState) {
@@ -52,7 +51,7 @@ public class BuildCycleException extends RuntimeException {
     return cycleState;
   }
 
-  public BuildUnit<?> getCycleCause() {
+  public BuildRequest<?, ?, ?, ?> getCycleCause() {
     return cycleCause;
   }
   
