@@ -14,9 +14,6 @@ import java.util.Set;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.sugarj.common.path.AbsolutePath;
-import org.sugarj.common.path.Path;
-import org.sugarj.common.path.RelativePath;
 import org.sugarj.common.util.Pair;
 
 public class InputParser<In> {
@@ -155,12 +152,8 @@ public class InputParser<In> {
     // selected class types
     if (paramClass.equals(String.class))
       return val;
-    if (paramClass.equals(AbsolutePath.class))
-      return new AbsolutePath(val);
-    if (paramClass.equals(Path.class) && AbsolutePath.acceptable(val))
-      return new AbsolutePath(val);
-    if (paramClass.equals(Path.class) || paramClass.equals(RelativePath.class))
-      return new RelativePath(new AbsolutePath("."), val);
+    if (paramClass.equals(File.class))
+      return new File(val);
     
     throw new UnsupportedOperationException("Cannot parse value of type " + pretty(paramClass) + " for option " + opt);
   }
@@ -238,12 +231,12 @@ public class InputParser<In> {
     
     
     // selected class types
-    if (AbsolutePath.acceptable(s))
-      return Pair.create(new AbsolutePath(s), AbsolutePath.class);
+    if (new File(s).isAbsolute())
+      return Pair.create(new File(s), File.class);
     if (new File(s).exists())
-      return Pair.create(new RelativePath(new AbsolutePath("."), s), RelativePath.class);
+      return Pair.create(new File("./" + s), File.class);
     if (s.matches("^([\\w\\.\\-\\$]+[/\\])*[\\w\\.\\-\\$]+$"))
-      return Pair.create(new RelativePath(new AbsolutePath("."), s), RelativePath.class);
+      return Pair.create(new File("./" + s), File.class);
     
     // character types
     if (s.length() == 1)

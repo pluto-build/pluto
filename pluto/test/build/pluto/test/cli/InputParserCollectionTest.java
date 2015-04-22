@@ -4,6 +4,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -16,13 +17,11 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.sugarj.common.path.AbsolutePath;
-import org.sugarj.common.path.Path;
+
+import build.pluto.cli.InputParser;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-
-import build.pluto.cli.InputParser;
 
 public class InputParserCollectionTest {
 
@@ -47,16 +46,16 @@ public class InputParserCollectionTest {
   public static class Collections {
     public Collections() {
     }
-    public Collections(int[] foo1, Path[] foo2, ArrayList<Integer> foo3, Set<Path> foo4) {
+    public Collections(int[] foo1, File[] foo2, ArrayList<Integer> foo3, Set<File> foo4) {
       this.foo1 = foo1;
       this.foo2 = foo2;
       this.foo3 = foo3;
       this.foo4 = foo4;
     }
     private int[] foo1;
-    private Path[] foo2;
+    private File[] foo2;
     private ArrayList<Integer> foo3;
-    private Set<Path> foo4;
+    private Set<File> foo4;
   }
   
   @Test
@@ -106,7 +105,7 @@ public class InputParserCollectionTest {
     assertNotNull(prim);
     Collections empty = new Collections();
     assertArrayEquals(new int[]{101, 102}, prim.foo1);
-    assertArrayEquals(new Path[]{new AbsolutePath("/tmp/foobar")}, prim.foo2);
+    assertArrayEquals(new File[]{new File("/tmp/foobar")}, prim.foo2);
     assertEquals(empty.foo3, prim.foo3);
     assertEquals(empty.foo4, prim.foo4);
   }
@@ -117,7 +116,7 @@ public class InputParserCollectionTest {
     assertNotNull(prim);
     Collections empty = new Collections();
     assertArrayEquals(new int[]{101, 102}, prim.foo1);
-    assertArrayEquals(new Path[]{new AbsolutePath("/tmp/foobar"), new AbsolutePath("/tmp/foobar2")}, prim.foo2);
+    assertArrayEquals(new File[]{new File("/tmp/foobar"), new File("/tmp/foobar2")}, prim.foo2);
     assertEquals(empty.foo3, prim.foo3);
     assertEquals(empty.foo4, prim.foo4);
   }
@@ -152,7 +151,7 @@ public class InputParserCollectionTest {
     assertArrayEquals(empty.foo1, prim.foo1);
     assertArrayEquals(empty.foo2, prim.foo2);
     assertEquals(Lists.newArrayList(101, 1020), prim.foo3);
-    assertEquals(Sets.newHashSet(new AbsolutePath("/tmp/foobar")), prim.foo4);
+    assertEquals(Sets.newHashSet(new File("/tmp/foobar")), prim.foo4);
   }
   
   @Test
@@ -163,6 +162,6 @@ public class InputParserCollectionTest {
     assertArrayEquals(empty.foo1, prim.foo1);
     assertArrayEquals(empty.foo2, prim.foo2);
     assertEquals(Lists.newArrayList(101, 1020), prim.foo3);
-    assertEquals(Sets.newHashSet(new AbsolutePath("/tmp/foobar"), new AbsolutePath("/tmp/foobar2")), prim.foo4);
+    assertEquals(Sets.newHashSet(new File("/tmp/foobar"), new File("/tmp/foobar2")), prim.foo4);
   }
 }

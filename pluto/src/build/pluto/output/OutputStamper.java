@@ -5,6 +5,6 @@ import java.io.Serializable;
 /**
  * @author Sebastian Erdweg
  */
-public interface OutputStamper<Out extends Serializable> extends Serializable {
-  public OutputStamp<Out> stampOf(Out p);
+public interface OutputStamper<OutT extends Serializable> extends Serializable {
+  public OutputStamp<OutT> stampOf(OutT p);
 }
