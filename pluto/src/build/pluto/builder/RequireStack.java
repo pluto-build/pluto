@@ -1,7 +1,6 @@
 package build.pluto.builder;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -84,7 +83,7 @@ public class RequireStack extends CycleDetectionStack<AbsoluteComparedFile, Bool
   
   @Override
   protected Boolean push(AbsoluteComparedFile dep) {
-    Log.log.beginTask("Require " + dep, Log.DETAIL);
+    Log.log.beginTask("Require " + dep.getFile(), Log.DETAIL);
     return super.push(dep);
   }
   
@@ -104,7 +103,7 @@ public class RequireStack extends CycleDetectionStack<AbsoluteComparedFile, Bool
 
   @Override
   protected Boolean cycleResult(AbsoluteComparedFile call, Set<AbsoluteComparedFile> scc) {
-    Log.log.log("Already required " + call, Log.DETAIL);
+    Log.log.log("Already required " + call.getFile(), Log.DETAIL);
     this.callStack.add(call);
     return true;
   }
