@@ -1,6 +1,5 @@
 package build.pluto.builder;
 
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +7,7 @@ import java.util.Map;
 import build.pluto.BuildUnit;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.output.Output;
+import build.pluto.util.AbsoluteComparedFile;
 
 public class BuildCycle {
   
@@ -26,15 +26,15 @@ public class BuildCycle {
       }
     }
     
-    private Map<Path, UnitResultTuple<?>> cycleOutputs = new HashMap<>();
+    private Map<AbsoluteComparedFile, UnitResultTuple<?>> cycleOutputs = new HashMap<>();
     
     
     public <Out extends Output> void setBuildResult(BuildUnit<Out> unit, Out result) {
-      this.cycleOutputs.put(unit.getPersistentPath().toPath().toAbsolutePath(), new UnitResultTuple<Out>(unit, result));
+      this.cycleOutputs.put(AbsoluteComparedFile.absolute(unit.getPersistentPath()), new UnitResultTuple<Out>(unit, result));
     }
     
     public <Out extends Output>  UnitResultTuple<Out> getUnitResult(BuildUnit<Out> unit) {
-      UnitResultTuple<Out> tuple = (UnitResultTuple<Out>) this.cycleOutputs.get(unit.getPersistentPath().toPath().toAbsolutePath());
+      UnitResultTuple<Out> tuple = (UnitResultTuple<Out>) this.cycleOutputs.get(AbsoluteComparedFile.absolute(unit.getPersistentPath()));
       return tuple;
     }
     

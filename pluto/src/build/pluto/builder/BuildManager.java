@@ -3,7 +3,6 @@ package build.pluto.builder;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,7 +19,6 @@ import build.pluto.builder.BuildCycleException.CycleState;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
-import build.pluto.stamp.Stamp;
 import build.pluto.xattr.Xattr;
 
 import com.cedarsoftware.util.DeepEquals;
@@ -31,20 +29,16 @@ public class BuildManager extends BuildUnitProvider {
 
   private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
 
-  public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
-    return build(buildReq, null);
-  }
-
   public static <Out extends Output> BuildUnit<Out> readResult(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
-    return BuildUnit.read(buildReq.createBuilder().persistentPath().toFile());
+    return BuildUnit.read(buildReq.createBuilder().persistentPath());
   }
 
-  public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq, Map<? extends Path, Stamp> editedSourceFiles) {
+  public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
     boolean freshManager = manager == null;
     if (freshManager) {
-      manager = new BuildManager(editedSourceFiles);
+      manager = new BuildManager();
       activeManagers.put(current, manager);
     }
 
@@ -60,15 +54,11 @@ public class BuildManager extends BuildUnitProvider {
   }
 
   public static <Out extends Output> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs) {
-    return buildAll(buildReqs, null);
-  }
-
-  public static <Out extends Output> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs, Map<? extends Path, Stamp> editedSourceFiles) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
     boolean freshManager = manager == null;
     if (freshManager) {
-      manager = new BuildManager(editedSourceFiles);
+      manager = new BuildManager();
       activeManagers.put(current, manager);
     }
 
@@ -89,14 +79,12 @@ public class BuildManager extends BuildUnitProvider {
     }
   }
 
-  private final Map<? extends Path, Stamp> editedSourceFiles;
   private ExecutingStack executingStack;
   private transient RequireStack requireStack;
   private transient boolean initialRequest = true;
   private transient DynamicAnalysis analysis;
 
-  protected BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
-    this.editedSourceFiles = editedSourceFiles;
+  protected BuildManager() {
     this.executingStack = new ExecutingStack();
     // this.consistencyManager = new ConsistencyManager();
     this.analysis = new DynamicAnalysis();
@@ -110,15 +98,15 @@ public class BuildManager extends BuildUnitProvider {
   // @formatter:on
   void setUpMetaDependency(Builder<In, Out> builder, BuildUnit<Out> depResult) throws IOException {
     if (depResult != null) {
-      Path builderClass = FileCommands.getRessourcePath(builder.getClass());
+      File builderClass = FileCommands.getRessourcePath(builder.getClass()).toFile();
       
-      Path depFile = BuildManager.xattr.getGenBy(builderClass);
-      if (FileCommands.exists(depFile)) {
-        BuildUnit<Output> metaBuilder = BuildUnit.read(depFile.toFile());
+      File depFile = Xattr.getDefault().getGenBy(builderClass);
+      if (depFile != null && depFile.exists()) {
+        BuildUnit<Output> metaBuilder = BuildUnit.read(depFile);
         depResult.requireMeta(metaBuilder);
       }
       
-      depResult.requires(builderClass.toFile(), LastModifiedStamper.instance.stampOf(builderClass.toFile()));
+      depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
     }
   }
 
@@ -317,7 +305,7 @@ public class BuildManager extends BuildUnitProvider {
   BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     Builder<In, Out> builder = buildReq.createBuilder();
-    File dep = builder.persistentPath().toFile();
+    File dep = builder.persistentPath();
     BuildUnit<Out> depResult = BuildUnit.read(dep);
 
     // Dont execute require because it is cyclic, requireStack keeps track of
@@ -390,13 +378,13 @@ public class BuildManager extends BuildUnitProvider {
   }
 
   private <Out extends Output> void assertConsistency(BuildUnit<Out> depResult) {
-    assert depResult.isConsistentShallowReason(null) != InconsistenyReason.NO_REASON 
+    assert depResult.isConsistentShallowReason(null) == InconsistenyReason.NO_REASON 
          : "Build manager does not guarantee soundness, got consistency status " + depResult.isConsistentShallowReason(null) + " for " + depResult.getPersistentPath();
   }
 
   private void resetGenBy(BuildUnit<?> depResult) throws IOException {
     if (depResult != null)
       for (File f : depResult.getGeneratedFiles())
-        BuildManager.xattr.removeGenBy(f.toPath());
+        BuildManager.xattr.removeGenBy(f);
   }
 }

@@ -21,7 +21,7 @@ public class TrackingBuildManager extends BuildManager {
 	private List<Serializable> successfullyExecutedInputs = new ArrayList<>();
 
 	public TrackingBuildManager() {
-		super(null);
+		super();
 	}
 
 	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(

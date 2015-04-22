@@ -6,15 +6,12 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.AbsolutePath;
-import org.sugarj.common.path.RelativePath;
 
 import build.pluto.builder.BuildCycleException;
 import build.pluto.builder.BuildManager;
@@ -26,15 +23,16 @@ import build.pluto.dependency.BuildRequirement;
 import build.pluto.stamp.FileHashStamper;
 import build.pluto.stamp.Stamper;
 import build.pluto.test.EmptyBuildOutput;
+import build.pluto.util.AbsoluteComparedFile;
 
 public class BuildManagerCycleDetectionTest {
 	
-	private static Path baseDir = Paths.get("testdata/CycleDetectionTest/").toAbsolutePath();
+	private static File baseDir = new File("testdata/CycleDetectionTest/");
 	
 	@Before
 	public void emptyDir() throws IOException{
-		FileCommands.delete(baseDir);
-		FileCommands.createDir(baseDir);
+		FileCommands.delete(baseDir.toPath());
+		FileCommands.createDir(baseDir.toPath());
 	}
 
 	public static final BuilderFactory<File, EmptyBuildOutput, TestBuilder> testFactory = new BuilderFactory<File, EmptyBuildOutput, TestBuilder>() {
@@ -60,8 +58,8 @@ public class BuildManagerCycleDetectionTest {
 		}
 
 		@Override
-		protected Path persistentPath() {
-			return FileCommands.replaceExtension(input.toPath(),"dep");
+		protected File persistentPath() {
+			return FileCommands.replaceExtension(input.toPath(),"dep").toFile();
 		}
 
 		@Override
@@ -71,7 +69,7 @@ public class BuildManagerCycleDetectionTest {
 
 		@Override
 		protected EmptyBuildOutput build() throws IOException {
-			Path req;
+			File req;
 			int number = 0;
 			String inputWithoutExt = FileCommands.dropExtension(input
 					.getAbsolutePath());
@@ -86,22 +84,22 @@ public class BuildManagerCycleDetectionTest {
 			if (number == 10) {
 				number = 0;
 			}
-			req = Paths.get(inputWithoutExt.substring(0,
+			req = new File(inputWithoutExt.substring(0,
 					inputWithoutExt.length() - 1)
 					+ number + ".txt");
 
-			requireBuild(testFactory, req.toFile());
+			requireBuild(testFactory, req);
 			return EmptyBuildOutput.instance;
 		}
 
 	}
 
 	private File getDepPathWithNumber(int num) {
-		return baseDir.resolve("Test" + num + ".dep").toFile();
+		return new File(baseDir, "Test" + num + ".dep");
 	}
 
 	private File getPathWithNumber(int num) {
-		return baseDir.resolve("Test" + num + ".txt").toFile();
+		return new File(baseDir, "Test" + num + ".txt");
 	}
 
 	@Test
@@ -126,19 +124,20 @@ public class BuildManagerCycleDetectionTest {
 			for (int i = 0; i < 10; i++) {
 				BuildRequirement<?> requirement = null;
 				for (BuildRequirement<?> req : cyclicUnits) {
-					if (req.getUnit().getPersistentPath().equals(
+					if (AbsoluteComparedFile.equals(req.getUnit().getPersistentPath(),
 							getDepPathWithNumber(i))) {
 						requirement = req;
 					}
 				}
+				assertTrue("No requirement for " + i, requirement != null);
 				assertTrue(requirement.getUnit() != null);
-				assertEquals("Wrong persistence path for unit",
+				assertTrue("Wrong persistence path for unit", AbsoluteComparedFile.equals(
 						getDepPathWithNumber(i),
-						requirement.getUnit().getPersistentPath());
+						requirement.getUnit().getPersistentPath()));
 				assertEquals("Wrong factory for unit", testFactory,
 						requirement.getRequest().factory);
-				assertEquals("Wrong input for unit", getPathWithNumber(i),
-						requirement.getRequest().input);
+				assertTrue("Wrong input for unit", AbsoluteComparedFile.equals(getPathWithNumber(i),
+						(File) requirement.getRequest().input));
 			}
 		}
 

@@ -3,7 +3,6 @@ package build.pluto.builder;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Path;
 import java.util.Collection;
 
 import build.pluto.BuildUnit;
@@ -34,7 +33,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    */
   protected abstract String description();
   
-  protected abstract Path persistentPath();
+  protected abstract File persistentPath();
   
   protected abstract Out build() throws Throwable;
 

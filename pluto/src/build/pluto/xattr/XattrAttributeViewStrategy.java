@@ -1,29 +1,28 @@
 package build.pluto.xattr;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import java.nio.file.Path;
-
 public class XattrAttributeViewStrategy implements XattrStrategy {
 
   @Override
-  public void setXattr(Path p, String key, String value) throws IOException {
-    Files.setAttribute(p, "user:" + Xattr.PREFIX + ":" + key, value);
+  public void setXattr(File p, String key, String value) throws IOException {
+    Files.setAttribute(p.toPath(), "user:" + Xattr.PREFIX + ":" + key, value);
   }
   
   @Override
-  public void removeXattr(Path p, String key) throws IOException {
-    Files.setAttribute(p, "user:" + Xattr.PREFIX + ":" + key, null);
+  public void removeXattr(File p, String key) throws IOException {
+    Files.setAttribute(p.toPath(), "user:" + Xattr.PREFIX + ":" + key, null);
   }
 
   @Override
-  public String getXattr(Path p, String key) throws IOException {
+  public String getXattr(File p, String key) throws IOException {
     try {
-      Object val = Files.getAttribute(p, "user:" + Xattr.PREFIX + ":" + key);
+      Object val = Files.getAttribute(p.toPath(), "user:" + Xattr.PREFIX + ":" + key);
       if (val == null || !(val instanceof String))
         return null;
       return (String) val;
@@ -33,8 +32,8 @@ public class XattrAttributeViewStrategy implements XattrStrategy {
   }
 
   @Override
-  public Map<String, String> getAllXattr(Path p) throws IOException {
-    Map<String, Object> vals = Files.readAttributes(p, Xattr.PREFIX + ":*");
+  public Map<String, String> getAllXattr(File p) throws IOException {
+    Map<String, Object> vals = Files.readAttributes(p.toPath(), Xattr.PREFIX + ":*");
     Map<String, String> attrs = new HashMap<>();
     for (Entry<String, Object> e : vals.entrySet()) {
       if (e.getValue() != null && e.getValue() instanceof String)

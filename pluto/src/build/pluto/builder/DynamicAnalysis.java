@@ -2,7 +2,6 @@ package build.pluto.builder;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -76,9 +75,9 @@ public class DynamicAnalysis {
       else if (req instanceof FileRequirement) {
         File file = ((FileRequirement) req).file;
         if (file.exists()) {
-          Path dep = null;
+          File dep = null;
           try {
-            dep = BuildManager.xattr.getGenBy(file.toPath());
+            dep = BuildManager.xattr.getGenBy(file);
           } catch (IOException e) {
             Log.log.log("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, Log.IMPORT);
           }
@@ -109,9 +108,9 @@ public class DynamicAnalysis {
   
   
   private static class IsConnectedTo implements ModuleVisitor<Boolean> {
-    private final Path requiredUnit;
+    private final File requiredUnit;
     
-    public IsConnectedTo(Path requiredUnit) {
+    public IsConnectedTo(File requiredUnit) {
       this.requiredUnit = Objects.requireNonNull(requiredUnit);
     }
     

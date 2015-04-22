@@ -37,7 +37,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
     return this;
   }
 
-  protected abstract Path singletonPersistencePath(In input);
+  protected abstract File singletonPersistencePath(In input);
 
   private List<BuildUnit<Out>> cyclicResults;
   
@@ -81,7 +81,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   }
 
   @Override
-  protected Path persistentPath() {
+  protected File persistentPath() {
     if (this.input.size() == 1) {
       return this.singletonPersistencePath(this.input.get(0));
     } else {

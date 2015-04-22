@@ -1,8 +1,8 @@
 package build.pluto.builder;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -13,6 +13,7 @@ import build.pluto.BuildUnit.State;
 import build.pluto.builder.BuildCycle.Result;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.output.Output;
+import build.pluto.util.AbsoluteComparedFile;
 
 public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
@@ -42,9 +43,9 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
   private <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> getBuildUnitInCycle(BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
-    Path depPath = buildReq.createBuilder().persistentPath();
+    File depPath = buildReq.createBuilder().persistentPath();
     for (BuildRequirement<?> req : this.cycle.getCycleComponents()) {
-      if (req.getUnit().getPersistentPath().getAbsoluteFile().equals(depPath.toFile().getAbsoluteFile())) {
+      if (AbsoluteComparedFile.equals(req.getUnit().getPersistentPath(), depPath)) {
         return (BuildUnit<Out>) req.getUnit();
       }
     }
@@ -78,8 +79,8 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
         try {
           try {
             Builder<In, Out> builder = buildReq.createBuilder();
-            Path dep =  builder.persistentPath();
-            cycleUnit = BuildUnit.create(dep.toFile(), buildReq);
+            File dep =  builder.persistentPath();
+            cycleUnit = BuildUnit.create(dep, buildReq);
             BuildManager.setUpMetaDependency(builder, cycleUnit);
 
             Out result = builder.triggerBuild(cycleUnit, this);

@@ -98,7 +98,7 @@ final public class BuildUnit<Out extends Output> extends PersistableEntity {
 		generatedFiles.add(new FileRequirement(file, stampOfFile));
 		try {
 		  if (file.exists()) 
-		    BuildManager.xattr.setGenBy(file.toPath(), this);
+		    BuildManager.xattr.setGenBy(file, this);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

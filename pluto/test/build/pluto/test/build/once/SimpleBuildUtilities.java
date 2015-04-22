@@ -10,8 +10,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.sugarj.common.FileCommands;
-
 import build.pluto.BuildUnit;
 import build.pluto.output.None;
 import build.pluto.test.build.cycle.fixpoint.FileInput;
@@ -44,7 +42,7 @@ public class SimpleBuildUtilities {
 			throws IOException {
 		SimpleRequirement req = new SimpleRequirement(SimpleBuilder.factory,new TestBuilderInput(testBasePath.toFile(), path));
 		
-		BuildUnit<None> unit = BuildUnit.read(req.factory.makeBuilder(req.input).persistentPath().toFile());
+		BuildUnit<None> unit = BuildUnit.read(req.factory.makeBuilder(req.input).persistentPath());
 		return unit;
 	}
 
