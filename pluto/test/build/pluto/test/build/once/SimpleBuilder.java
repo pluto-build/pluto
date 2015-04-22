@@ -4,13 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.RelativePath;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.Builder;
@@ -75,8 +73,8 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 	}
 
 	@Override
-	protected Path persistentPath() {
-		return FileCommands.addExtension(input.inputPath.toPath(), "dep");
+	protected File persistentPath() {
+		return FileCommands.addExtension(input.inputPath.toPath(), "dep").toFile();
 	}
 
 	@Override

@@ -36,7 +36,7 @@ public class BuildManager extends BuildUnitProvider {
   }
 
   public static <Out extends Serializable> BuildUnit<Out> readResult(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
-    return BuildUnit.read(buildReq.createBuilder().persistentPath().toFile());
+    return BuildUnit.read(buildReq.createBuilder().persistentPath());
   }
 
   public static <Out extends Serializable> Out build(BuildRequest<?, Out, ?, ?> buildReq, Map<? extends Path, Stamp> editedSourceFiles) {
@@ -320,7 +320,7 @@ public class BuildManager extends BuildUnitProvider {
   BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     Builder<In, Out> builder = buildReq.createBuilder();
-    File dep = builder.persistentPath().toFile();
+    File dep = builder.persistentPath();
     BuildUnit<Out> depResult = BuildUnit.read(dep);
 
     // Dont execute require because it is cyclic, requireStack keeps track of

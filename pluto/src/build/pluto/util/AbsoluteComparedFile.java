@@ -12,6 +12,10 @@ public class AbsoluteComparedFile {
     return new AbsoluteComparedFile(file);
   }
   
+  public static boolean equals(File file1, File file2) {
+    return file1.getAbsoluteFile().equals(file2.getAbsoluteFile());
+  }
+  
   public AbsoluteComparedFile(File file) {
     super();
     Objects.requireNonNull(file);

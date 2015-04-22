@@ -2,11 +2,9 @@ package build.pluto.test.build.cycle.fixpoint;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.RelativePath;
 
 import build.pluto.BuildUnit.State;
 import build.pluto.builder.Builder;
@@ -27,8 +25,8 @@ public abstract class NumericBuilder extends Builder<FileInput, IntegerOutput> {
 	protected abstract Operator getOperator();
 
 	@Override
-	protected final Path persistentPath() {
-		return FileCommands.addExtension(this.input.getFile().toPath(), "dep");
+	protected final File persistentPath() {
+		return FileCommands.addExtension(this.input.getFile().toPath(), "dep").toFile();
 	}
 
 	@Override

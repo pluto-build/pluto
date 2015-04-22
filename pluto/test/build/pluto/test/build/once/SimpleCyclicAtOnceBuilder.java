@@ -2,14 +2,12 @@ package build.pluto.test.build.once;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.RelativePath;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuilderFactory;
@@ -41,8 +39,8 @@ public class SimpleCyclicAtOnceBuilder extends
 	}
 
 	@Override
-	protected Path singletonPersistencePath(TestBuilderInput input) {
-		return FileCommands.addExtension(input.getInputPath().toPath(), "dep");
+	protected File singletonPersistencePath(TestBuilderInput input) {
+		return FileCommands.addExtension(input.getInputPath().toPath(), "dep").toFile();
 	}
 	
 	@Override
