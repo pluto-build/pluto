@@ -3,8 +3,8 @@ package build.pluto.builder;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.sugarj.common.Log;
 
@@ -12,6 +12,7 @@ import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
 import build.pluto.builder.BuildCycle.Result;
 import build.pluto.dependency.BuildRequirement;
+import build.pluto.dependency.CyclicBuildRequirement;
 import build.pluto.output.Output;
 import build.pluto.util.AbsoluteComparedFile;
 
@@ -21,7 +22,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
   private BuildCycle cycle;
 
-  private Set<BuildUnit<?>> requiredUnitsInIteration;
+  private Map<BuildUnit<?>, Output> requiredUnitsInIteration;
 
   private Result result;
 
@@ -29,7 +30,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
     super();
     this.parentManager = parentManager;
     this.cycle = cycle;
-    this.requiredUnitsInIteration = new HashSet<>();
+    this.requiredUnitsInIteration = new HashMap<>();
     this.result = new Result();
   }
 
@@ -60,18 +61,20 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
 //@formatter:on
-  BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildRequirement<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
     
     BuildUnit<Out> cycleUnit = getBuildUnitInCycle(buildReq);
-    if (cycleUnit != null && (this.requiredUnitsInIteration.contains(cycleUnit))) {
-      return cycleUnit;
+    if (cycleUnit != null && (this.requiredUnitsInIteration.containsKey(cycleUnit))) {
+      @SuppressWarnings("unchecked")
+      Out previousOutput = (Out) this.requiredUnitsInIteration.get(cycleUnit);
+      return new CyclicBuildRequirement<>(cycleUnit, buildReq, previousOutput);
     } else {
       if (cycleUnit != null) {
 
-        this.requiredUnitsInIteration.add(cycleUnit);
+        this.requiredUnitsInIteration.put(cycleUnit, cycleUnit.getBuildResult());
         
         if (cycleUnit.isConsistentShallow(null)) {
-          return cycleUnit;
+          return new BuildRequirement<>(cycleUnit, buildReq);
         }
 
         Log.log.beginTask(buildReq.createBuilder().description(), Log.CORE);
@@ -88,7 +91,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
             cycleUnit.setState(State.finished(true));
 
             this.result.setBuildResult(cycleUnit, result);
-            return cycleUnit;
+            return new BuildRequirement<>(cycleUnit, buildReq);
 
           } catch (BuildCycleException e) {
             Log.log.log("Stopped because of cycle", Log.CORE);
@@ -97,7 +100,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
         } catch (BuildCycleException e2) {
           throw e2;
         } catch (Throwable e) {
-          throw new RequiredBuilderFailed(buildReq.factory.makeBuilder(buildReq.input), cycleUnit, e);
+          throw new RequiredBuilderFailed(new BuildRequirement<>(cycleUnit, buildReq), e);
         } finally {
           
           Log.log.endTask(cycleUnit.getState() == BuildUnit.State.SUCCESS);
@@ -112,5 +115,4 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
   protected Throwable tryCompileCycle(BuildCycleException e) {
     return this.parentManager.tryCompileCycle(e);
   }
-
 }

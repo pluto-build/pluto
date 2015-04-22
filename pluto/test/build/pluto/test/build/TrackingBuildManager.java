@@ -12,6 +12,7 @@ import build.pluto.builder.BuildManager;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
+import build.pluto.dependency.BuildRequirement;
 import build.pluto.output.Output;
 
 public class TrackingBuildManager extends BuildManager {
@@ -24,14 +25,14 @@ public class TrackingBuildManager extends BuildManager {
 		super();
 	}
 
-	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(
+	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildRequirement<Out> require(
 			F factory, In input) throws IOException {
 		requiredInputs.add(input);
 		return super.require(new BuildRequest<>(factory, input));
 	}
 
 	@Override
-	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(
+	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildRequirement<Out> require(
 			BuildRequest<In, Out, B, F> buildReq) throws IOException {
 		requiredInputs.add(buildReq.input);
 		return super.require(buildReq);
@@ -45,10 +46,10 @@ public class TrackingBuildManager extends BuildManager {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   // @formatter:on
-  BuildUnit<Out> executeBuilder(Builder<In, Out> builder, File dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+	BuildRequirement<Out> executeBuilder(Builder<In, Out> builder, File dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 		executedInputs.add(buildReq.input);
 		try {
-  		BuildUnit<Out> result = super.executeBuilder(builder, dep, buildReq);
+		  BuildRequirement<Out> result = super.executeBuilder(builder, dep, buildReq);
   		successfullyExecutedInputs.add(buildReq.input);
   		return result;
 		} catch (BuildCycleException e) {

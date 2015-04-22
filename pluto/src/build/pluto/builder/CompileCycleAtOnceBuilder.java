@@ -56,9 +56,9 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   F_ extends BuilderFactory<ArrayList<In_>, Out_, B_>
   > Out_ requireCyclicable(F_ factory, In_ input) throws IOException {
     BuildRequest<ArrayList<In_>, Out_, B_, F_> req = new BuildRequest<ArrayList<In_>, Out_, B_, F_>(factory, CompileCycleAtOnceBuilder.singletonArrayList(input));
-    BuildUnit<Out_> e = manager.require(req);
+    BuildRequirement<Out_> e = manager.require(req);
     result.requires(e);
-    return e.getBuildResult();
+    return e.getUnit().getBuildResult();
   }
   
   @Override

@@ -60,7 +60,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
 	@Test (timeout = 1000)
 	public void testBuildGCDCycle() throws IOException {
 		BuildUnit<IntegerOutput> resultUnit = new TrackingBuildManager()
-				.require(mainBuildRequest);
+				.require(mainBuildRequest).getUnit();
 		assertEquals("Compiliding GCD cycle has wrong result", 0, resultUnit
 				.getBuildResult().getResult());
 		assertAllFilesConsistent();
@@ -76,7 +76,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
 		FileUtils.writeIntToFile(19, mainFile);
 
 		TrackingBuildManager manager = new TrackingBuildManager();
-		BuildUnit<IntegerOutput> resultUnit = manager.require(mainBuildRequest);
+		BuildUnit<IntegerOutput> resultUnit = manager.require(mainBuildRequest).getUnit();
 		// Assert that the new result is correct
 		assertEquals("Rebuilding GCD cycle with inconsistent has wrong result", 4, resultUnit
 				.getBuildResult().getResult());
@@ -104,7 +104,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
 		FileCommands.delete(unitForFile(cycle_gcd1File).getBuildResult().getResultFile().toPath());
 
 		TrackingBuildManager manager = new TrackingBuildManager();
-		BuildUnit<IntegerOutput> resultUnit = manager.require(mainBuildRequest);
+		BuildUnit<IntegerOutput> resultUnit = manager.require(mainBuildRequest).getUnit();
 		// Assert that the new result is correct
 		assertEquals("Rebuilding GCD cycle with inconsistent has wrong result", 0, resultUnit
 				.getBuildResult().getResult());

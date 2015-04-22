@@ -30,7 +30,7 @@ public class BuildRequest<
     this.stamper = stamper;
   }
 
-  public Builder<In, Out> createBuilder() {
+  public B createBuilder() {
     return factory.makeBuilder(input);
   }
   

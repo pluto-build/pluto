@@ -3,7 +3,6 @@ package build.pluto.dependency;
 import java.io.IOException;
 import java.io.Serializable;
 
-import build.pluto.BuildUnit;
 import build.pluto.builder.BuildUnitProvider;
 
 public interface Requirement extends Serializable {

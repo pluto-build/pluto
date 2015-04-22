@@ -25,10 +25,14 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
   public BuildRequirement() { }
 
   public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req) {
+    this(unit, req, req.stamper.stampOf(unit.getBuildResult()));
+  }
+  
+  protected BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req, OutputStamp<? super Out> stamp) {
     Objects.requireNonNull(unit);
     this.unit = unit;
     this.req = req;
-    this.stamp = req.stamper.stampOf(unit.getBuildResult());
+    this.stamp = stamp;
   }
 
   @Override
@@ -37,7 +41,7 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
     if (!reqsEqual)
       return false;
     
-    boolean stampOK = stamp.equals(stamp.getStamper().stampOf(this.unit.getBuildResult()));
+    boolean stampOK = stamp == null || stamp.equals(stamp.getStamper().stampOf(this.unit.getBuildResult()));
     if (!stampOK)
       return false;
     
@@ -47,13 +51,13 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
   @Override
   public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException{
     boolean wasFailed = hasFailed || unit != null && unit.hasFailed();
-    BuildUnit<Out> newUnit = manager.require(this.req);
+    BuildUnit<Out> newUnit = manager.require(this.req).getUnit();
     hasFailed = newUnit.hasFailed();
 
     if (wasFailed && !hasFailed)
       return false;
     
-    boolean stampOK = stamp.equals(stamp.getStamper().stampOf(newUnit.getBuildResult()));
+    boolean stampOK = stamp == null || stamp.equals(stamp.getStamper().stampOf(newUnit.getBuildResult()));
     if (!stampOK)
       return false;
     

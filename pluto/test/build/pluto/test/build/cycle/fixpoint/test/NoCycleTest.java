@@ -21,7 +21,7 @@ public class NoCycleTest extends ScopedBuildTest{
 	
 	@Test
 	public void testBuildNoCycle() throws IOException {
-		BuildUnit<IntegerOutput> resultUnit = new TrackingBuildManager().require(ModuloBuilder.factory, new FileInput(testBasePath.toFile(), "main1.modulo"));
+		BuildUnit<IntegerOutput> resultUnit = new TrackingBuildManager().require(ModuloBuilder.factory, new FileInput(testBasePath.toFile(), "main1.modulo")).getUnit();
 		assertEquals("No cycle produced wrong output", 1, resultUnit.getBuildResult().getResult());
 	}
 

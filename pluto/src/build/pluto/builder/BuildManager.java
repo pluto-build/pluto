@@ -16,10 +16,10 @@ import build.pluto.BuildUnit.InconsistenyReason;
 import build.pluto.BuildUnit.State;
 import build.pluto.builder.BuildCycle.Result.UnitResultTuple;
 import build.pluto.builder.BuildCycleException.CycleState;
+import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
-import build.pluto.xattr.Xattr;
 
 import com.cedarsoftware.util.DeepEquals;
 
@@ -115,7 +115,7 @@ public class BuildManager extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   // @formatter:on
-  BuildUnit<Out> executeBuilder(Builder<In, Out> builder, File dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildRequirement<Out> executeBuilder(Builder<In, Out> builder, File dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     this.requireStack.beginRebuild(dep);
 
@@ -155,7 +155,7 @@ public class BuildManager extends BuildUnitProvider {
 
     } catch (Throwable e) {
       Log.log.logErr(e.getClass() + ": " + e.getMessage(), Log.CORE);
-      throw RequiredBuilderFailed.init(builder, depResult, e);
+      throw RequiredBuilderFailed.init(new BuildRequirement<Out>(depResult, buildReq), e);
 
     } finally {
       if (!depResult.isFinished())
@@ -172,9 +172,9 @@ public class BuildManager extends BuildUnitProvider {
     }
 
     if (depResult.getState() == BuildUnit.State.FAILURE)
-      throw new RequiredBuilderFailed(builder, depResult, new IllegalStateException("Builder failed for unknown reason, please confer log."));
+      throw new RequiredBuilderFailed(new BuildRequirement<Out>(depResult, buildReq), new IllegalStateException("Builder failed for unknown reason, please confer log."));
 
-    return depResult;
+    return new BuildRequirement<Out>(depResult, buildReq);
   }
 
   @Override
@@ -247,7 +247,7 @@ public class BuildManager extends BuildUnitProvider {
       if (e.getCycleState() != CycleState.RESOLVED) {
         Log.log.log("Unable to find builder which can compile the cycle", Log.CORE);
         // Cycle cannot be handled
-        throw new RequiredBuilderFailed(builder, depResult, e);
+        throw new RequiredBuilderFailed(new BuildRequirement<Out>(depResult, buildReq), e);
       } else {
 
         if (this.executingStack.getNumContains(e.getCycleCause()) == 1) {
@@ -281,9 +281,9 @@ public class BuildManager extends BuildUnitProvider {
     }
     boolean successful = false;
     try {
-      BuildUnit<Out> result = require(buildReq);
-      successful = !result.hasFailed();
-      return result;
+      BuildRequirement<Out> result = require(buildReq);
+      successful = !result.getUnit().hasFailed();
+      return result.getUnit();
     } finally {
       if (wasInitial) {
         Log.log.endTask(successful);
@@ -300,9 +300,9 @@ public class BuildManager extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
-  BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildRequirement<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
-    Builder<In, Out> builder = buildReq.createBuilder();
+    B builder = buildReq.createBuilder();
     File dep = builder.persistentPath();
     BuildUnit<Out> depResult = BuildUnit.read(dep);
 
@@ -326,11 +326,11 @@ public class BuildManager extends BuildUnitProvider {
       }
 
       if (alreadyRequired) {
-        return yield(builder, depResult);
+        return yield(buildReq, builder, depResult);
       }
 
       if (requireStack.isConsistent(dep))
-        return yield(builder, depResult);
+        return yield(buildReq, builder, depResult);
 
       for (Requirement req : depResult.getRequirements()) {
         if (!req.isConsistentInBuild(this)) {
@@ -339,14 +339,14 @@ public class BuildManager extends BuildUnitProvider {
           // compiled now
           // TODO better remove that for security purpose?
           if (requireStack.isConsistent(dep))
-            return yield(builder, depResult);
+            return yield(buildReq, builder, depResult);
           return executeBuilder(builder, dep, buildReq);
         }
       }
       requireStack.markConsistent(dep);
 
     } catch (RequiredBuilderFailed e) {
-      if (executed || e.getLastAddedBuilder().result.getPersistentPath().equals(depResult.getPersistentPath()))
+      if (executed || e.getLastAddedBuilder().getUnit().getPersistentPath().equals(depResult.getPersistentPath()))
         throw e;
 
       String desc = builder.description();
@@ -363,16 +363,23 @@ public class BuildManager extends BuildUnitProvider {
 //      }
     }
 
-    return yield(builder, depResult);
+    return yield(buildReq, builder, depResult);
   }
   
-  private <In extends Serializable, Out extends Output> BuildUnit<Out> yield(Builder<In, Out> builder, BuildUnit<Out> unit) {
+  //@formatter:off
+  private
+    <In extends Serializable,
+     Out extends Output,
+     B extends Builder<In, Out>,
+     F extends BuilderFactory<In, Out, B>>
+  //@formatter:on
+  BuildRequirement<Out> yield(BuildRequest<In, Out, B, F> req, B builder, BuildUnit<Out> unit) {
     if (unit.hasFailed()) {
-      RequiredBuilderFailed e = new RequiredBuilderFailed(builder, unit, "no rebuild of failing builder");
+      RequiredBuilderFailed e = new RequiredBuilderFailed(new BuildRequirement<Out>(unit, req), "no rebuild of failing builder");
       Log.log.logErr(e.getMessage(), Log.CORE);
       throw e;
     }
-    return unit;
+    return new BuildRequirement<>(unit, req);
   }
 
   private <Out extends Output> void assertConsistency(BuildUnit<Out> depResult) {

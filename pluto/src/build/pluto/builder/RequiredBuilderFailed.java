@@ -4,66 +4,57 @@ import java.util.ArrayList;
 import java.util.List;
 
 import build.pluto.BuildUnit;
+import build.pluto.dependency.BuildRequirement;
 
 public class RequiredBuilderFailed extends RuntimeException {
   private static final long serialVersionUID = 3080806736856580512L;
 
-  public static class BuilderResult {
-
-    public Builder<?, ?> builder;
-    public BuildUnit<?> result;
-    public BuilderResult(Builder<?, ?> builder, BuildUnit<?> result) {
-      this.builder = builder;
-      this.result = result;
-    }
-  }
+  private List<BuildRequirement<?>> builders;
   
-  private List<BuilderResult> builders;
-  
-  public RequiredBuilderFailed(Builder<?, ?> builder, BuildUnit<?> result, Throwable cause) {
+  public RequiredBuilderFailed(BuildRequirement<?> buildReq, Throwable cause) {
     super(cause);
     builders = new ArrayList<>();
-    builders.add(new BuilderResult(builder, result));
+    builders.add(buildReq);
   }
   
-  public RequiredBuilderFailed(Builder<?, ?> builder, BuildUnit<?> result, String message) {
+  public RequiredBuilderFailed(BuildRequirement<?> buildReq, String message) {
     super(message);
     builders = new ArrayList<>();
-    builders.add(new BuilderResult(builder, result));
+    builders.add(buildReq);
   }
   
-  private void addBuilder(Builder<?, ?> builder, BuildUnit<?> result) {
-    builders.add(new BuilderResult(builder, result));
+  private void addBuilder(BuildRequirement<?> buildReq) {
+    builders.add(buildReq);
   }
   
-  public BuilderResult getLastAddedBuilder() {
+  public BuildRequirement<?> getLastAddedBuilder() {
     return builders.get(builders.size() - 1);
   }
 
-  public List<BuilderResult> getBuilders() {
+  public List<BuildRequirement<?>> getBuilders() {
     return builders;
   }
   
   @Override
   public String getMessage() {
-    BuilderResult p = builders.get(0);
-    return "Required builder failed. Error occurred in build step \"" + p.builder.description() + "\": " + (getCause() == null ? super.getMessage() : getCause().getMessage());
+    BuildRequirement<?> p = builders.get(0);
+    return "Required builder failed. Error occurred in build step \"" + p.getRequest().createBuilder().description() + "\": " + (getCause() == null ? super.getMessage() : getCause().getMessage());
   }
 
   protected RequiredBuilderFailed enqueueBuilder(BuildUnit<?> depResult, Builder<?,?> builder) {
     return enqueueBuilder(depResult, builder, true);
   }
   protected RequiredBuilderFailed enqueueBuilder(BuildUnit<?> depResult, Builder<?,?> builder, boolean addDependency) {
-    BuilderResult required = getLastAddedBuilder();
+    BuildRequirement<?> required = getLastAddedBuilder();
     if (addDependency)
-      depResult.requires(required.result);
+      depResult.requires(required);
     depResult.setState(BuildUnit.State.FAILURE);
   
-    addBuilder(builder, depResult);
+    addBuilder(required);
     return this;
   }
   
-  static RequiredBuilderFailed init(Builder<?, ?> builder, BuildUnit<?> result, Throwable cause) {
-    return new RequiredBuilderFailed(builder, result, cause);
+  static RequiredBuilderFailed init(BuildRequirement<?> buildReq, Throwable cause) {
+    return new RequiredBuilderFailed(buildReq, cause);
   }
 }

@@ -30,7 +30,7 @@ import build.pluto.stamp.Util;
  * 
  * @author Sebastian Erdweg
  */
-final public class BuildUnit<Out extends Output> extends PersistableEntity {
+public final class BuildUnit<Out extends Output> extends PersistableEntity {
 
   public static final long serialVersionUID = -2821414386853890682L;
 
@@ -97,10 +97,10 @@ final public class BuildUnit<Out extends Output> extends PersistableEntity {
 		generatedFiles.add(new FileRequirement(file, stampOfFile));
 	}
 	
-	public <Out_ extends Output> void requires(BuildUnit<Out_> mod) {
-	  Objects.requireNonNull(mod);
-	  requirements.add(new BuildRequirement<Out_>(mod, mod.getGeneratedBy()));
-	  requiredUnits.add(mod);
+	public <Out_ extends Output> void requires(BuildRequirement<Out_> req) {
+	  Objects.requireNonNull(req);
+	  requirements.add(req);
+	  requiredUnits.add(req.getUnit());
 	}
 	
 	public <Out_ extends Output> void requireMeta(BuildUnit<Out_> mod) {

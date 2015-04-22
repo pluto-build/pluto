@@ -13,6 +13,7 @@ import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
+import build.pluto.dependency.BuildRequirement;
 import build.pluto.output.Output;
 
 public class CompilationUnitTestUtils {
@@ -100,7 +101,7 @@ public class CompilationUnitTestUtils {
 				@Override
 				public AndEdgeMaker and(BuildUnit<NodeOutput> dst) {
 					for (BuildUnit<NodeOutput> src : srcs) {
-						src.requires(dst);
+						src.requires(new BuildRequirement<>(dst, dst.getGeneratedBy()));
 					}
 					return this;
 				}

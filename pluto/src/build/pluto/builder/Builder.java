@@ -7,6 +7,7 @@ import java.util.Collection;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
+import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.IllegalDependencyException;
 import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
@@ -79,9 +80,9 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   B_ extends Builder<In_,Out_>,
   F_ extends BuilderFactory<In_, Out_, B_>
   > Out_ requireBuild(BuildRequest<In_, Out_, B_, F_> req) throws IOException {
-    BuildUnit<Out_> e = manager.require(req);
+    BuildRequirement<Out_> e = manager.require(req);
     result.requires(e);
-    return e.getBuildResult();
+    return e.getUnit().getBuildResult();
   }
 
   protected void requireBuild(Collection<? extends BuildRequest<?, ?, ?, ?>> reqs) throws IOException {
