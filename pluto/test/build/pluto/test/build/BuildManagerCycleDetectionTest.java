@@ -6,7 +6,6 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.List;
 
 import org.junit.Before;
@@ -95,11 +94,11 @@ public class BuildManagerCycleDetectionTest {
 	}
 
 	private File getDepPathWithNumber(int num) {
-		return new File(baseDir, "Test" + num + ".dep");
+		return new File(baseDir, "Test" + num + ".dep").getAbsoluteFile();
 	}
 
 	private File getPathWithNumber(int num) {
-		return new File(baseDir, "Test" + num + ".txt");
+		return new File(baseDir, "Test" + num + ".txt").getAbsoluteFile();
 	}
 
 	@Test
