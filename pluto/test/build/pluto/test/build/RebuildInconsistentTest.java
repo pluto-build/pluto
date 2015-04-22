@@ -18,7 +18,6 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sugarj.common.path.RelativePath;
 
 import build.pluto.BuildUnit;
 import build.pluto.output.None;

@@ -5,16 +5,12 @@ import static build.pluto.test.build.Validators.validateThat;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Arrays;
-import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.sugarj.common.FileCommands;
 
 import build.pluto.builder.BuildRequest;
 import build.pluto.test.build.once.SimpleBuilder;
@@ -33,7 +29,6 @@ public class BuildFailureTest extends SimpleBuildTest {
   private File dep1FileGood;
   private File dep1FileFail;
   private File dep2File;
-  private List<File> allFiles;
   
   @Before
   public void makeConsistentState() throws IOException{
@@ -42,7 +37,6 @@ public class BuildFailureTest extends SimpleBuildTest {
     dep1FileGood = getRelativeFile("dep1-good.txt");
     dep1FileFail = getRelativeFile("dep1-fail.txt");
     dep2File = getRelativeFile("dep2.txt");
-    allFiles = Arrays.asList(mainFile, dep1File, dep2File);
   }
   
   @Test

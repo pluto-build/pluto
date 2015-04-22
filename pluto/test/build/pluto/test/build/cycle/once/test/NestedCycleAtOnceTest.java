@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.junit.Test;
-import org.sugarj.common.path.RelativePath;
 
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuilderFactory;

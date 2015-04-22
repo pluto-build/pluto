@@ -1,70 +1,33 @@
 package build.pluto.builder;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import build.pluto.BuildUnit;
-import build.pluto.dependency.BuildRequirement;
-import build.pluto.output.Output;
-import build.pluto.util.AbsoluteComparedFile;
+import org.sugarj.common.Log;
 
 public class BuildCycle {
-  
-  public static class Result {
-    
-    public static class  UnitResultTuple <Out extends Output>{
-      private BuildUnit<Out> unit;
-      private Out result;
-      public UnitResultTuple(BuildUnit<Out> unit, Out result) {
-        super();
-        this.unit = unit;
-        this.result = result;
-      }
-      public void setOutputToUnit() {
-        unit.setBuildResult(result);
-      }
-    }
-    
-    private Map<AbsoluteComparedFile, UnitResultTuple<?>> cycleOutputs = new HashMap<>();
-    
-    
-    public <Out extends Output> void setBuildResult(BuildUnit<Out> unit, Out result) {
-      this.cycleOutputs.put(AbsoluteComparedFile.absolute(unit.getPersistentPath()), new UnitResultTuple<Out>(unit, result));
-    }
-    
-    public <Out extends Output>  UnitResultTuple<Out> getUnitResult(BuildUnit<Out> unit) {
-      UnitResultTuple<Out> tuple = (UnitResultTuple<Out>) this.cycleOutputs.get(AbsoluteComparedFile.absolute(unit.getPersistentPath()));
-      return tuple;
-    }
-    
-    
-  }
-  
-  private List<BuildRequirement<?>> cycleComponents;
 
-  public BuildCycle(List<BuildRequirement<?>> cycleComponents) {
+  private Set<BuildRequest<?, ?, ?, ?>> cycle;
+
+  public BuildCycle(Set<BuildRequest<?, ?, ?, ?>> cycleComponents) {
     super();
-    this.cycleComponents = cycleComponents;
-  }
-  
-  public List<BuildRequirement<?>> getCycleComponents() {
-    return cycleComponents;
+    this.cycle = cycleComponents;
   }
 
+  public Set<BuildRequest<?, ?, ?, ?>> getCycleComponents() {
+    return cycle;
+  }
 
-  protected CycleSupport getCycleSupport() {
-    for (BuildRequirement<?> requirement : this.getCycleComponents()) {
-      CycleSupport support = requirement.getRequest().createBuilder().getCycleSupport();
-      if (support != null && support.canCompileCycle(this)) {
-        return support;
-      }
+  protected Optional<CycleSupport> findCycleSupport() {
+    List<CycleSupport> matchingSupports = this.cycle.stream().map((BuildRequest<?, ?, ?, ?> req) -> req.createBuilder().getCycleSupport()).filter((CycleSupport c) -> c != null && c.canCompileCycle(this)).collect(Collectors.toList());
+
+    if (matchingSupports.size() > 1) {
+      Log.log.log("Found " + matchingSupports.size() + " matching cycle supports for cycle.", Log.CORE);
     }
-    return null;
+
+    return matchingSupports.stream().findAny();
   }
-  
-  public BuildRequirement<?> getInitialComponent() {
-    return this.cycleComponents.get(0);
-  }
-  
+
 }

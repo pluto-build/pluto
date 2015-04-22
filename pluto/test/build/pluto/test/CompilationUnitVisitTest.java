@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
-import static org.junit.Assert.*;
 
+import static org.junit.Assert.*;
 import build.pluto.BuildUnit;
 import build.pluto.test.CompilationUnitTestUtils.NodeOutput;
 
@@ -17,7 +17,8 @@ public class CompilationUnitVisitTest {
 	
 	BuildUnit.ModuleVisitor<List<BuildUnit<NodeOutput>>> collectVisitedNodesVisitor = new BuildUnit.ModuleVisitor<List<BuildUnit<NodeOutput>>> () {
 
-		@Override
+		@SuppressWarnings("unchecked")
+    @Override
 		public List<BuildUnit<NodeOutput>> visit(BuildUnit<?> mod) {
 			List<BuildUnit<NodeOutput>> singleton = new ArrayList<>();
 			singleton.add((BuildUnit<NodeOutput>) mod);

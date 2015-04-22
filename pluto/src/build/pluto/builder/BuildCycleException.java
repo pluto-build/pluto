@@ -1,10 +1,9 @@
 package build.pluto.builder;
 
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import build.pluto.BuildUnit;
-import build.pluto.dependency.BuildRequirement;
 
 public class BuildCycleException extends RuntimeException {
 
@@ -17,28 +16,31 @@ public class BuildCycleException extends RuntimeException {
     RESOLVED, NOT_RESOLVED, UNHANDLED
   }
 
-  /**
-   * The list of the stack entries which form a dependency cycle in order of the
-   * stack.
-   */
-  private final BuildUnit<?> cycleCause;
-  private final List<BuildRequirement<?>> cycleComponents;
-  private CycleState cycleState = CycleState.UNHANDLED;
-  private BuildCycle.Result cycleResult = null;
 
-  public BuildCycleException(String message, BuildUnit<?> cycleCause, List<BuildRequirement<?>> cycleComponents) {
+  /**
+   * The {@link BuildUnit} that caused the cycle.
+   */
+  private final BuildRequest<?, ?, ?, ?> cycleCause;
+  /**
+   * The set 
+   */
+  private final BuildCycle cycle;
+  private CycleState cycleState = CycleState.UNHANDLED;
+  private BuildCycleResult cycleResult = null;
+
+  public BuildCycleException(String message, BuildRequest<?, ?, ?, ?> cycleCause, BuildCycle cycle) {
     super(message);
     Objects.requireNonNull(cycleCause);
     this.cycleCause = cycleCause;
-    this.cycleComponents = cycleComponents;
+    this.cycle = cycle;
   }
 
-  public List<BuildRequirement<?>> getCycleComponents() {
-    return cycleComponents;
+  public Set<BuildRequest<?, ?, ?, ?>> getCycleComponents() {
+    return cycle.getCycleComponents();
   }
 
-  public boolean isUnitFirstInvokedOn(BuildUnit<?> path) {
-    return cycleCause == path ;//&& cycleCause.getUnit().getGeneratedBy().factory.equals(factory);
+  public boolean isUnitFirstInvokedOn(BuildRequest<?, ?, ?, ?> unit) {
+    return cycleCause.equals(unit);
   }
 
   public void setCycleState(CycleState cycleState) {
@@ -49,15 +51,15 @@ public class BuildCycleException extends RuntimeException {
     return cycleState;
   }
 
-  public BuildUnit<?> getCycleCause() {
+  public BuildRequest<?, ?, ?, ?> getCycleCause() {
     return cycleCause;
   }
   
-  public void setCycleResult(BuildCycle.Result cycleResult) {
+  public void setCycleResult(BuildCycleResult cycleResult) {
     this.cycleResult = cycleResult;
   }
   
-  public BuildCycle.Result getCycleResult() {
+  public BuildCycleResult getCycleResult() {
     return cycleResult;
   }
 

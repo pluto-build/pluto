@@ -15,7 +15,6 @@ import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.RelativePath;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildManager;

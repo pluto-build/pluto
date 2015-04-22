@@ -7,15 +7,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import javax.management.RuntimeErrorException;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.RelativePath;
 
 public abstract class ScopedBuildTest {
 

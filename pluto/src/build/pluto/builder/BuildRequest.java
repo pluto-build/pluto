@@ -1,6 +1,7 @@
 package build.pluto.builder;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import build.pluto.output.Output;
 import build.pluto.output.OutputEqualStamper;
@@ -25,6 +26,9 @@ public class BuildRequest<
   }
   
   public BuildRequest(F factory, In input, OutputStamper<? super Out> stamper) {
+    Objects.requireNonNull(factory);
+    Objects.requireNonNull(input);
+    Objects.requireNonNull(stamper);
     this.factory = factory;
     this.input = input;
     this.stamper = stamper;
@@ -42,6 +46,24 @@ public class BuildRequest<
     return DeepEquals.deepHashCode(this);
   }
   
+  @Override
+  public boolean equals(Object o) {
+    if (o instanceof BuildRequest<?, ?, ?, ?>) {
+      BuildRequest<?, ?, ?, ?> other = (BuildRequest<?, ?, ?, ?>) o;
+      return DeepEquals.deepEquals(factory, other.factory) && DeepEquals.deepEquals(input, other.input);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + DeepEquals.deepHashCode(factory);
+    result = prime * result + DeepEquals.deepHashCode(input);
+    return result;
+  }
+
   @Override
   public String toString() {
     return "BuildReq(" + factory.getClass().getName() + ")";

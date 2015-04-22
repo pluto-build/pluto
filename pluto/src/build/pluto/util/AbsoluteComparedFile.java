@@ -1,9 +1,13 @@
 package build.pluto.util;
 
+import java.io.Externalizable;
 import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.Objects;
 
-public class AbsoluteComparedFile {
+public class AbsoluteComparedFile implements Externalizable {
   
   private File file;
   private File absoluteFile;
@@ -50,6 +54,22 @@ public class AbsoluteComparedFile {
     } else if (!absoluteFile.equals(other.absoluteFile))
       return false;
     return true;
+  }
+
+  @Override
+  public String toString() {
+    return "ABS[" + file.toString() + "]";
+  }
+
+  @Override
+  public void writeExternal(ObjectOutput out) throws IOException {
+    out.writeObject(file);
+  }
+
+  @Override
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    this.file = (File) in.readObject();
+    this.absoluteFile = this.file.getAbsoluteFile();
   }
 
 }

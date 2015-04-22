@@ -46,7 +46,8 @@ public class SimpleBuildUtilities {
 		return unit;
 	}
 
-	public static List<File> inputToFileList(List<Serializable> inputs) {
+	@SuppressWarnings("unchecked")
+  public static List<File> inputToFileList(List<Serializable> inputs) {
 		ArrayList<File> fileList = new ArrayList<>();
 		for (Serializable s : inputs) {
 			if (s instanceof TestBuilderInput) {

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import build.pluto.BuildUnit;
 import build.pluto.util.UniteSets;
 
 public abstract class CycleDetectionStack<C, P> {
@@ -33,10 +32,10 @@ public abstract class CycleDetectionStack<C, P> {
   protected abstract P cycleResult(C call, Set<C> scc);
   protected abstract P noCycleResult();
   
-  public int getNumContains(BuildUnit<?> path) {
+  public int getNumContains(C elem) {
     int num = 0;
     for (C p  : callStack) {
-      if (p.equals(path)) {
+      if (p.equals(elem)) {
         num ++;
       }
     }
