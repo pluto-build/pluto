@@ -17,6 +17,7 @@ public abstract class CycleDetectionStack<C, P> {
     // Check whether unit is already on the stack
     int index = this.callStack.indexOf(unit);
     if (index != -1) {
+      unit = callStack.get(index);
       // Then unite the sccs of all units from the top of the stack until
       // the already existing occurence of unit
       UniteSets<C>.Key scc = sccs.getOrCreateSet(unit);   
