@@ -22,6 +22,7 @@ import build.pluto.output.Output;
 import build.pluto.xattr.Xattr;
 
 import com.cedarsoftware.util.DeepEquals;
+import com.cedarsoftware.util.Traverser;
 
 public class DynamicAnalysis {
   public final static Xattr XATTR = Xattr.getDefault();
@@ -112,9 +113,28 @@ public class DynamicAnalysis {
    * A builder must declare build requirements on all builders whose
    * outputs it uses (including outputs provided via the build input).
    */
-  private void checkGeneratedOutputs(BuildUnit<?> unit) {
+  private void checkGeneratedOutputs(final BuildUnit<?> unit) {
     if (unit.getBuildResult() != null)
       generatedOutput.put(unit.getBuildResult(), unit);
+    
+    Traverser.traverse(unit.getGeneratedBy().input, new Traverser.Visitor() {
+      @Override
+      public void process(Object o) {
+        if (o instanceof Output) {
+          BuildUnit<?> generator = generatedOutput.get(o);
+          if (generator != null) {
+            File dep = unit.getPersistentPath();
+            boolean foundDep = unit.visit(new IsConnectedTo(dep));
+            if (!foundDep)
+              throw new IllegalDependencyException(dep, 
+                  "Build unit " + dep + " has a hidden dependency on the "
+                + "in-memory output of build unit " + generator + ". "
+                + "The builder " + unit.getGeneratedBy().createBuilder().description() + " should "
+                + "mark a dependency to " + dep + " by `requiring` the corresponding builder.");
+          }
+        }
+      }
+    });
   }
   
   
