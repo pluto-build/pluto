@@ -40,6 +40,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
     requiredUnitsInIteration.clear();
   }
 
+  @SuppressWarnings("unchecked")
   private <In extends Serializable, Out extends Serializable, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> getBuildUnitInCycle(BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     File depPath = buildReq.createBuilder().persistentPath();

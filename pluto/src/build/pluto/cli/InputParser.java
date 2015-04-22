@@ -161,6 +161,8 @@ public class InputParser<In> {
       return new AbsolutePath(val);
     if (paramClass.equals(Path.class) || paramClass.equals(RelativePath.class))
       return new RelativePath(new AbsolutePath("."), val);
+    if (paramClass.equals(File.class))
+      return new File(val);
     
     throw new UnsupportedOperationException("Cannot parse value of type " + pretty(paramClass) + " for option " + opt);
   }

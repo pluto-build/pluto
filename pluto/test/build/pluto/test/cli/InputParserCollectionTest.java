@@ -19,10 +19,10 @@ import org.junit.rules.TestName;
 import org.sugarj.common.path.AbsolutePath;
 import org.sugarj.common.path.Path;
 
+import build.pluto.cli.InputParser;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-
-import build.pluto.cli.InputParser;
 
 public class InputParserCollectionTest {
 

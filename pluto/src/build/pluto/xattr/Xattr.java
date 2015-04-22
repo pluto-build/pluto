@@ -7,11 +7,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.sugarj.common.FileCommands;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 import build.pluto.BuildUnit;
 
 public class Xattr {

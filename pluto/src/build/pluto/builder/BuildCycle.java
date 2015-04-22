@@ -34,6 +34,7 @@ public class BuildCycle {
     }
     
     public <Out extends Serializable>  UnitResultTuple<Out> getUnitResult(BuildUnit<Out> unit) {
+      @SuppressWarnings("unchecked")
       UnitResultTuple<Out> tuple = (UnitResultTuple<Out>) this.cycleOutputs.get(AbsoluteComparedFile.absolute(unit.getPersistentPath()));
       return tuple;
     }

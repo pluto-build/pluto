@@ -26,13 +26,19 @@ public class CompilationUnitTestUtils {
 		public NodeInput(String name) {
 			this.name = name;
 		}
+		
+		public String getName() {
+      return name;
+    }
 	}
 	
 	public static class NodeOutput implements Serializable {
 
-		private final String name;
-		
-		
+		/**
+     * 
+     */
+    private static final long serialVersionUID = -2599965537565985757L;
+    private final String name;
 		
 		public NodeOutput(String name) {
 			super();
@@ -117,7 +123,8 @@ public class CompilationUnitTestUtils {
 		return node.getBuildResult().name;
 	}
 
-	public static <T> Set<T> set(T... elems) {
+	@SafeVarargs
+  public static <T> Set<T> set(T... elems) {
 		return set(Arrays.asList(elems));
 	}
 

@@ -25,7 +25,8 @@ public class Validators {
 			this.elem = elem;
 		}
 
-		public Validator before(final T... otherElems) {
+		@SafeVarargs
+		public final Validator before(final T... otherElems) {
 			return new Validator() {
 				public void validate() {
 					for (T otherElem : otherElems) {
@@ -65,7 +66,8 @@ public class Validators {
 			};
 		}
 
-		public Validator containsSameElements(final T... elems) {
+		@SafeVarargs
+		public final Validator containsSameElements(final T... elems) {
 			return new Validator() {
 
 				@Override
@@ -77,7 +79,8 @@ public class Validators {
 			};
 		}
 
-		public Validator containsAll(final T... elems) {
+		@SafeVarargs
+		public final Validator containsAll(final T... elems) {
 			return new Validator() {
 
 				@Override

@@ -21,8 +21,6 @@ import build.pluto.dependency.DuplicateFileGenerationException;
 import build.pluto.dependency.FileRequirement;
 import build.pluto.dependency.Requirement;
 import build.pluto.stamp.LastModifiedStamper;
-import build.pluto.stamp.Stamp;
-import build.pluto.util.AbsoluteComparedFile;
 import build.pluto.xattr.Xattr;
 
 import com.cedarsoftware.util.DeepEquals;

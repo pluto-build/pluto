@@ -59,7 +59,7 @@ public class UnitValidators {
 
 	public static UnitValiatorBuilder unitsForPath(Path... depPath)
 			throws IOException {
-		BuildUnit[] units = new BuildUnit[depPath.length];
+		BuildUnit<?>[] units = new BuildUnit[depPath.length];
 		for (int i = 0; i < depPath.length; i++) {
 			units[i] = BuildUnit.read(depPath[i].toFile());
  		}
@@ -68,7 +68,7 @@ public class UnitValidators {
 	
 	public static UnitValiatorBuilder unitsForPath(File... depPath)
       throws IOException {
-    BuildUnit[] units = new BuildUnit[depPath.length];
+    BuildUnit<?>[] units = new BuildUnit[depPath.length];
     for (int i = 0; i < depPath.length; i++) {
       units[i] = BuildUnit.read(depPath[i]);
     }
