@@ -18,6 +18,7 @@ import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
 import build.pluto.builder.RequiredBuilderFailed;
+import build.pluto.dependency.BuildRequirement;
 import build.pluto.stamp.FileHashStamper;
 import build.pluto.stamp.Stamper;
 import build.pluto.test.EmptyBuildOutput;
@@ -105,21 +106,21 @@ public class BuildManagerCycleDetectionTest {
 					e.getCause() instanceof BuildCycleException);
 			BuildCycleException cycle = (BuildCycleException) e.getCause();
 
-      assertEquals("Wrong cause path", getPathWithNumber(0), cycle.getCycleCause().input);
+      assertEquals("Wrong cause path", getPathWithNumber(0), cycle.getCycleCause().getGeneratedBy().input);
 
-      Set<BuildRequest<?, ?, ?, ?>> cyclicUnits = cycle.getCycleComponents();
+      Set<BuildRequirement<?>> cyclicUnits = cycle.getCycleComponents();
 			assertEquals("Wrong number of units in cycle", 10,
 					cyclicUnits.size());
 
 			for (int i = 0; i < 10; i++) {
-        BuildRequest<?, ?, ?, ?> requirement = null;
-        for (BuildRequest<?, ?, ?, ?> req : cyclicUnits) {
-          if (req.input.equals(getPathWithNumber(i))) {
+			  BuildRequirement<?> requirement = null;
+        for (BuildRequirement<?> req : cyclicUnits) {
+          if (req.getRequest().input.equals(getPathWithNumber(i))) {
 						requirement = req;
 					}
 				}
         assertTrue("No requirement for " + i, requirement != null);
-        assertEquals("Wrong factory for unit", testFactory, requirement.factory);
+        assertEquals("Wrong factory for unit", testFactory, requirement.getRequest().factory);
 			}
 		}
 

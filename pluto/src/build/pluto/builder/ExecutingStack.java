@@ -1,12 +1,22 @@
 package build.pluto.builder;
 
+import java.util.HashSet;
 import java.util.Set;
 
-public class ExecutingStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, Void> {
+import build.pluto.BuildUnit;
+import build.pluto.dependency.BuildRequirement;
+import build.pluto.output.Output;
 
-  protected Void cycleResult(BuildRequest<?, ?, ?, ?> req, Set<BuildRequest<?, ?, ?, ?>> scc) {
+public class ExecutingStack extends CycleDetectionStack<BuildUnit<?>, Void> {
+
+  protected Void cycleResult(BuildUnit<?> cause, Set<BuildUnit<?>> scc) {
     // Get all elements of the scc
-    BuildCycleException ex = new BuildCycleException("Build contains a dependency cycle on " + req.createBuilder().persistentPath(), req, new BuildCycle(scc));
+    Set<BuildRequirement<?>>  cycleComponents = new HashSet<>();
+    for (BuildUnit<?> sccUnit : scc) {
+      cycleComponents.add(requirementForEntry(sccUnit));
+    }
+    
+    BuildCycleException ex = new BuildCycleException("Build contains a dependency cycle on " + cause.getPersistentPath(), cause, new BuildCycle(cycleComponents));
     throw ex;
   }
 
@@ -14,8 +24,8 @@ public class ExecutingStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>
     return null;
   }
 
-//  private <Out extends Output> BuildRequirement<Out> requirementForEntry(BuildRequest<?, Out, ?, ?> req) throws IOException {
-//    return new BuildRequirement<Out>(BuildUnit.<Out> create(req.createBuilder().persistentPath(), req), req);
-//  }
+  private <Out extends Output> BuildRequirement<Out> requirementForEntry(BuildUnit<Out> unit) {
+    return new BuildRequirement<Out>(unit, unit.getGeneratedBy());
+  }
 
 }

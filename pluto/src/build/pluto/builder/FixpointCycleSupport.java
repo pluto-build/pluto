@@ -21,17 +21,17 @@ public class FixpointCycleSupport implements CycleSupport {
   @Override
   public String getCycleDescription(BuildCycle cycle) {
     String cycleName = "Cycle ";
-    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
-      cycleName += req.createBuilder().description();
+    for (BuildRequirement<?> req : cycle.getCycleComponents()) {
+      cycleName += req.getRequest().createBuilder().description();
     }
     return cycleName;
   }
 
   @Override
   public boolean canCompileCycle(BuildCycle cycle) {
-    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
+    for (BuildRequirement<?> req : cycle.getCycleComponents()) {
       for (BuilderFactory<?, ?, ?> supportedBuilder : supportedBuilders) {
-        if (req.factory == supportedBuilder) {
+        if (req.getRequest().factory == supportedBuilder) {
           return true;
         }
       }
@@ -53,8 +53,8 @@ public class FixpointCycleSupport implements CycleSupport {
       try {
         // CycleComponents are in order if which they were required
         // Require the first one which is not consistent to their input
-        for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
-          final BuildUnit<?> unit = cycleUnits.get(req);
+        for (BuildRequirement<?> req : cycle.getCycleComponents()) {
+          final BuildUnit<?> unit = cycleUnits.get(req.getRequest());
           // Check whether the unit is shallowly consistent (if null its the
           // first iteration)
           if (unit == null || !unit.isConsistentShallow(null)) {
@@ -63,8 +63,8 @@ public class FixpointCycleSupport implements CycleSupport {
               logStarted = true;
             }
             cycleConsistent = false;
-            final BuildRequirement<?> newUnit = cycleManager.require(req);
-            cycleUnits.put(req, newUnit.getUnit());
+            final BuildRequirement<?> newUnit = cycleManager.require(req.getRequest());
+            cycleUnits.put(req.getRequest(), newUnit.getUnit());
           }
         }
       } finally {

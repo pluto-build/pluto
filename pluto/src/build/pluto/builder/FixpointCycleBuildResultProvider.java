@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.sugarj.common.Log;
+import org.sugarj.common.util.Pair;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
@@ -21,7 +22,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
   private BuildCycle cycle;
 
   // private Set<BuildRequest<?, ?, ?, ?>> requiredUnitsInIteration;
-  private Map<BuildRequest<?, ?, ?, ?>, BuildUnit<?>> requiredUnitsInIteration = new HashMap<>();
+  private Map<BuildRequest<?, ?, ?, ?>, Pair<BuildUnit<?>, Output>> requiredUnitsInIteration = new HashMap<>();
 
   private BuildCycleResult result;
 
@@ -51,6 +52,17 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
    * (AbsoluteComparedFile.equals(req.getUnit().getPersistentPath(), depPath)) {
    * return (BuildUnit<Out>) req.getUnit(); } } return null; }
    */
+  
+  private BuildRequirement<?> getCycleComponent(BuildRequest<?,?,?,?> request) {
+    for (BuildRequirement<?> req : cycle.getCycleComponents()) {
+      if (req.getRequest().equals(request))
+        return req;
+    }
+    
+    return null;
+  }
+
+
 
   @Override
   public
@@ -62,20 +74,34 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 //@formatter:on
   BuildRequirement<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
-    BuildUnit<Out> cycleUnit = (BuildUnit<Out>) requiredUnitsInIteration.get(buildReq);
+    Pair<BuildUnit<?>, Output> pair = requiredUnitsInIteration.get(buildReq);
+    @SuppressWarnings("unchecked")
+    BuildUnit<Out> cycleUnit = pair == null ? null : (BuildUnit<Out>) pair.a;
+    @SuppressWarnings("unchecked")
+    Out previousOutput = pair == null ? null : (Out) pair.b;
+    
     if (cycleUnit != null) {
-      return new CyclicBuildRequirement<>(cycleUnit, buildReq, cycleUnit.getBuildResult());
+      return new CyclicBuildRequirement<>(cycleUnit, buildReq, previousOutput);
     } else {
-      if (cycle.getCycleComponents().contains(buildReq)) {
+      
+      BuildRequirement<Out> cycleComponent = (BuildRequirement<Out>) getCycleComponent(buildReq);
+      if (cycleComponent != null) {
+        cycleUnit = cycleComponent.getUnit();
+        previousOutput = cycleComponent.getUnit().getBuildResult();
+        this.requiredUnitsInIteration.put(buildReq, Pair.create(cycleUnit, previousOutput));
+        
+        if (cycleUnit.isConsistentShallow(null)) {
+          return new BuildRequirement<>(cycleUnit, buildReq);
+        }
 
         Log.log.beginTask(buildReq.createBuilder().description(), Log.CORE);
 
+        
         try {
           try {
             Builder<In, Out> builder = buildReq.createBuilder();
             File dep = builder.persistentPath();
             cycleUnit = BuildUnit.create(dep, buildReq);
-            this.requiredUnitsInIteration.put(buildReq, cycleUnit);
             BuildManager.setUpMetaDependency(builder, cycleUnit);
 
             Out result = builder.triggerBuild(cycleUnit, this);
