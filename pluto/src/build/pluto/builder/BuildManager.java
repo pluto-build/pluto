@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
@@ -14,8 +15,8 @@ import org.sugarj.common.Log;
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.InconsistenyReason;
 import build.pluto.BuildUnit.State;
-import build.pluto.builder.BuildCycle.Result.UnitResultTuple;
 import build.pluto.builder.BuildCycleException.CycleState;
+import build.pluto.builder.BuildCycleResult.UnitResultTuple;
 import build.pluto.dependency.DuplicateBuildUnitPathException;
 import build.pluto.dependency.DuplicateFileGenerationException;
 import build.pluto.dependency.FileRequirement;
@@ -192,14 +193,11 @@ public class BuildManager extends BuildUnitProvider {
 
     e.setCycleState(CycleState.NOT_RESOLVED);
     BuildCycle cycle = new BuildCycle(e.getCycleComponents());
-    CycleSupport cycleSupport = cycle.getCycleSupport();
-    if (cycleSupport == null) {
-      return e;
-    }
-
+    CycleSupport cycleSupport = cycle.findCycleSupport().orElseThrow(() -> e);
+   
     Log.log.beginTask("Compile cycle with: " + cycleSupport.getCycleDescription(cycle), Log.CORE);
     try {
-      BuildCycle.Result result = cycleSupport.compileCycle(this, cycle);
+      BuildCycleResult result = cycleSupport.compileCycle(this, cycle);
       e.setCycleResult(result);
       e.setCycleState(CycleState.RESOLVED);
     } catch (BuildCycleException cyclicEx) {

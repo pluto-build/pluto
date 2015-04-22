@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.sugarj.common.Log;
 
-import build.pluto.builder.BuildCycle.Result;
 import build.pluto.dependency.BuildRequirement;
 
 public class FixpointCycleSupport implements CycleSupport {
@@ -38,7 +37,7 @@ public class FixpointCycleSupport implements CycleSupport {
   }
 
   @Override
-  public Result compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
+  public BuildCycleResult compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
     FixpointCycleBuildResultProvider cycleManager = new FixpointCycleBuildResultProvider(manager, cycle);
 
     int numInterations = 1;

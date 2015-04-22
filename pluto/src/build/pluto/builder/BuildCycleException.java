@@ -1,7 +1,7 @@
 package build.pluto.builder;
 
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import build.pluto.BuildUnit;
 import build.pluto.dependency.BuildRequirement;
@@ -17,28 +17,31 @@ public class BuildCycleException extends RuntimeException {
     RESOLVED, NOT_RESOLVED, UNHANDLED
   }
 
+
   /**
-   * The list of the stack entries which form a dependency cycle in order of the
-   * stack.
+   * The {@link BuildUnit} that caused the cycle.
    */
   private final BuildUnit<?> cycleCause;
-  private final List<BuildRequirement<?>> cycleComponents;
+  /**
+   * The set 
+   */
+  private final BuildCycle cycle;
   private CycleState cycleState = CycleState.UNHANDLED;
-  private BuildCycle.Result cycleResult = null;
+  private BuildCycleResult cycleResult = null;
 
-  public BuildCycleException(String message, BuildUnit<?> cycleCause, List<BuildRequirement<?>> cycleComponents) {
+  public BuildCycleException(String message, BuildUnit<?> cycleCause, BuildCycle cycle) {
     super(message);
     Objects.requireNonNull(cycleCause);
     this.cycleCause = cycleCause;
-    this.cycleComponents = cycleComponents;
+    this.cycle = cycle;
   }
 
-  public List<BuildRequirement<?>> getCycleComponents() {
-    return cycleComponents;
+  public Set<BuildRequirement<?>> getCycleComponents() {
+    return cycle.getCycleComponents();
   }
 
-  public boolean isUnitFirstInvokedOn(BuildUnit<?> path) {
-    return cycleCause == path ;//&& cycleCause.getUnit().getGeneratedBy().factory.equals(factory);
+  public boolean isUnitFirstInvokedOn(BuildUnit<?> unit) {
+    return cycleCause == unit;
   }
 
   public void setCycleState(CycleState cycleState) {
@@ -53,11 +56,11 @@ public class BuildCycleException extends RuntimeException {
     return cycleCause;
   }
   
-  public void setCycleResult(BuildCycle.Result cycleResult) {
+  public void setCycleResult(BuildCycleResult cycleResult) {
     this.cycleResult = cycleResult;
   }
   
-  public BuildCycle.Result getCycleResult() {
+  public BuildCycleResult getCycleResult() {
     return cycleResult;
   }
 

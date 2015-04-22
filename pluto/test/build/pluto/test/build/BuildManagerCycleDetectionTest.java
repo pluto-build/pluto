@@ -6,7 +6,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -116,7 +116,7 @@ public class BuildManagerCycleDetectionTest {
 			assertEquals("Wrong cause path", getDepPathWithNumber(0), cycle
 					.getCycleCause().getPersistentPath());
 
-			List<BuildRequirement<?>> cyclicUnits = cycle.getCycleComponents();
+			Set<BuildRequirement<?>> cyclicUnits = cycle.getCycleComponents();
 			assertEquals("Wrong number of units in cycle", 10,
 					cyclicUnits.size());
 

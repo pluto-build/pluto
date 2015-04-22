@@ -9,7 +9,6 @@ import java.util.List;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
-import build.pluto.builder.BuildCycle.Result;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.stamp.LastModifiedStamper;
 
@@ -115,7 +114,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   }
 
   @Override
-  public Result compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
+  public BuildCycleResult compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
     ArrayList<BuildUnit<Out>> cyclicResults = new ArrayList<>();
     ArrayList<In> inputs = new ArrayList<>();
     
@@ -136,7 +135,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
        throw new AssertionError("buildAll needs to return one output for one input");
      }
      
-     Result result = new Result();
+     BuildCycleResult result = new BuildCycleResult();
      for (int i = 0;  i < outputs.size(); i++) {
        result.setBuildResult(cyclicResults.get(i), outputs.get(i));
      }

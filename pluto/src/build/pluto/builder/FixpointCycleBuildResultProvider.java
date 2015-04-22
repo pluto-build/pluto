@@ -10,7 +10,6 @@ import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
-import build.pluto.builder.BuildCycle.Result;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.util.AbsoluteComparedFile;
 
@@ -22,17 +21,17 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
   private Set<BuildUnit<?>> requiredUnitsInIteration;
 
-  private Result result;
+  private BuildCycleResult result;
 
   public FixpointCycleBuildResultProvider(BuildUnitProvider parentManager, BuildCycle cycle) {
     super();
     this.parentManager = parentManager;
     this.cycle = cycle;
     this.requiredUnitsInIteration = new HashSet<>();
-    this.result = new Result();
+    this.result = new BuildCycleResult();
   }
 
-  public Result getResult() {
+  public BuildCycleResult getResult() {
     return result;
   }
 

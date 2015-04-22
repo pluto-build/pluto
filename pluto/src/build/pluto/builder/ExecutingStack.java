@@ -1,8 +1,7 @@
 package build.pluto.builder;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 
 import build.pluto.BuildUnit;
@@ -12,12 +11,11 @@ public class ExecutingStack extends CycleDetectionStack<BuildUnit<?>, Void>{
   
   protected Void cycleResult(BuildUnit<?> unit, Set<BuildUnit<?>> scc) {
  // Get all elements of the scc
-    List<BuildRequirement<?>>  cycleComponents = new ArrayList<>();
+    Set<BuildRequirement<?>>  cycleComponents = new HashSet<>();
     for (BuildUnit<?> p : scc) {
       cycleComponents.add(requirementForEntry(p));
     }
-    
-    BuildCycleException ex = new BuildCycleException("Build contains a dependency cycle on " + unit.getPersistentPath(), unit, cycleComponents);
+    BuildCycleException ex = new BuildCycleException("Build contains a dependency cycle on " + unit.getPersistentPath(), unit, new BuildCycle(cycleComponents));
    throw ex;
   }
   protected Void noCycleResult() {
