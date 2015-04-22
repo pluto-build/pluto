@@ -28,6 +28,7 @@ import build.pluto.dependency.Requirement;
 import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamp;
 import build.pluto.stamp.Util;
+import build.pluto.util.AbsoluteComparedFile;
 import build.pluto.xattr.Xattr;
 
 /**
@@ -104,14 +105,14 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 	private void checkUnitDependency(File file) {
 	  if (file.exists()) {
 	    try {
-        final Path dep = xattr.getGenBy(file.toPath());
+        final File dep = xattr.getGenBy(file);
         if (dep == null)
           return;
         
         boolean foundDep = visit(new ModuleVisitor<Boolean>() {
           @Override
           public Boolean visit(BuildUnit<?> mod) {
-            return dep.equals(mod.getPersistentPath());
+            return AbsoluteComparedFile.equals(dep, mod.getPersistentPath());
           }
 
           @Override
@@ -146,7 +147,7 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 		generatedFiles.add(new FileRequirement(file, stampOfFile));
 		try {
 		  if (file.exists()) 
-		    xattr.setGenBy(file.toPath(), this);
+		    xattr.setGenBy(file, this);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

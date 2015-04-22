@@ -1,14 +1,13 @@
 package build.pluto.xattr;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-import java.nio.file.Path;
-
 public interface XattrStrategy {
-  public void setXattr(Path p, String key, String value) throws IOException;
-  public void removeXattr(Path p, String key) throws IOException;
-  public String getXattr(Path p, String key) throws IOException;
+  public void setXattr(File p, String key, String value) throws IOException;
+  public void removeXattr(File p, String key) throws IOException;
+  public String getXattr(File p, String key) throws IOException;
 
-  public Map<String, String> getAllXattr(Path p) throws IOException;
+  public Map<String, String> getAllXattr(File p) throws IOException;
 }

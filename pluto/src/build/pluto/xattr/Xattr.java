@@ -45,24 +45,24 @@ public class Xattr {
     this.strategy = strategy;
   }
  
-  public void setGenBy(Path p, BuildUnit<?> unit) throws IOException {
-    strategy.setXattr(p.toAbsolutePath(), "genBy", unit.getPersistentPath().toPath().toAbsolutePath().toString());
+  public void setGenBy(File p, BuildUnit<?> unit) throws IOException {
+    strategy.setXattr(p, "genBy", unit.getPersistentPath().toPath().toAbsolutePath().toString());
   }
   
-  public void removeGenBy(Path p) throws IOException {
-    strategy.removeXattr(p.toAbsolutePath(), "genBy");
+  public void removeGenBy(File p) throws IOException {
+    strategy.removeXattr(p, "genBy");
   }
   
-  public Path getGenBy(Path p) throws IOException {
-    String val = strategy.getXattr(p.toAbsolutePath(), "genBy");
+  public File getGenBy(File p) throws IOException {
+    String val = strategy.getXattr(p, "genBy");
     if (val == null)
       return null;
-    return Paths.get(val);
+    return new File(val);
   }
   
-  public void setSynFrom(Path p, Iterable<Path> paths) throws IOException {
+  public void setSynFrom(File p, Iterable<File> paths) throws IOException {
     StringBuilder builder = new StringBuilder();
-    for (Iterator<Path> it = paths.iterator(); it.hasNext(); ) {
+    for (Iterator<File> it = paths.iterator(); it.hasNext(); ) {
       builder.append(it.next());
       if (it.hasNext())
         builder.append(File.pathSeparatorChar);
@@ -70,15 +70,15 @@ public class Xattr {
     strategy.setXattr(p, "synBy", builder.toString());
   }
   
-  public List<Path> getSynFrom(Path p) throws IOException {
+  public List<File> getSynFrom(File p) throws IOException {
     String val = strategy.getXattr(p, "synBy");
     if (val == null)
       return null;
     
-    List<Path> paths = new ArrayList<>();
+    List<File> files = new ArrayList<>();
     for (String s : val.split(Pattern.quote(File.pathSeparator)))
-      paths.add(Paths.get(s));
-    return paths;
+      files.add(new File(s));
+    return files;
   }
 }
 

@@ -1,38 +1,38 @@
 package build.pluto.xattr;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.sugarj.common.Exec;
-import java.nio.file.Path;
 
 public class XattrCommandStrategy implements XattrStrategy {
 
   Exec exec = new Exec(true);
   
   @Override
-  public void setXattr(Path p, String key, String value) throws IOException {
+  public void setXattr(File p, String key, String value) throws IOException {
     try {
-      exec.exec("xattr", "-w", Xattr.PREFIX + ":" + key, value, p.toAbsolutePath().toString());
+      exec.exec("xattr", "-w", Xattr.PREFIX + ":" + key, value, p.getAbsolutePath());
     } catch (Exec.ExecutionError e) {
       throw new IOException(e);
     }
   }
   
   @Override
-  public void removeXattr(Path p, String key) throws IOException {
+  public void removeXattr(File p, String key) throws IOException {
     try {
-      exec.exec("xattr", "-d", Xattr.PREFIX + ":" + key, p.toAbsolutePath().toString());
+      exec.exec("xattr", "-d", Xattr.PREFIX + ":" + key, p.getAbsolutePath());
     } catch (Exec.ExecutionError e) {
       throw new IOException(e);
     }
   }
 
   @Override
-  public String getXattr(Path p, String key) throws IOException {
+  public String getXattr(File p, String key) throws IOException {
     try {
-      Exec.ExecutionResult out = exec.exec("xattr", "-p", Xattr.PREFIX + ":" + key, p.toAbsolutePath().toString());
+      Exec.ExecutionResult out = exec.exec("xattr", "-p", Xattr.PREFIX + ":" + key, p.getAbsolutePath());
       return out.outMsgs[0];
     } catch (Exec.ExecutionError e) {
       return null;
@@ -40,9 +40,9 @@ public class XattrCommandStrategy implements XattrStrategy {
   }
 
   @Override
-  public Map<String, String> getAllXattr(Path p) throws IOException {
+  public Map<String, String> getAllXattr(File p) throws IOException {
     try {
-      Exec.ExecutionResult out = exec.exec("xattr", "-l", p.toAbsolutePath().toString());
+      Exec.ExecutionResult out = exec.exec("xattr", "-l", p.getAbsolutePath());
       
       Map<String, String> attrs = new HashMap<>();
       for (String line : out.outMsgs) {
