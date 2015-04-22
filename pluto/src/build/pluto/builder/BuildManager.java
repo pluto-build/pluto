@@ -25,8 +25,6 @@ import com.cedarsoftware.util.DeepEquals;
 
 public class BuildManager extends BuildUnitProvider {
 
-  public static final Xattr xattr = Xattr.getDefault();
-
   private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
 
   public static <Out extends Output> BuildUnit<Out> readResult(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
@@ -100,7 +98,7 @@ public class BuildManager extends BuildUnitProvider {
     if (depResult != null) {
       File builderClass = FileCommands.getRessourcePath(builder.getClass()).toFile();
       
-      File depFile = Xattr.getDefault().getGenBy(builderClass);
+      File depFile = DynamicAnalysis.XATTR.getGenBy(builderClass);
       if (depFile != null && depFile.exists()) {
         BuildUnit<Output> metaBuilder = BuildUnit.read(depFile);
         depResult.requireMeta(metaBuilder);
@@ -121,7 +119,7 @@ public class BuildManager extends BuildUnitProvider {
 
     this.requireStack.beginRebuild(dep);
 
-    resetGenBy(BuildUnit.read(dep));
+    analysis.reset(BuildUnit.read(dep));
     BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
 
     setUpMetaDependency(builder, depResult);
@@ -380,11 +378,5 @@ public class BuildManager extends BuildUnitProvider {
   private <Out extends Output> void assertConsistency(BuildUnit<Out> depResult) {
     assert depResult.isConsistentShallowReason(null) == InconsistenyReason.NO_REASON 
          : "Build manager does not guarantee soundness, got consistency status " + depResult.isConsistentShallowReason(null) + " for " + depResult.getPersistentPath();
-  }
-
-  private void resetGenBy(BuildUnit<?> depResult) throws IOException {
-    if (depResult != null)
-      for (File f : depResult.getGeneratedFiles())
-        BuildManager.xattr.removeGenBy(f);
   }
 }

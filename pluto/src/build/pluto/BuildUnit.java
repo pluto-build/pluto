@@ -15,7 +15,6 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
-import build.pluto.builder.BuildManager;
 import build.pluto.builder.BuildRequest;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.FileRequirement;
@@ -96,12 +95,6 @@ final public class BuildUnit<Out extends Output> extends PersistableEntity {
 	
 	public void generates(File file, Stamp stampOfFile) {
 		generatedFiles.add(new FileRequirement(file, stampOfFile));
-		try {
-		  if (file.exists()) 
-		    BuildManager.xattr.setGenBy(file, this);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
 	}
 	
 	public <Out_ extends Output> void requires(BuildUnit<Out_> mod) {
