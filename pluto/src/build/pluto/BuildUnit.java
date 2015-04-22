@@ -15,19 +15,16 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
-import org.sugarj.common.Log;
-
+import build.pluto.builder.BuildManager;
 import build.pluto.builder.BuildRequest;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.FileRequirement;
-import build.pluto.dependency.IllegalDependencyException;
 import build.pluto.dependency.MetaBuildRequirement;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamp;
 import build.pluto.stamp.Util;
-import build.pluto.xattr.Xattr;
 
 /**
  * Dependency management for modules.
@@ -38,9 +35,7 @@ final public class BuildUnit<Out extends Output> extends PersistableEntity {
 
   public static final long serialVersionUID = -2821414386853890682L;
 
-  public static final Xattr xattr = Xattr.getDefault();
-	
-	public static enum State {
+  public static enum State {
 	  NEW, INITIALIZED, IN_PROGESS, SUCCESS, FAILURE;
 	  
 	  public static State finished(boolean success) {
@@ -97,55 +92,13 @@ final public class BuildUnit<Out extends Output> extends PersistableEntity {
 	public void requires(File file, Stamp stampOfFile) {
 		requirements.add(new FileRequirement(file, stampOfFile));
 		requiredFiles.add(file);
-		checkUnitDependency(file);
 	}
 	
-	private void checkUnitDependency(File file) {
-	  if (file.exists()) {
-	    try {
-        final Path dep = xattr.getGenBy(file.toPath());
-        if (dep == null)
-          return;
-        
-        boolean foundDep = visit(new ModuleVisitor<Boolean>() {
-          @Override
-          public Boolean visit(BuildUnit<?> mod) {
-            return dep.equals(mod.getPersistentPath());
-          }
-
-          @Override
-          public Boolean combine(Boolean t1, Boolean t2) {
-            return t1 || t2;
-          }
-
-          @Override
-          public Boolean init() {
-            return false;
-          }
-
-          @Override
-          public boolean cancel(Boolean t) {
-            return t;
-          }
-        }, getModuleDependencies());
-        
-        if (!foundDep)
-          throw new IllegalDependencyException(dep, 
-              "Build unit " + getPersistentPath() + " has a hidden dependency on file " + file + 
-              " without build-unit dependency on " + dep + ", which generated this file. The current builder " + 
-                  getPersistentPath().getName() + " should mark a dependency to " + dep + 
-                  " by `requiring` the corresponding builder.");
-      } catch (IOException e) {
-        Log.log.log("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, Log.IMPORT);
-      }
-	  }
-  }
-
 	public void generates(File file, Stamp stampOfFile) {
 		generatedFiles.add(new FileRequirement(file, stampOfFile));
 		try {
 		  if (file.exists()) 
-		    xattr.setGenBy(file.toPath(), this);
+		    BuildManager.xattr.setGenBy(file.toPath(), this);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

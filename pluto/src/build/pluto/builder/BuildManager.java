@@ -17,9 +17,6 @@ import build.pluto.BuildUnit.InconsistenyReason;
 import build.pluto.BuildUnit.State;
 import build.pluto.builder.BuildCycle.Result.UnitResultTuple;
 import build.pluto.builder.BuildCycleException.CycleState;
-import build.pluto.dependency.DuplicateBuildUnitPathException;
-import build.pluto.dependency.DuplicateFileGenerationException;
-import build.pluto.dependency.FileRequirement;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
@@ -29,6 +26,8 @@ import build.pluto.xattr.Xattr;
 import com.cedarsoftware.util.DeepEquals;
 
 public class BuildManager extends BuildUnitProvider {
+
+  public static final Xattr xattr = Xattr.getDefault();
 
   private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
 
@@ -92,18 +91,15 @@ public class BuildManager extends BuildUnitProvider {
 
   private final Map<? extends Path, Stamp> editedSourceFiles;
   private ExecutingStack executingStack;
-
   private transient RequireStack requireStack;
-
-  private transient Map<File, BuildUnit<?>> generatedFiles;
-
   private transient boolean initialRequest = true;
+  private transient DynamicAnalysis analysis;
 
   protected BuildManager(Map<? extends Path, Stamp> editedSourceFiles) {
     this.editedSourceFiles = editedSourceFiles;
     this.executingStack = new ExecutingStack();
     // this.consistencyManager = new ConsistencyManager();
-    this.generatedFiles = new HashMap<>();
+    this.analysis = new DynamicAnalysis();
     this.requireStack = new RequireStack();
   }
 
@@ -115,13 +111,14 @@ public class BuildManager extends BuildUnitProvider {
   void setUpMetaDependency(Builder<In, Out> builder, BuildUnit<Out> depResult) throws IOException {
     if (depResult != null) {
       Path builderClass = FileCommands.getRessourcePath(builder.getClass());
-      depResult.requires(builderClass.toFile(), LastModifiedStamper.instance.stampOf(builderClass.toFile()));
       
-      Path depFile = Xattr.getDefault().getGenBy(builderClass);
+      Path depFile = BuildManager.xattr.getGenBy(builderClass);
       if (FileCommands.exists(depFile)) {
         BuildUnit<Output> metaBuilder = BuildUnit.read(depFile.toFile());
         depResult.requireMeta(metaBuilder);
       }
+      
+      depResult.requires(builderClass.toFile(), LastModifiedStamper.instance.stampOf(builderClass.toFile()));
     }
   }
 
@@ -181,8 +178,7 @@ public class BuildManager extends BuildUnitProvider {
       if (taskDescription != null)
         Log.log.endTask(depResult.getState() == BuildUnit.State.SUCCESS);
 
-      if (inputHash != DeepEquals.deepHashCode(builder.input))
-        throw new AssertionError("API Violation detected: Builder mutated its input.");
+      analysis.check(depResult, inputHash);
       assertConsistency(depResult);
 
       this.executingStack.pop(depResult);
@@ -393,26 +389,14 @@ public class BuildManager extends BuildUnitProvider {
     return unit;
   }
 
-  private <Out extends Output> BuildUnit<Out> assertConsistency(BuildUnit<Out> depResult) {
-    BuildUnit<?> other = generatedFiles.put(depResult.getPersistentPath(), depResult);
-    if (other != null && other != depResult)
-      throw new DuplicateBuildUnitPathException("Build unit " + depResult + " has same persistent path as build unit " + other);
-
-    for (FileRequirement freq : depResult.getGeneratedFileRequirements()) {
-      other = generatedFiles.put(freq.file, depResult);
-      if (other != null && other != depResult)
-        throw new DuplicateFileGenerationException("Build unit " + depResult + " generates same file as build unit " + other);
-    }
-
-    InconsistenyReason reason = depResult.isConsistentShallowReason(null);
-    if (reason != InconsistenyReason.NO_REASON)
-      throw new AssertionError("Build manager does not guarantee soundness, got consistency status " + reason + " for " + depResult.getPersistentPath());
-    return depResult;
+  private <Out extends Output> void assertConsistency(BuildUnit<Out> depResult) {
+    assert depResult.isConsistentShallowReason(null) != InconsistenyReason.NO_REASON 
+         : "Build manager does not guarantee soundness, got consistency status " + depResult.isConsistentShallowReason(null) + " for " + depResult.getPersistentPath();
   }
 
   private void resetGenBy(BuildUnit<?> depResult) throws IOException {
     if (depResult != null)
       for (File f : depResult.getGeneratedFiles())
-        BuildUnit.xattr.removeGenBy(f.toPath());
+        BuildManager.xattr.removeGenBy(f.toPath());
   }
 }
