@@ -227,7 +227,6 @@ public class BuildManager extends BuildUnitProvider {
     // where normal
     // units are compiled too
 
-    Log.log.log("CycleCause: " + e.getCycleCause().input, Log.CORE);
     // Set the result to the unit
     if (e.getCycleState() == CycleState.RESOLVED) {
       if (e.getCycleResult() == null) {

@@ -66,8 +66,6 @@ public class FixpointCycleSupport implements CycleSupport {
             cycleUnits.put(req, newUnit);
           }
         }
-      } catch (Throwable t) {
-        t.printStackTrace();
       } finally {
         if (logStarted) {
           Log.log.endTask();
