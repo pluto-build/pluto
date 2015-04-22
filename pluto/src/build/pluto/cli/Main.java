@@ -94,6 +94,7 @@ public class Main {
       e.printStackTrace();
       System.exit(1);
     } catch (ParseException e) {
+      Log.log.logErr(e.getMessage(), Log.CORE);
       showUsage(command, options);
       System.exit(1);
     }
