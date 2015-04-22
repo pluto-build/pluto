@@ -67,7 +67,7 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 	// Methods for initialization
 	// **************************
 
-	public static <Out extends Serializable> BuildUnit<Out> create(Path dep, BuildRequest<?, Out, ?, ?> generatedBy) throws IOException {
+	public static <Out extends Serializable> BuildUnit<Out> create(File dep, BuildRequest<?, Out, ?, ?> generatedBy) throws IOException {
 		@SuppressWarnings("unchecked")
     BuildUnit<Out> e = PersistableEntity.create(BuildUnit.class, dep);
 		e.generatedBy = generatedBy;

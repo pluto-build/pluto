@@ -131,11 +131,11 @@ public class BuildManager extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   // @formatter:on
-  BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildUnit<Out> executeBuilder(Builder<In, Out> builder, File dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     this.requireStack.beginRebuild(dep);
 
-    resetGenBy(dep, BuildUnit.read(dep.toFile()));
+    resetGenBy(BuildUnit.read(dep));
     BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
 
     setUpMetaDependency(builder, depResult);
@@ -162,7 +162,7 @@ public class BuildManager extends BuildUnitProvider {
         throw this.tryCompileCycle(e);
       }
     } catch (BuildCycleException e) {
-      stopBuilderInCycle(builder, dep, buildReq, depResult, e);
+      stopBuilderInCycle(builder, buildReq, depResult, e);
 
     } catch (RequiredBuilderFailed e) {
       if (taskDescription != null)
@@ -237,7 +237,7 @@ public class BuildManager extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>> 
   //@formatter:on
-  void stopBuilderInCycle(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq, BuildUnit<Out> depResult, BuildCycleException e) {
+  void stopBuilderInCycle(Builder<In, Out> builder, BuildRequest<In, Out, B, F> buildReq, BuildUnit<Out> depResult, BuildCycleException e) {
     // This is the exception which has been rethrown above, but we cannot
     // handle it
     // here because compiling the cycle needs to be in the major try block
@@ -255,7 +255,7 @@ public class BuildManager extends BuildUnitProvider {
         throw new AssertionError("Cyclic builder does not provide a result for " + depResult.getPersistentPath());
       }
       tuple.setOutputToUnit();
-      requireStack.markConsistent(depResult.getPersistentPath().toPath());
+      requireStack.markConsistent(depResult.getPersistentPath());
     } else {
       depResult.setState(State.FAILURE);
     }
@@ -320,8 +320,8 @@ public class BuildManager extends BuildUnitProvider {
   BuildUnit<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     Builder<In, Out> builder = buildReq.createBuilder();
-    Path dep = builder.persistentPath();
-    BuildUnit<Out> depResult = BuildUnit.read(dep.toFile());
+    File dep = builder.persistentPath().toFile();
+    BuildUnit<Out> depResult = BuildUnit.read(dep);
 
     // Dont execute require because it is cyclic, requireStack keeps track of
     // this
@@ -409,7 +409,7 @@ public class BuildManager extends BuildUnitProvider {
     return depResult;
   }
 
-  private void resetGenBy(Path dep, BuildUnit<?> depResult) throws IOException {
+  private void resetGenBy(BuildUnit<?> depResult) throws IOException {
     if (depResult != null)
       for (File f : depResult.getGeneratedFiles())
         BuildUnit.xattr.removeGenBy(f.toPath());

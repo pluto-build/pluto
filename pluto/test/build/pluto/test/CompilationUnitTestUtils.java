@@ -57,7 +57,7 @@ public class CompilationUnitTestUtils {
 
 	public static BuildUnit<NodeOutput> makeNode(String name) {
 		try {
-		BuildUnit<NodeOutput> unit = BuildUnit.create(Paths.get("./"+name), new BuildRequest<>(factory, new NodeInput(name)));
+		BuildUnit<NodeOutput> unit = BuildUnit.create(Paths.get("./"+name).toFile(), new BuildRequest<>(factory, new NodeInput(name)));
 		unit.setBuildResult(new NodeOutput(name));
 		return unit;
 		} catch (IOException e) {

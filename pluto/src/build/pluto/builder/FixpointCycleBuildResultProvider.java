@@ -78,7 +78,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
           try {
             Builder<In, Out> builder = buildReq.createBuilder();
             Path dep =  builder.persistentPath();
-            cycleUnit = BuildUnit.create(dep, buildReq);
+            cycleUnit = BuildUnit.create(dep.toFile(), buildReq);
             BuildManager.setUpMetaDependency(builder, cycleUnit);
 
             Out result = builder.triggerBuild(cycleUnit, this);

@@ -1,11 +1,10 @@
 package build.pluto.test.build;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-
-import java.nio.file.Path;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildCycleException;
@@ -38,13 +37,14 @@ public class TrackingBuildManager extends BuildManager {
 	}
 
 	 // @formatter:off
+	@Override
   protected 
     <In extends Serializable,
      Out extends Serializable,
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   // @formatter:on
-  BuildUnit<Out> executeBuilder(Builder<In, Out> builder, Path dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildUnit<Out> executeBuilder(Builder<In, Out> builder, File dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 		executedInputs.add(buildReq.input);
 		try {
   		BuildUnit<Out> result = super.executeBuilder(builder, dep, buildReq);

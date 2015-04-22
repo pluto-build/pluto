@@ -8,7 +8,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -17,6 +16,7 @@ import org.sugarj.common.FileCommands;
 
 import build.pluto.stamp.Stamp;
 import build.pluto.stamp.Stamper;
+import build.pluto.util.AbsoluteComparedFile;
 
 /**
  * @author Sebastian Erdweg
@@ -26,7 +26,7 @@ public abstract class PersistableEntity implements Serializable {
   
   private static final long serialVersionUID = 3725384862203109760L;
 
-  private final static Map<File, PersistableEntity> inMemory = new HashMap<>();
+  private final static Map<AbsoluteComparedFile, PersistableEntity> inMemory = new HashMap<>();
   
   
   public PersistableEntity() { /* for deserialization only */ }
@@ -65,8 +65,8 @@ public abstract class PersistableEntity implements Serializable {
   
   protected abstract void init();
   
-  final protected static <E extends PersistableEntity> E create(Class<E> clazz, Path p) throws IOException {
-    E entity = readFromMemoryCache(clazz, p.toFile());
+  final protected static <E extends PersistableEntity> E create(Class<E> clazz, File p) throws IOException {
+    E entity = readFromMemoryCache(clazz, p);
     
     if (entity != null) {
       entity.init();
@@ -83,7 +83,7 @@ public abstract class PersistableEntity implements Serializable {
       return null;
     }
 
-    entity.persistentPath = p.toFile();
+    entity.persistentPath = p;
     entity.cacheInMemory();
     entity.init();
     return entity;
@@ -148,7 +148,7 @@ public abstract class PersistableEntity implements Serializable {
   final protected static <E extends PersistableEntity> E readFromMemoryCache(Class<E> clazz, File p) {
     PersistableEntity e;
     synchronized (PersistableEntity.class) {
-      e = inMemory.get(p.getAbsoluteFile());
+      e = inMemory.get(AbsoluteComparedFile.absolute(p));
     }
     if (e == null)
       return null;
@@ -160,7 +160,7 @@ public abstract class PersistableEntity implements Serializable {
   
   final protected void cacheInMemory() {
     synchronized (PersistableEntity.class) {
-      inMemory.put(persistentPath.getAbsoluteFile(), this);
+      inMemory.put(AbsoluteComparedFile.absolute(persistentPath), this);
     }
   }
   
