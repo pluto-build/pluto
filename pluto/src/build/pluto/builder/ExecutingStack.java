@@ -1,12 +1,12 @@
 package build.pluto.builder;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import build.pluto.BuildUnit;
 import build.pluto.dependency.BuildRequirement;
+import build.pluto.output.Output;
 
 public class ExecutingStack extends CycleDetectionStack<BuildUnit<?>, Void>{
   
@@ -25,7 +25,7 @@ public class ExecutingStack extends CycleDetectionStack<BuildUnit<?>, Void>{
   }
   
   
-  private <Out extends Serializable> BuildRequirement<Out> requirementForEntry(BuildUnit<Out> unit) {
+  private <Out extends Output> BuildRequirement<Out> requirementForEntry(BuildUnit<Out> unit) {
     return new BuildRequirement<>(unit, unit.getGeneratedBy());
   }
 

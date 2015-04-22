@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -25,6 +23,7 @@ import build.pluto.dependency.FileRequirement;
 import build.pluto.dependency.IllegalDependencyException;
 import build.pluto.dependency.MetaBuildRequirement;
 import build.pluto.dependency.Requirement;
+import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamp;
 import build.pluto.stamp.Util;
@@ -35,7 +34,7 @@ import build.pluto.xattr.Xattr;
  * 
  * @author Sebastian Erdweg
  */
-final public class BuildUnit<Out extends Serializable> extends PersistableEntity {
+final public class BuildUnit<Out extends Output> extends PersistableEntity {
 
   public static final long serialVersionUID = -2821414386853890682L;
 
@@ -67,14 +66,14 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 	// Methods for initialization
 	// **************************
 
-	public static <Out extends Serializable> BuildUnit<Out> create(File dep, BuildRequest<?, Out, ?, ?> generatedBy) throws IOException {
+	public static <Out extends Output> BuildUnit<Out> create(File dep, BuildRequest<?, Out, ?, ?> generatedBy) throws IOException {
 		@SuppressWarnings("unchecked")
     BuildUnit<Out> e = PersistableEntity.create(BuildUnit.class, dep);
 		e.generatedBy = generatedBy;
 		return e;
 	}
 	
-	final public static <Out extends Serializable> BuildUnit<Out> read(File dep) throws IOException {
+	final public static <Out extends Output> BuildUnit<Out> read(File dep) throws IOException {
 	  @SuppressWarnings("unchecked")
     BuildUnit<Out> e = PersistableEntity.read(BuildUnit.class, dep);
 	  return e;
@@ -152,13 +151,13 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
     }
 	}
 	
-	public <Out_ extends Serializable> void requires(BuildUnit<Out_> mod) {
+	public <Out_ extends Output> void requires(BuildUnit<Out_> mod) {
 	  Objects.requireNonNull(mod);
 	  requirements.add(new BuildRequirement<Out_>(mod, mod.getGeneratedBy()));
 	  requiredUnits.add(mod);
 	}
 	
-	public <Out_ extends Serializable> void requireMeta(BuildUnit<Out_> mod) {
+	public <Out_ extends Output> void requireMeta(BuildUnit<Out_> mod) {
 	  Objects.requireNonNull(mod);
 	  requirements.add(new MetaBuildRequirement<Out_>(mod, mod.getGeneratedBy()));
     requiredUnits.add(mod);

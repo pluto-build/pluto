@@ -1,8 +1,7 @@
 package build.pluto.output;
 
-import java.io.Serializable;
 
-public class None implements Serializable {
+public class None implements Output {
 
   private static final long serialVersionUID = -4427485206308344655L;
   

@@ -25,13 +25,14 @@ import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
 import build.pluto.builder.RequiredBuilderFailed;
+import build.pluto.output.Output;
 
 public class Main {
 
   @SuppressWarnings("unchecked")
   public static void main(String[] args) throws ClassNotFoundException, NoSuchFieldException, SecurityException, IllegalAccessException, IOException {
     String command;
-    BuilderFactory<Serializable, Serializable, Builder<Serializable, Serializable>> factory;
+    BuilderFactory<Serializable, Output, Builder<Serializable, Output>> factory;
     Class<Serializable> inputClass;
     try {
       command = args[0];
@@ -77,7 +78,7 @@ public class Main {
       }
         
       Serializable input = inputParser.parseCommandLine(line);
-      BuildRequest<?, ?, ?, ?> req = new BuildRequest<Serializable, Serializable, Builder<Serializable, Serializable>, BuilderFactory<Serializable, Serializable, Builder<Serializable, Serializable>>>(factory, input);
+      BuildRequest<?, ?, ?, ?> req = new BuildRequest<Serializable, Output, Builder<Serializable, Output>, BuilderFactory<Serializable, Output, Builder<Serializable, Output>>>(factory, input);
       
       if (line.hasOption(cleanOption.getLongOpt()) || line.hasOption(dryCleanOption.getLongOpt())) {
         clean(line.hasOption(dryCleanOption.getLongOpt()), req);
@@ -99,14 +100,14 @@ public class Main {
   }
 
   @SuppressWarnings("unchecked")
-  private static BuilderFactory<Serializable, Serializable, Builder<Serializable, Serializable>> findFactory(String factoryField) throws ClassNotFoundException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+  private static BuilderFactory<Serializable, Output, Builder<Serializable, Output>> findFactory(String factoryField) throws ClassNotFoundException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
     String factoryFieldContainer = factoryField.substring(0, factoryField.lastIndexOf('.'));
     String factoryFieldName = factoryField.substring(factoryField.lastIndexOf('.') + 1);
     Class<?> containerClass = Class.forName(factoryFieldContainer);
     Field f = containerClass.getDeclaredField(factoryFieldName);
     f.setAccessible(true);
     Object fval = f.get(null);
-    return (BuilderFactory<Serializable, Serializable, Builder<Serializable, Serializable>>) fval;
+    return (BuilderFactory<Serializable, Output, Builder<Serializable, Output>>) fval;
   }
   
 

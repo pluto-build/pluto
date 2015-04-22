@@ -12,6 +12,7 @@ import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
 import build.pluto.builder.BuildCycle.Result;
 import build.pluto.dependency.BuildRequirement;
+import build.pluto.output.Output;
 
 public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
@@ -39,7 +40,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
     requiredUnitsInIteration.clear();
   }
 
-  private <In extends Serializable, Out extends Serializable, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> getBuildUnitInCycle(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  private <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> getBuildUnitInCycle(BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     Path depPath = buildReq.createBuilder().persistentPath();
     for (BuildRequirement<?> req : this.cycle.getCycleComponents()) {
@@ -54,7 +55,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
   public
 //@formatter:off
     <In extends Serializable,
-     Out extends Serializable,
+     Out extends Output,
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
 //@formatter:on

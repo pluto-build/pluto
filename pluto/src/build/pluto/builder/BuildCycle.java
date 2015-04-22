@@ -1,6 +1,5 @@
 package build.pluto.builder;
 
-import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
@@ -8,12 +7,13 @@ import java.util.Map;
 
 import build.pluto.BuildUnit;
 import build.pluto.dependency.BuildRequirement;
+import build.pluto.output.Output;
 
 public class BuildCycle {
   
   public static class Result {
     
-    public static class  UnitResultTuple <Out extends Serializable>{
+    public static class  UnitResultTuple <Out extends Output>{
       private BuildUnit<Out> unit;
       private Out result;
       public UnitResultTuple(BuildUnit<Out> unit, Out result) {
@@ -29,11 +29,11 @@ public class BuildCycle {
     private Map<Path, UnitResultTuple<?>> cycleOutputs = new HashMap<>();
     
     
-    public <Out extends Serializable> void setBuildResult(BuildUnit<Out> unit, Out result) {
+    public <Out extends Output> void setBuildResult(BuildUnit<Out> unit, Out result) {
       this.cycleOutputs.put(unit.getPersistentPath().toPath().toAbsolutePath(), new UnitResultTuple<Out>(unit, result));
     }
     
-    public <Out extends Serializable>  UnitResultTuple<Out> getUnitResult(BuildUnit<Out> unit) {
+    public <Out extends Output>  UnitResultTuple<Out> getUnitResult(BuildUnit<Out> unit) {
       UnitResultTuple<Out> tuple = (UnitResultTuple<Out>) this.cycleOutputs.get(unit.getPersistentPath().toPath().toAbsolutePath());
       return tuple;
     }

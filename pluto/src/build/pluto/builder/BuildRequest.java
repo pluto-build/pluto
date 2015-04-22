@@ -1,10 +1,8 @@
 package build.pluto.builder;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.util.Objects;
 
+import build.pluto.output.Output;
 import build.pluto.output.OutputEqualStamper;
 import build.pluto.output.OutputStamper;
 
@@ -12,7 +10,7 @@ import com.cedarsoftware.util.DeepEquals;
 
 public class BuildRequest<
   In extends Serializable, 
-  Out extends Serializable, 
+  Out extends Output, 
   B extends Builder<In, Out>,
   F extends BuilderFactory<In, Out, B>
 > implements Serializable {

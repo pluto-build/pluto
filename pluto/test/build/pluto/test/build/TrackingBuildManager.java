@@ -12,6 +12,7 @@ import build.pluto.builder.BuildManager;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
+import build.pluto.output.Output;
 
 public class TrackingBuildManager extends BuildManager {
 
@@ -23,14 +24,14 @@ public class TrackingBuildManager extends BuildManager {
 		super(null);
 	}
 
-	public <In extends Serializable, Out extends Serializable, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(
+	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(
 			F factory, In input) throws IOException {
 		requiredInputs.add(input);
 		return super.require(new BuildRequest<>(factory, input));
 	}
 
 	@Override
-	public <In extends Serializable, Out extends Serializable, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(
+	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildUnit<Out> require(
 			BuildRequest<In, Out, B, F> buildReq) throws IOException {
 		requiredInputs.add(buildReq.input);
 		return super.require(buildReq);
@@ -40,7 +41,7 @@ public class TrackingBuildManager extends BuildManager {
 	@Override
   protected 
     <In extends Serializable,
-     Out extends Serializable,
+     Out extends Output,
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   // @formatter:on

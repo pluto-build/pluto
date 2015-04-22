@@ -2,12 +2,10 @@ package build.pluto.test.build.cycle.fixpoint;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 
-import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.Path;
+import build.pluto.output.Output;
 
-public class IntegerOutput implements Serializable {
+public class IntegerOutput implements Output {
 	/**
 	 * 
 	 */

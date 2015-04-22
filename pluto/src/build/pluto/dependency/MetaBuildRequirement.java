@@ -1,14 +1,14 @@
 package build.pluto.dependency;
 
 import java.io.IOException;
-import java.io.Serializable;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuildUnitProvider;
 import build.pluto.builder.IMetaBuildingEnabled;
+import build.pluto.output.Output;
 
-public class MetaBuildRequirement<Out extends Serializable> extends BuildRequirement<Out> {
+public class MetaBuildRequirement<Out extends Output> extends BuildRequirement<Out> {
   public MetaBuildRequirement() {
 
   }

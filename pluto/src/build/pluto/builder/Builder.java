@@ -9,11 +9,12 @@ import java.util.Collection;
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
 import build.pluto.dependency.IllegalDependencyException;
+import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamp;
 import build.pluto.stamp.Stamper;
 
-public abstract class Builder<In extends Serializable, Out extends Serializable> {
+public abstract class Builder<In extends Serializable, Out extends Output> {
   protected final In input;
   
   public Builder(In input) {
@@ -64,7 +65,7 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
   
   protected <
   In_ extends Serializable, 
-  Out_ extends Serializable, 
+  Out_ extends Output, 
   B_ extends Builder<In_,Out_>,
   F_ extends BuilderFactory<In_, Out_, B_>,
   SubIn_ extends In_
@@ -75,7 +76,7 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
   
   protected <
   In_ extends Serializable, 
-  Out_ extends Serializable, 
+  Out_ extends Output, 
   B_ extends Builder<In_,Out_>,
   F_ extends BuilderFactory<In_, Out_, B_>
   > Out_ requireBuild(BuildRequest<In_, Out_, B_, F_> req) throws IOException {

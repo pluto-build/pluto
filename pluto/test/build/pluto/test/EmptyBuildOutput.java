@@ -1,8 +1,8 @@
 package build.pluto.test;
 
-import java.io.Serializable;
+import build.pluto.output.Output;
 
-public final class EmptyBuildOutput implements Serializable {
+public final class EmptyBuildOutput implements Output {
 
 	/**
 	 * 

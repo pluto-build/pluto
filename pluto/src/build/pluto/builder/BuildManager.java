@@ -21,6 +21,7 @@ import build.pluto.dependency.DuplicateBuildUnitPathException;
 import build.pluto.dependency.DuplicateFileGenerationException;
 import build.pluto.dependency.FileRequirement;
 import build.pluto.dependency.Requirement;
+import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamp;
 import build.pluto.xattr.Xattr;
@@ -31,15 +32,15 @@ public class BuildManager extends BuildUnitProvider {
 
   private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
 
-  public static <Out extends Serializable> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
+  public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
     return build(buildReq, null);
   }
 
-  public static <Out extends Serializable> BuildUnit<Out> readResult(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
+  public static <Out extends Output> BuildUnit<Out> readResult(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
     return BuildUnit.read(buildReq.createBuilder().persistentPath().toFile());
   }
 
-  public static <Out extends Serializable> Out build(BuildRequest<?, Out, ?, ?> buildReq, Map<? extends Path, Stamp> editedSourceFiles) {
+  public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq, Map<? extends Path, Stamp> editedSourceFiles) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
     boolean freshManager = manager == null;
@@ -59,11 +60,11 @@ public class BuildManager extends BuildUnitProvider {
     }
   }
 
-  public static <Out extends Serializable> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs) {
+  public static <Out extends Output> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs) {
     return buildAll(buildReqs, null);
   }
 
-  public static <Out extends Serializable> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs, Map<? extends Path, Stamp> editedSourceFiles) {
+  public static <Out extends Output> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs, Map<? extends Path, Stamp> editedSourceFiles) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
     boolean freshManager = manager == null;
@@ -109,7 +110,7 @@ public class BuildManager extends BuildUnitProvider {
   // @formatter:off
   protected static 
     <In extends Serializable,
-     Out extends Serializable>
+     Out extends Output>
   // @formatter:on
   void setUpMetaDependency(Builder<In, Out> builder, BuildUnit<Out> depResult) throws IOException {
     if (depResult != null) {
@@ -118,7 +119,7 @@ public class BuildManager extends BuildUnitProvider {
       
       Path depFile = Xattr.getDefault().getGenBy(builderClass);
       if (FileCommands.exists(depFile)) {
-        BuildUnit<Serializable> metaBuilder = BuildUnit.read(depFile.toFile());
+        BuildUnit<Output> metaBuilder = BuildUnit.read(depFile.toFile());
         depResult.requireMeta(metaBuilder);
       }
     }
@@ -127,7 +128,7 @@ public class BuildManager extends BuildUnitProvider {
   // @formatter:off
   protected 
     <In extends Serializable,
-     Out extends Serializable,
+     Out extends Output,
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   // @formatter:on
@@ -233,7 +234,7 @@ public class BuildManager extends BuildUnitProvider {
   // @formatter:off
   private 
     <In extends Serializable,
-     Out extends Serializable,
+     Out extends Output,
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>> 
   //@formatter:on
@@ -285,7 +286,7 @@ public class BuildManager extends BuildUnitProvider {
 //@formatter:off
   protected
     <In extends Serializable,
-     Out extends Serializable,
+     Out extends Output,
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
@@ -313,7 +314,7 @@ public class BuildManager extends BuildUnitProvider {
   //@formatter:off
   public
     <In extends Serializable,
-     Out extends Serializable,
+     Out extends Output,
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
@@ -383,7 +384,7 @@ public class BuildManager extends BuildUnitProvider {
     return yield(builder, depResult);
   }
   
-  private <In extends Serializable, Out extends Serializable> BuildUnit<Out> yield(Builder<In, Out> builder, BuildUnit<Out> unit) {
+  private <In extends Serializable, Out extends Output> BuildUnit<Out> yield(Builder<In, Out> builder, BuildUnit<Out> unit) {
     if (unit.hasFailed()) {
       RequiredBuilderFailed e = new RequiredBuilderFailed(builder, unit, "no rebuild of failing builder");
       Log.log.logErr(e.getMessage(), Log.CORE);
@@ -392,7 +393,7 @@ public class BuildManager extends BuildUnitProvider {
     return unit;
   }
 
-  private <Out extends Serializable> BuildUnit<Out> assertConsistency(BuildUnit<Out> depResult) {
+  private <Out extends Output> BuildUnit<Out> assertConsistency(BuildUnit<Out> depResult) {
     BuildUnit<?> other = generatedFiles.put(depResult.getPersistentPath(), depResult);
     if (other != null && other != depResult)
       throw new DuplicateBuildUnitPathException("Build unit " + depResult + " has same persistent path as build unit " + other);

@@ -5,15 +5,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.io.Serializable;
 import java.util.Objects;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuildUnitProvider;
+import build.pluto.output.Output;
 import build.pluto.output.OutputStamp;
 
-public class BuildRequirement<Out extends Serializable> implements Requirement, Externalizable {
+public class BuildRequirement<Out extends Output> implements Requirement, Externalizable {
 
   private static final long serialVersionUID = -5059819155907677962L;
   

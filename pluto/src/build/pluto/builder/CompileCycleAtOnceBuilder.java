@@ -12,9 +12,10 @@ import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
 import build.pluto.builder.BuildCycle.Result;
 import build.pluto.dependency.BuildRequirement;
+import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
 
-public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out extends Serializable> extends Builder<ArrayList<In>, Out> implements CycleSupport{
+public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out extends Output> extends Builder<ArrayList<In>, Out> implements CycleSupport{
 
   public static <X> ArrayList<X> singletonArrayList(X elem) {
     return new ArrayList<X>(Collections.<X> singletonList(elem));
@@ -50,7 +51,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   
   protected <
   In_ extends Serializable, 
-  Out_ extends Serializable, 
+  Out_ extends Output, 
   B_ extends Builder<ArrayList<In_>, Out_>,
   F_ extends BuilderFactory<ArrayList<In_>, Out_, B_>
   > Out_ requireCyclicable(F_ factory, In_ input) throws IOException {

@@ -13,6 +13,7 @@ import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
+import build.pluto.output.Output;
 
 public class CompilationUnitTestUtils {
 
@@ -28,7 +29,7 @@ public class CompilationUnitTestUtils {
 		}
 	}
 	
-	public static class NodeOutput implements Serializable {
+	public static class NodeOutput implements Output {
 
 		private final String name;
 		
