@@ -1,10 +1,9 @@
 package build.pluto.stamp;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.sugarj.common.path.Path;
 
 public class CollectionStamper implements Stamper {
 
@@ -17,13 +16,13 @@ public class CollectionStamper implements Stamper {
   }
   
   @Override
-  public Stamp stampOf(Path p) {
+  public Stamp stampOf(File p) {
     return new ValueStamp<>(this, Collections.singletonMap(p, elementStamper.stampOf(p)));
   }
   
-  public Stamp stampOf(Iterable<Path> paths) {
-    Map<Path, Stamp> map = new HashMap<>();
-    for (Path p : paths)
+  public Stamp stampOf(Iterable<File> paths) {
+    Map<File, Stamp> map = new HashMap<>();
+    for (File p : paths)
       map.put(p, elementStamper.stampOf(p));
     return new ValueStamp<>(this, map);
   }

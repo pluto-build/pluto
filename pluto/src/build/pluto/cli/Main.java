@@ -1,8 +1,11 @@
 package build.pluto.cli;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Set;
 
@@ -15,7 +18,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
-import org.sugarj.common.path.Path;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildManager;
@@ -119,16 +121,16 @@ public class Main {
       return;
     Set<BuildUnit<?>> allUnits = unit.getTransitiveModuleDependencies();
     for (BuildUnit<?> next : allUnits) {
-      for (Path p : next.getGeneratedFiles())
-        deleteFile(p, dryRun);
-      deleteFile(next.getPersistentPath(), dryRun);
+      for (File p : next.getGeneratedFiles())
+        deleteFile(p.toPath(), dryRun);
+      deleteFile(next.getPersistentPath().toPath(), dryRun);
     }
   }
 
   private static void deleteFile(Path p, boolean dryRun) throws IOException {
     Log.log.log("Delete " + p + (dryRun ? " (dry run)" : ""), Log.CORE);
     if (!dryRun)
-      if (!p.getFile().isDirectory() || p.getFile().list().length == 0)
+      if (!Files.isDirectory(p) || Files.list(p).findAny().isPresent())
         FileCommands.delete(p);
   }
 

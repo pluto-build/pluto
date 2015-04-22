@@ -1,13 +1,15 @@
 package build.pluto.test.build.once;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.Path;
 import org.sugarj.common.path.RelativePath;
 
 import build.pluto.BuildUnit;
@@ -37,29 +39,28 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 		 * 
 		 */
 		private static final long serialVersionUID = 6657909750424698658L;
-		private RelativePath inputPath;
-		private Path basePath;
+		private File inputPath;
+		private File basePath;
 
-		public TestBuilderInput(Path basePath, RelativePath inputPath) {
+		public TestBuilderInput(File basePath, File inputPath) {
 			super();
 			Objects.requireNonNull(basePath);
 			Objects.requireNonNull(inputPath);
-			Objects.requireNonNull(inputPath.getBasePath());
 			this.inputPath = inputPath;
 			this.basePath = basePath;
 		}
 
-		public RelativePath getInputPath() {
+		public File getInputPath() {
 			return inputPath;
 		}
 
-		public Path getBasePath() {
+		public File getBasePath() {
 			return basePath;
 		}
 		
 		@Override
 		public String toString() {
-			return this.getInputPath().getRelativePath();
+			return this.getInputPath().toString();
 		}
 	}
 
@@ -70,12 +71,12 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 
 	@Override
 	protected String description() {
-		return "Test Builder for " + input.getInputPath().getRelativePath();
+		return "Test Builder for " + input.getInputPath();
 	}
 
 	@Override
 	protected Path persistentPath() {
-		return FileCommands.addExtension(input.inputPath, "dep");
+		return FileCommands.addExtension(input.inputPath.toPath(), "dep");
 	}
 
 	@Override
@@ -86,7 +87,7 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 	@Override
 	protected None build() throws IOException {
 		require(input.inputPath);
-		List<String> allLines = FileCommands.readFileLines(input.inputPath);
+		List<String> allLines = Files.readAllLines(input.inputPath.toPath());
 
 		if (!allLines.isEmpty() && allLines.get(0).equals("#fail"))
 		  throw new RuntimeException("#fail detected in source file");
@@ -97,7 +98,7 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 			if (line.startsWith("Dep:")) {
 				String depFile = line.substring(4);
 				TestBuilderInput depInput = new TestBuilderInput(
-						input.basePath, new RelativePath(input.getBasePath(),
+						input.basePath, new File(input.getBasePath(),
 								depFile));
 				SimpleRequirement req = new SimpleRequirement(factory, depInput);
 				requireBuild(req);
@@ -107,8 +108,8 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 		}
 
 		// Write the content to a generated file
-		Path generatedFile = FileCommands.addExtension(input.inputPath, "gen");
-		FileCommands.writeLinesFile(generatedFile, contentLines);
+		File generatedFile = FileCommands.addExtension(input.inputPath.toPath(), "gen").toFile();
+		Files.write(generatedFile.toPath(), contentLines);
 		provide(generatedFile);
 		setState(BuildUnit.State.finished(true));
 		return None.val;

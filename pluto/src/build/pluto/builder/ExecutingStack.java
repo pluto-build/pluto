@@ -1,16 +1,12 @@
 package build.pluto.builder;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.sugarj.common.FileCommands;
-
 import build.pluto.BuildUnit;
 import build.pluto.dependency.BuildRequirement;
-import build.pluto.util.UniteSets;
 
 public class ExecutingStack extends CycleDetectionStack<BuildUnit<?>, Void>{
   
@@ -21,7 +17,7 @@ public class ExecutingStack extends CycleDetectionStack<BuildUnit<?>, Void>{
       cycleComponents.add(requirementForEntry(p));
     }
     
-    BuildCycleException ex = new BuildCycleException("Build contains a dependency cycle on " + FileCommands.tryGetRelativePath(unit.getPersistentPath()), unit, cycleComponents);
+    BuildCycleException ex = new BuildCycleException("Build contains a dependency cycle on " + unit.getPersistentPath(), unit, cycleComponents);
    throw ex;
   }
   protected Void noCycleResult() {

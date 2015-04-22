@@ -1,18 +1,19 @@
 package build.pluto;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.Path;
-import org.sugarj.common.path.RelativePath;
 
 import build.pluto.stamp.Stamp;
 import build.pluto.stamp.Stamper;
@@ -25,7 +26,7 @@ public abstract class PersistableEntity implements Serializable {
   
   private static final long serialVersionUID = 3725384862203109760L;
 
-  private final static Map<Path, PersistableEntity> inMemory = new HashMap<>();
+  private final static Map<File, PersistableEntity> inMemory = new HashMap<>();
   
   
   public PersistableEntity() { /* for deserialization only */ }
@@ -33,7 +34,7 @@ public abstract class PersistableEntity implements Serializable {
   /**
    * Path and stamp of the disk-stored version of this result.
    */
-  protected Path persistentPath;
+  protected File persistentPath;
   private Stamp persistentStamp = null;
   private boolean isPersisted = false;
 
@@ -65,7 +66,7 @@ public abstract class PersistableEntity implements Serializable {
   protected abstract void init();
   
   final protected static <E extends PersistableEntity> E create(Class<E> clazz, Path p) throws IOException {
-    E entity = readFromMemoryCache(clazz, p);
+    E entity = readFromMemoryCache(clazz, p.toFile());
     
     if (entity != null) {
       entity.init();
@@ -82,22 +83,22 @@ public abstract class PersistableEntity implements Serializable {
       return null;
     }
 
-    entity.persistentPath = p;
+    entity.persistentPath = p.toFile();
     entity.cacheInMemory();
     entity.init();
     return entity;
   }
   
-  protected static <E extends PersistableEntity> E read(Class<E> clazz, Path p) throws IOException {
+  protected static <E extends PersistableEntity> E read(Class<E> clazz, File p) throws IOException {
     if (p == null)
       return null;
     
-    if (!FileCommands.exists(p))
+    if (!p.exists())
       return null;
       
     ObjectInputStream in = null;
     try {
-      in = new ObjectInputStream(new FileInputStream(p.getAbsolutePath()));
+      in = new ObjectInputStream(new FileInputStream(p));
       long id = in.readLong();
 
       E entity = readFromMemoryCache(clazz, p);
@@ -118,7 +119,7 @@ public abstract class PersistableEntity implements Serializable {
     } catch (Throwable e) {
       System.err.println("Could not read module's dependency file: " + p + ": " + e);
       e.printStackTrace();
-      FileCommands.delete(p);
+      Files.delete(p.toPath());
       return null;
     } finally {
       if (in != null)
@@ -128,8 +129,8 @@ public abstract class PersistableEntity implements Serializable {
   
   final public void write(Stamper stamper) throws IOException {
     Objects.requireNonNull(stamper);
-    FileCommands.createFile(persistentPath);
-    ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(persistentPath.getAbsolutePath()));
+    FileCommands.createFile(persistentPath.toPath());
+    ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(persistentPath));
 
     try {
       out.writeLong(this.getClass().getField("serialVersionUID").getLong(this));
@@ -144,10 +145,10 @@ public abstract class PersistableEntity implements Serializable {
     }
   }
   
-  final protected static <E extends PersistableEntity> E readFromMemoryCache(Class<E> clazz, Path p) {
+  final protected static <E extends PersistableEntity> E readFromMemoryCache(Class<E> clazz, File p) {
     PersistableEntity e;
     synchronized (PersistableEntity.class) {
-      e = inMemory.get(p);
+      e = inMemory.get(p.getAbsoluteFile());
     }
     if (e == null)
       return null;
@@ -159,7 +160,7 @@ public abstract class PersistableEntity implements Serializable {
   
   final protected void cacheInMemory() {
     synchronized (PersistableEntity.class) {
-      inMemory.put(persistentPath, this);
+      inMemory.put(persistentPath.getAbsoluteFile(), this);
     }
   }
   
@@ -168,8 +169,8 @@ public abstract class PersistableEntity implements Serializable {
   }
   
   public String getName() {
-    if (persistentPath instanceof RelativePath)
-      return FileCommands.dropExtension(((RelativePath) persistentPath).getRelativePath());
-    return persistentPath.getAbsolutePath();
+    if (!persistentPath.isAbsolute())
+      return FileCommands.dropExtension(persistentPath.toPath()).toString();
+    return persistentPath.toString();
   }
 }

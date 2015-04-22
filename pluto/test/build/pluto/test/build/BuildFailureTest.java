@@ -3,7 +3,11 @@ package build.pluto.test.build;
 import static build.pluto.test.build.Validators.requiredFilesOf;
 import static build.pluto.test.build.Validators.validateThat;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 
@@ -11,7 +15,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.RelativePath;
 
 import build.pluto.builder.BuildRequest;
 import build.pluto.test.build.once.SimpleBuilder;
@@ -25,12 +28,12 @@ public class BuildFailureTest extends SimpleBuildTest {
     return new SimpleRequirement(SimpleBuilder.factory, input);
   }
   
-  private RelativePath mainFile;
-  private RelativePath dep1File;
-  private RelativePath dep1FileGood;
-  private RelativePath dep1FileFail;
-  private RelativePath dep2File;
-  private List<RelativePath> allFiles;
+  private File mainFile;
+  private File dep1File;
+  private File dep1FileGood;
+  private File dep1FileFail;
+  private File dep2File;
+  private List<File> allFiles;
   
   @Before
   public void makeConsistentState() throws IOException{
@@ -44,7 +47,7 @@ public class BuildFailureTest extends SimpleBuildTest {
   
   @Test
   public void testSuccessfulBuild() throws IOException {
-    FileCommands.copyFile(dep1FileGood, dep1File);
+    Files.copy(dep1FileGood.toPath(), dep1File.toPath());
     TrackingBuildManager manager = new TrackingBuildManager();
     buildMainFile(manager);
 
@@ -53,7 +56,7 @@ public class BuildFailureTest extends SimpleBuildTest {
   
   @Test
   public void testFailedBuild() throws IOException {
-    FileCommands.copyFile(dep1FileFail, dep1File);
+    Files.copy(dep1FileFail.toPath(), dep1File.toPath());
     TrackingBuildManager manager = new TrackingBuildManager();
     try {
       buildMainFile(manager);
@@ -66,7 +69,7 @@ public class BuildFailureTest extends SimpleBuildTest {
   
   @Test
   public void testSuccessAfterFailureBuild() throws IOException {
-    FileCommands.copyFile(dep1FileFail, dep1File);
+    Files.copy(dep1FileFail.toPath(), dep1File.toPath());
     TrackingBuildManager manager = new TrackingBuildManager();
     try {
       buildMainFile(manager);
@@ -74,7 +77,7 @@ public class BuildFailureTest extends SimpleBuildTest {
     }
     validateThat(requiredFilesOf(manager).containsSameElements(mainFile, dep1File));
     
-    FileCommands.copyFile(dep1FileGood, dep1File);
+    Files.copy(dep1FileGood.toPath(), dep1File.toPath(), StandardCopyOption.REPLACE_EXISTING);
     manager = new TrackingBuildManager();
     try {
       buildMainFile(manager);
@@ -86,7 +89,7 @@ public class BuildFailureTest extends SimpleBuildTest {
 
   @Test
   public void testFailureAfterSuccessBuild() throws IOException {
-    FileCommands.copyFile(dep1FileGood, dep1File);
+    Files.copy(dep1FileGood.toPath(), dep1File.toPath());
     TrackingBuildManager manager = new TrackingBuildManager();
     try {
       buildMainFile(manager);
@@ -94,7 +97,7 @@ public class BuildFailureTest extends SimpleBuildTest {
     }
     validateThat(requiredFilesOf(manager).containsSameElements(mainFile, dep1File, dep2File));
     
-    FileCommands.copyFile(dep1FileFail, dep1File);
+    Files.copy(dep1FileFail.toPath(), dep1File.toPath(), StandardCopyOption.REPLACE_EXISTING);
     manager = new TrackingBuildManager();
     try {
       buildMainFile(manager);
@@ -106,7 +109,7 @@ public class BuildFailureTest extends SimpleBuildTest {
   
   @Test
   public void testFailureAfterFailureBuild() throws IOException {
-    FileCommands.copyFile(dep1FileFail, dep1File);
+    Files.copy(dep1FileFail.toPath(), dep1File.toPath());
     TrackingBuildManager manager = new TrackingBuildManager();
     boolean failed = false;
     try {

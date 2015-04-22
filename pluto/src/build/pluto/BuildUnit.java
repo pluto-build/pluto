@@ -1,9 +1,12 @@
 package build.pluto;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,9 +17,7 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
-import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
-import org.sugarj.common.path.Path;
 
 import build.pluto.builder.BuildRequest;
 import build.pluto.dependency.BuildRequirement;
@@ -58,7 +59,7 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 	protected Out buildResult;
 
 	private transient Set<BuildUnit<?>> requiredUnits;
-	private transient Set<Path> requiredFiles;
+	private transient Set<File> requiredFiles;
 	
 	protected BuildRequest<?, Out, ?, ?> generatedBy;
 	
@@ -73,7 +74,7 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 		return e;
 	}
 	
-	final public static <Out extends Serializable> BuildUnit<Out> read(Path dep) throws IOException {
+	final public static <Out extends Serializable> BuildUnit<Out> read(File dep) throws IOException {
 	  @SuppressWarnings("unchecked")
     BuildUnit<Out> e = PersistableEntity.read(BuildUnit.class, dep);
 	  return e;
@@ -94,16 +95,16 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 	// Methods for adding dependencies
 	// *******************************
 
-	public void requires(Path file, Stamp stampOfFile) {
+	public void requires(File file, Stamp stampOfFile) {
 		requirements.add(new FileRequirement(file, stampOfFile));
 		requiredFiles.add(file);
 		checkUnitDependency(file);
 	}
 	
-	private void checkUnitDependency(Path file) {
-	  if (FileCommands.exists(file)) {
+	private void checkUnitDependency(File file) {
+	  if (file.exists()) {
 	    try {
-        final Path dep = xattr.getGenBy(file);
+        final Path dep = xattr.getGenBy(file.toPath());
         if (dep == null)
           return;
         
@@ -130,18 +131,22 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
         }, getModuleDependencies());
         
         if (!foundDep)
-          throw new IllegalDependencyException(dep, "Build unit " + FileCommands.tryGetRelativePath(getPersistentPath()) + " has a hidden dependency on file " + FileCommands.tryGetRelativePath(file) + " without build-unit dependency on " + dep + ", which generated this file. The current builder " + FileCommands.fileName(getPersistentPath()) + " should mark a dependency to " + FileCommands.tryGetRelativePath(dep) + " by `requiring` the corresponding builder.");
+          throw new IllegalDependencyException(dep, 
+              "Build unit " + getPersistentPath() + " has a hidden dependency on file " + file + 
+              " without build-unit dependency on " + dep + ", which generated this file. The current builder " + 
+                  getPersistentPath().getName() + " should mark a dependency to " + dep + 
+                  " by `requiring` the corresponding builder.");
       } catch (IOException e) {
         Log.log.log("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, Log.IMPORT);
       }
 	  }
   }
 
-	public void generates(Path file, Stamp stampOfFile) {
+	public void generates(File file, Stamp stampOfFile) {
 		generatedFiles.add(new FileRequirement(file, stampOfFile));
 		try {
-		  if (FileCommands.exists(file)) 
-		    xattr.setGenBy(file, this);
+		  if (file.exists()) 
+		    xattr.setGenBy(file.toPath(), this);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -202,7 +207,7 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
     });
 	}
 
-	public Set<Path> getSourceArtifacts() {
+	public Set<File> getSourceArtifacts() {
 		return requiredFiles;
 	}
 
@@ -247,20 +252,20 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
   
   
 
-	public Set<Path> getExternalFileDependencies() {
+	public Set<File> getExternalFileDependencies() {
 	  if (requiredFiles == null) {
       requiredFiles = new HashSet<>();
       for (Requirement req : requirements)
         if (req instanceof FileRequirement)
-          requiredFiles.add(((FileRequirement) req).path);
+          requiredFiles.add(((FileRequirement) req).file);
     }
 	  return requiredFiles;
 	}
 
-	public Set<Path> getGeneratedFiles() {
-	  Set<Path> set = new HashSet<>();
+	public Set<File> getGeneratedFiles() {
+	  Set<File> set = new HashSet<>();
 	  for (FileRequirement freq : generatedFiles)
-	    set.add(freq.path);
+	    set.add(freq.file);
 		return set;
 	}
 	
@@ -318,7 +323,7 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 	  return state;
 	}
 
-	public Path getPersistentPath() {
+	public File getPersistentPath() {
     return persistentPath;
   }
   	
@@ -339,10 +344,10 @@ final public class BuildUnit<Out extends Serializable> extends PersistableEntity
 		for (Requirement req : requirements) 
 		  if (req instanceof FileRequirement) {
 		    FileRequirement freq = (FileRequirement) req;
-  		  Stamp editStamp = hasEdits ? editedSourceFiles.get(freq.path) : null;
+  		  Stamp editStamp = hasEdits ? editedSourceFiles.get(freq.file) : null;
   			if (editStamp != null && !editStamp.equals(freq.stamp)) {
   				return false;
-  			} else if (editStamp == null && !Util.stampEqual(freq.stamp, freq.path)) {
+  			} else if (editStamp == null && !Util.stampEqual(freq.stamp, freq.file)) {
   				return false;
   			}
 		}

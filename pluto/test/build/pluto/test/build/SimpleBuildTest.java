@@ -1,8 +1,7 @@
 package build.pluto.test.build;
 
+import java.io.File;
 import java.io.IOException;
-
-import org.sugarj.common.path.RelativePath;
 
 import build.pluto.builder.BuildRequest;
 import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
@@ -22,13 +21,13 @@ public abstract class SimpleBuildTest extends ScopedBuildTest{
 		return buildFile(getRelativeFile("main.txt"), manager);
 	}
 	
-	protected final TrackingBuildManager buildFile(RelativePath path) throws IOException {
+	protected final TrackingBuildManager buildFile(File path) throws IOException {
 		return buildFile(path, new TrackingBuildManager());
 	}
 	
-	protected final TrackingBuildManager buildFile(RelativePath path, TrackingBuildManager manager) throws IOException {
-		System.out.println("====== Build " + path.getRelativePath()+" ======");
-		BuildRequest<?,?,?,?> req = requirementForInput(new TestBuilderInput(testBasePath, getRelativeFile("main.txt")));
+	protected final TrackingBuildManager buildFile(File path, TrackingBuildManager manager) throws IOException {
+		System.out.println("====== Build " + path.getPath()+" ======");
+		BuildRequest<?,?,?,?> req = requirementForInput(new TestBuilderInput(testBasePath.toFile(), getRelativeFile("main.txt")));
 		manager.require(req);
 		return manager;
 	}

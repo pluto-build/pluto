@@ -5,13 +5,13 @@ import static build.pluto.test.build.Validators.requiredFilesOf;
 import static build.pluto.test.build.Validators.successfulyExecutedFilesOf;
 import static build.pluto.test.build.Validators.validateThat;
 
+import java.io.File;
 import java.io.IOException;
 
-import org.junit.Before;
 import org.junit.Test;
-import org.sugarj.common.path.RelativePath;
 
 import build.pluto.test.build.ScopedBuildTest;
+import build.pluto.test.build.ScopedPath;
 import build.pluto.test.build.TrackingBuildManager;
 import build.pluto.test.build.cycle.fixpoint.FileInput;
 import build.pluto.test.build.cycle.fixpoint.FileUtils;
@@ -19,31 +19,28 @@ import build.pluto.test.build.cycle.fixpoint.ModuloBuilder;
 
 public class GCDMultipleCyclesTest extends ScopedBuildTest{
 
-	private RelativePath main;
-	private RelativePath cycle1;
-	private RelativePath cycle2;
-	private RelativePath cycle3;
-	private RelativePath leaf;
+  @ScopedPath("main.modulo")
+	private File main;
+  @ScopedPath("cycle1.gcd")
+	private File cycle1;
+  @ScopedPath("cycle2.gcd")
+	private File cycle2;
+  @ScopedPath("cycle3.gcd")
+	private File cycle3;
+  @ScopedPath("leaf.gcd")
+	private File leaf;
 	
-	private RelativePath mainDep;
-	private RelativePath cycle1Dep;
-	private RelativePath cycle2Dep;
-	private RelativePath cycle3Dep;
-	private RelativePath leafDep;
+  @ScopedPath("main.modulo.dep")
+  private File mainDep;
+  @ScopedPath("cycle1.gcd.dep")
+	private File cycle1Dep;
+  @ScopedPath("cycle2.gcd.dep")
+	private File cycle2Dep;
+  @ScopedPath("cycle3.gcd.dep")
+	private File cycle3Dep;
+  @ScopedPath("leaf.gcd.dep")
+	private File leafDep;
 	
-	@Before
-	public void initFiles() {
-		main = getRelativeFile("main.modulo");
-		cycle1 = getRelativeFile("cycle1.gcd");
-		cycle2 = getRelativeFile("cycle2.gcd");
-		cycle3 = getRelativeFile("cycle3.gcd");
-		leaf = getRelativeFile("leaf.gcd");
-		mainDep = getRelativeFile("main.modulo.dep");
-		cycle1Dep = getRelativeFile("cycle1.gcd.dep");
-		cycle2Dep = getRelativeFile("cycle2.gcd.dep");
-		cycle3Dep = getRelativeFile("cycle3.gcd.dep");
-		leafDep = getRelativeFile("leaf.gcd.dep");
-	}
 	
 	@Override
 	protected String getTestFolderName() {
@@ -52,7 +49,7 @@ public class GCDMultipleCyclesTest extends ScopedBuildTest{
 
 	private TrackingBuildManager build() throws IOException {
 		TrackingBuildManager manager = new TrackingBuildManager();
-		manager.require(ModuloBuilder.factory, new FileInput(testBasePath, main));
+		manager.require(ModuloBuilder.factory, new FileInput(testBasePath.toFile(), main));
 		
 		validateThat(unitsForPath(mainDep, cycle1Dep, cycle2Dep, cycle3Dep, leafDep).areConsistent());
 		validateThat(unitsForPath(mainDep).dependsOn(cycle1Dep));

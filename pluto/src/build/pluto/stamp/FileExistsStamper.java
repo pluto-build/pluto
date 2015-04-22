@@ -1,7 +1,6 @@
 package build.pluto.stamp;
 
-import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.Path;
+import java.io.File;
 
 /**
  * @author Sebastian Erdweg
@@ -18,7 +17,7 @@ public class FileExistsStamper implements Stamper {
    * @see build.pluto.stamp.Stamper#stampOf(org.sugarj.common.path.Path)
    */
   @Override
-  public Stamp stampOf(Path p) {
-    return new ValueStamp<>(this, FileCommands.exists(p));
+  public Stamp stampOf(File p) {
+    return new ValueStamp<>(this, p.exists());
   }
 }

@@ -5,9 +5,8 @@ import static build.pluto.test.build.once.SimpleBuildUtilities.inputToFileList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.util.List;
-
-import org.sugarj.common.path.RelativePath;
 
 public class Validators {
 
@@ -118,19 +117,19 @@ public class Validators {
 		return t;
 	}
 
-	public static ListValidatorBuilder<RelativePath> requiredFilesOf(
+	public static ListValidatorBuilder<File> requiredFilesOf(
 			TrackingBuildManager manager) {
 		return new ListValidatorBuilder<>(
 				inputToFileList(manager.getRequiredInputs()));
 	}
 
-	public static ListValidatorBuilder<RelativePath> executedFilesOf(
+	public static ListValidatorBuilder<File> executedFilesOf(
 			TrackingBuildManager manager) {
 		return new ListValidatorBuilder<>(
 				inputToFileList(manager.getExecutedInputs()));
 	}
 
-	public static ListValidatorBuilder<RelativePath> successfulyExecutedFilesOf(
+	public static ListValidatorBuilder<File> successfulyExecutedFilesOf(
 			TrackingBuildManager manager) {
 		return new ListValidatorBuilder<>(
 				inputToFileList(manager.getSuccessfullyExecutedInputs()));

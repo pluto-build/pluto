@@ -37,7 +37,7 @@ public class GCDBuilder extends NumericBuilder {
 
 	@Override
 	protected String description() {
-		return "GCD for " + this.input.getFile().getRelativePath();
+		return "GCD for " + this.input.getFile().getName();
 	}
 
 }

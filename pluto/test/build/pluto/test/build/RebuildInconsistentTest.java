@@ -1,5 +1,17 @@
 package build.pluto.test.build;
 
+import static build.pluto.test.build.Validators.executedFilesOf;
+import static build.pluto.test.build.Validators.in;
+import static build.pluto.test.build.Validators.requiredFilesOf;
+import static build.pluto.test.build.Validators.validateThat;
+import static build.pluto.test.build.once.SimpleBuildUtilities.addInputFileContent;
+import static build.pluto.test.build.once.SimpleBuildUtilities.addInputFileDep;
+import static build.pluto.test.build.once.SimpleBuildUtilities.unitForFile;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -14,18 +26,14 @@ import build.pluto.test.build.once.SimpleBuilder;
 import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 import build.pluto.test.build.once.SimpleRequirement;
 
-import static org.junit.Assert.*;
-import static build.pluto.test.build.once.SimpleBuildUtilities.*;
-import static build.pluto.test.build.Validators.*;
-
 public class RebuildInconsistentTest extends SimpleBuildTest{
 
-	private RelativePath mainFile;
-	private RelativePath dep1File;
-	private RelativePath dep2File;
-	private RelativePath dep2_1File;
+	private File mainFile;
+	private File dep1File;
+	private File dep2File;
+	private File dep2_1File;
 
-	private List<RelativePath> allFiles;
+	private List<File> allFiles;
 
 	@Before
 	public void makeConsistentState() throws IOException{
@@ -47,12 +55,12 @@ public class RebuildInconsistentTest extends SimpleBuildTest{
 	private void buildClean() throws IOException {
 		TrackingBuildManager manager = buildMainFile();
 		// Now require that all compilationUnits are consistent
-		for (RelativePath file : allFiles) {
+		for (File file : allFiles) {
 			BuildUnit<None> unit = unitForFile(file, testBasePath);
 			assertNotNull(
-					"No unit was persisted for path: " + file.getRelativePath(),
+					"No unit was persisted for path: " + file,
 					unit);
-			assertTrue("Unit for " + file.getRelativePath()
+			assertTrue("Unit for " + file
 					+ " is not consistent",
 					unit.isConsistent(null));
 		}

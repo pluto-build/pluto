@@ -1,12 +1,14 @@
 package build.pluto.test.build.once;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.Path;
 import org.sugarj.common.path.RelativePath;
 
 import build.pluto.BuildUnit;
@@ -40,7 +42,7 @@ public class SimpleCyclicAtOnceBuilder extends
 
 	@Override
 	protected Path singletonPersistencePath(TestBuilderInput input) {
-		return FileCommands.addExtension(input.getInputPath(), "dep");
+		return FileCommands.addExtension(input.getInputPath().toPath(), "dep");
 	}
 	
 	@Override
@@ -48,7 +50,7 @@ public class SimpleCyclicAtOnceBuilder extends
 
 		List<None> outputs = new ArrayList<>(this.input.size());
 
-		Set<RelativePath> cyclicDependencies = new HashSet<>();
+		Set<File> cyclicDependencies = new HashSet<>();
 		for (TestBuilderInput input : this.input) {
 			// System.out.println(input.getInputPath().getRelativePath());
 			cyclicDependencies.add(input.getInputPath());
@@ -58,13 +60,13 @@ public class SimpleCyclicAtOnceBuilder extends
 		List<String> contentLines = new ArrayList<>();
 
 		for (TestBuilderInput input : this.input) {
-			List<String> allLines = FileCommands.readFileLines(input
-					.getInputPath());
+			List<String> allLines = Files.readAllLines(input
+					.getInputPath().toPath());
 
 			for (String line : allLines) {
 				if (line.startsWith("Dep:")) {
 					String depFile = line.substring(4);
-					RelativePath depPath = new RelativePath(
+					File depPath = new File(
 							input.getBasePath(), depFile);
 					if (!cyclicDependencies.contains(depPath)) {
 						TestBuilderInput depInput = new TestBuilderInput(
@@ -80,9 +82,9 @@ public class SimpleCyclicAtOnceBuilder extends
 		for (TestBuilderInput input : this.input) {
 
 			// Write the content to a generated file
-			Path generatedFile = FileCommands.addExtension(
-					input.getInputPath(), "gen");
-			FileCommands.writeLinesFile(generatedFile, contentLines);
+			File generatedFile = FileCommands.addExtension(
+					input.getInputPath().toPath(), "gen").toFile();
+			Files.write(generatedFile.toPath(), contentLines);
 			generates(input, generatedFile);
 			outputs.add(None.val);
 		}
@@ -94,7 +96,7 @@ public class SimpleCyclicAtOnceBuilder extends
 	protected String description() {
 		String descr = "Cyclic SimpleBuilder for ";
 		for (TestBuilderInput input : this.input) {
-			descr += input.getInputPath().getRelativePath() + ", ";
+			descr += input.getInputPath().getName() + ", ";
 		}
 		return descr;
 	}

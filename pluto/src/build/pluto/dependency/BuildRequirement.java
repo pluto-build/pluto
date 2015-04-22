@@ -1,13 +1,12 @@
 package build.pluto.dependency;
 
 import java.io.Externalizable;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.util.Objects;
-
-import org.sugarj.common.path.Path;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
@@ -78,7 +77,7 @@ public class BuildRequirement<Out extends Serializable> implements Requirement, 
   @Override
   @SuppressWarnings("unchecked")
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-    Path unitPath = (Path) in.readObject();
+    File unitPath = (File) in.readObject();
     hasFailed = in.readBoolean();
     req = (BuildRequest<?, Out, ?, ?>) in.readObject();
     stamp = (OutputStamp<? super Out>) in.readObject();

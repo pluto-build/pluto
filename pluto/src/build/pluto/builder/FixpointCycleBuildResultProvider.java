@@ -2,12 +2,11 @@ package build.pluto.builder;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
-import org.sugarj.common.path.Path;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
@@ -44,7 +43,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
     Path depPath = buildReq.createBuilder().persistentPath();
     for (BuildRequirement<?> req : this.cycle.getCycleComponents()) {
-      if (req.getUnit().getPersistentPath().equals(depPath)) {
+      if (req.getUnit().getPersistentPath().getAbsoluteFile().equals(depPath.toFile().getAbsoluteFile())) {
         return (BuildUnit<Out>) req.getUnit();
       }
     }

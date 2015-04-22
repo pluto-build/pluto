@@ -1,14 +1,18 @@
 package build.pluto.test.build;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.Path;
 import org.sugarj.common.path.AbsolutePath;
 import org.sugarj.common.path.RelativePath;
 
@@ -25,7 +29,7 @@ import build.pluto.test.EmptyBuildOutput;
 
 public class BuildManagerCycleDetectionTest {
 	
-	private static AbsolutePath baseDir = new AbsolutePath(new File("testdata/CycleDetectionTest/").getAbsolutePath());
+	private static Path baseDir = Paths.get("testdata/CycleDetectionTest/").toAbsolutePath();
 	
 	@Before
 	public void emptyDir() throws IOException{
@@ -33,20 +37,20 @@ public class BuildManagerCycleDetectionTest {
 		FileCommands.createDir(baseDir);
 	}
 
-	public static final BuilderFactory<Path, EmptyBuildOutput, TestBuilder> testFactory = new BuilderFactory<Path, EmptyBuildOutput, TestBuilder>() {
+	public static final BuilderFactory<File, EmptyBuildOutput, TestBuilder> testFactory = new BuilderFactory<File, EmptyBuildOutput, TestBuilder>() {
 
 		private static final long serialVersionUID = 3231801709410953205L;
 
 		@Override
-		public TestBuilder makeBuilder(Path input) {
+		public TestBuilder makeBuilder(File input) {
 			return new TestBuilder(input);
 		}
 
 	};
 
-	private static class TestBuilder extends Builder<Path, EmptyBuildOutput> {
+	private static class TestBuilder extends Builder<File, EmptyBuildOutput> {
 
-		private TestBuilder(Path input) {
+		private TestBuilder(File input) {
 			super(input);
 		}
 
@@ -57,7 +61,7 @@ public class BuildManagerCycleDetectionTest {
 
 		@Override
 		protected Path persistentPath() {
-			return input.replaceExtension("dep");
+			return FileCommands.replaceExtension(input.toPath(),"dep");
 		}
 
 		@Override
@@ -67,7 +71,7 @@ public class BuildManagerCycleDetectionTest {
 
 		@Override
 		protected EmptyBuildOutput build() throws IOException {
-			AbsolutePath req;
+			Path req;
 			int number = 0;
 			String inputWithoutExt = FileCommands.dropExtension(input
 					.getAbsolutePath());
@@ -82,22 +86,22 @@ public class BuildManagerCycleDetectionTest {
 			if (number == 10) {
 				number = 0;
 			}
-			req = new AbsolutePath(inputWithoutExt.substring(0,
+			req = Paths.get(inputWithoutExt.substring(0,
 					inputWithoutExt.length() - 1)
 					+ number + ".txt");
 
-			requireBuild(testFactory, req);
+			requireBuild(testFactory, req.toFile());
 			return EmptyBuildOutput.instance;
 		}
 
 	}
 
-	private RelativePath getDepPathWithNumber(int num) {
-		return new RelativePath(baseDir, "Test" + num + ".dep");
+	private File getDepPathWithNumber(int num) {
+		return baseDir.resolve("Test" + num + ".dep").toFile();
 	}
 
-	private RelativePath getPathWithNumber(int num) {
-		return new RelativePath(baseDir, "Test" + num + ".txt");
+	private File getPathWithNumber(int num) {
+		return baseDir.resolve("Test" + num + ".txt").toFile();
 	}
 
 	@Test
@@ -105,7 +109,7 @@ public class BuildManagerCycleDetectionTest {
 
 		try {
 			BuildManager
-					.build(new BuildRequest<Path, EmptyBuildOutput, TestBuilder, BuilderFactory<Path, EmptyBuildOutput, TestBuilder>>(
+					.build(new BuildRequest<File, EmptyBuildOutput, TestBuilder, BuilderFactory<File, EmptyBuildOutput, TestBuilder>>(
 							testFactory, getPathWithNumber(0)));
 		} catch (RequiredBuilderFailed e) {
 			assertTrue("Cause is not a cycle",

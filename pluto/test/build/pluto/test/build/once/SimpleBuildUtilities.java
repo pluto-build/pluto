@@ -1,54 +1,55 @@
 package build.pluto.test.build.once;
 
+import static org.junit.Assert.fail;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.Path;
-import org.sugarj.common.path.RelativePath;
 
 import build.pluto.BuildUnit;
 import build.pluto.output.None;
 import build.pluto.test.build.cycle.fixpoint.FileInput;
 import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 
-import static org.junit.Assert.*;
-
 public class SimpleBuildUtilities {
 	
-	public static void addInputFileContent(RelativePath path, String newContent)
+	public static void addInputFileContent(File path, String newContent)
 			throws IOException {
-		List<String> lines = FileCommands.readFileLines(path);
+		List<String> lines = Files.readAllLines(path.toPath());
 		lines.add(newContent);
-		FileCommands.writeLinesFile(path, lines);
+		Files.write(path.toPath(), lines);
 	}
 	
-	public static void addInputFileDep(RelativePath path, RelativePath dep)
+	public static void addInputFileDep(File path, File dep)
 			throws IOException {
-		List<String> lines = FileCommands.readFileLines(path);
-		lines.add("Dep:"+dep.getRelativePath());
-		FileCommands.writeLinesFile(path, lines);
+		List<String> lines = Files.readAllLines(path.toPath());
+		lines.add("Dep:"+dep.getName());
+		Files.write(path.toPath(), lines);
 	}
 	
-	public static void removeInputFileDep(RelativePath path, RelativePath dep)
+	public static void removeInputFileDep(File path, File dep)
 			throws IOException {
-		List<String> lines = FileCommands.readFileLines(path);
-		lines.remove("Dep:"+dep.getRelativePath());
-		FileCommands.writeLinesFile(path, lines);
+		List<String> lines = Files.readAllLines(path.toPath());
+		lines.remove("Dep:"+dep.getName());
+		Files.write(path.toPath(), lines);
 	}
 
-	public static BuildUnit<None> unitForFile(RelativePath path, Path testBasePath)
+	public static BuildUnit<None> unitForFile(File path, Path testBasePath)
 			throws IOException {
-		SimpleRequirement req = new SimpleRequirement(SimpleBuilder.factory,new TestBuilderInput(testBasePath, path));
+		SimpleRequirement req = new SimpleRequirement(SimpleBuilder.factory,new TestBuilderInput(testBasePath.toFile(), path));
 		
-		BuildUnit<None> unit = BuildUnit.read(req.factory.makeBuilder(req.input).persistentPath());
+		BuildUnit<None> unit = BuildUnit.read(req.factory.makeBuilder(req.input).persistentPath().toFile());
 		return unit;
 	}
 
-	public static List<RelativePath> inputToFileList(List<Serializable> inputs) {
-		ArrayList<RelativePath> fileList = new ArrayList<>();
+	public static List<File> inputToFileList(List<Serializable> inputs) {
+		ArrayList<File> fileList = new ArrayList<>();
 		for (Serializable s : inputs) {
 			if (s instanceof TestBuilderInput) {
 				fileList.add(((TestBuilderInput) s).getInputPath());

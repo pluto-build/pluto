@@ -1,11 +1,10 @@
 package build.pluto.builder;
 
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
-import org.sugarj.common.path.Path;
 
 import build.pluto.util.UniteSets;
 
@@ -14,7 +13,7 @@ public class RequireStack extends CycleDetectionStack<Path, Boolean> {
   private Set<Path> knownInconsistentUnits;
   private Set<Path> consistentUnits;
 
-  private final boolean LOG_REQUIRE = true;
+  private final boolean LOG_REQUIRE = false;
 
   public RequireStack() {
     this.consistentUnits = new HashSet<>();
@@ -23,10 +22,10 @@ public class RequireStack extends CycleDetectionStack<Path, Boolean> {
 
   public void beginRebuild(Path dep) {
     if (LOG_REQUIRE) {
-      Log.log.log("Rebuild " + FileCommands.tryGetRelativePath(dep), Log.CORE);
-      Log.log.log("Assumptions: " + printCyclicConsistentAssumtion(dep), Log.CORE);
+      Log.log.log("Rebuild " + dep, Log.CORE);
+      Log.log.log("Assumptions: " + printCyclicConsistentAssumtion(dep.toAbsolutePath()), Log.CORE);
     }
-    this.knownInconsistentUnits.add(dep);
+    this.knownInconsistentUnits.add(dep.toAbsolutePath());
     // TODO: Need to forget the scc where dep is in, because the graph structure
     // may change?
    // for (Path assumed : this.requireStack) {
@@ -43,20 +42,20 @@ public class RequireStack extends CycleDetectionStack<Path, Boolean> {
     }
     String s = "";
     for (Path p : this.sccs.getSetMembers(key)) {
-      s += FileCommands.tryGetRelativePath(p) + ", ";
+      s += p + ", ";
     }
     return s;
   }
 
   public void finishRebuild(Path dep) {
-    this.consistentUnits.add(dep);
-    this.knownInconsistentUnits.remove(dep);
+    this.consistentUnits.add(dep.toAbsolutePath());
+    this.knownInconsistentUnits.remove(dep.toAbsolutePath());
     // Allowed to do that in any case?
     // this.assumedCyclicConsistency.remove(dep);
   }
 
   public boolean isKnownInconsistent(Path dep) {
-    return knownInconsistentUnits.contains(dep) || this.isAssumtionKnownInconsistent(dep);
+    return knownInconsistentUnits.contains(dep.toAbsolutePath()) || this.isAssumtionKnownInconsistent(dep.toAbsolutePath());
   }
 
   private boolean isAssumtionKnownInconsistent(Path dep) {
@@ -73,32 +72,32 @@ public class RequireStack extends CycleDetectionStack<Path, Boolean> {
   }
 
   public boolean isConsistent(Path dep) {
-    return this.consistentUnits.contains(dep);
+    return this.consistentUnits.contains(dep.toAbsolutePath());
   }
 
   @Override
   protected Boolean push(Path dep) {
     if (LOG_REQUIRE)
-      Log.log.beginTask("Require " + FileCommands.tryGetRelativePath(dep), Log.CORE);
-    return super.push(dep);
+      Log.log.beginTask("Require " + dep, Log.CORE);
+    return super.push(dep.toAbsolutePath());
   }
 
   @Override
   public void pop(Path dep) {
-    super.pop(dep);
+    super.pop(dep.toAbsolutePath());
     if (LOG_REQUIRE)
       Log.log.endTask();
   }
 
   public void markConsistent(Path dep) {
-    this.consistentUnits.add(dep);
+    this.consistentUnits.add(dep.toAbsolutePath());
   }
 
   @Override
   protected Boolean cycleResult(Path call, Set<Path> scc) {
     if (LOG_REQUIRE)
-      Log.log.log("Already required " + FileCommands.tryGetRelativePath(call), Log.CORE);
-    this.callStack.add(call);
+      Log.log.log("Already required " + call, Log.CORE);
+    this.callStack.add(call.toAbsolutePath());
     return true;
   }
 

@@ -1,12 +1,12 @@
 package build.pluto.builder;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import org.sugarj.common.path.Path;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
@@ -41,7 +41,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   private List<BuildUnit<Out>> cyclicResults;
   
   @Override
-  public void require(Path p) {
+  public void require(File p) {
     for (BuildUnit<Out> result : cyclicResults) {
       result.requires(p, defaultStamper().stampOf(p));
     }
@@ -61,9 +61,9 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   }
   
   @Override
-  public void provide(Path p) {throw new AssertionError();};
+  public void provide(File p) {throw new AssertionError();};
   
-  public void generates(In input, Path p) {
+  public void generates(In input, File p) {
     for (int i = 0; i < this.input.size(); i++) {
       if (this.input.get(i) == input) {
       this.cyclicResults.get(i).generates(p, LastModifiedStamper.instance.stampOf(p));
@@ -128,7 +128,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
      CompileCycleAtOnceBuilder<In, Out > newBuilder = factory.makeBuilder(inputs);
      newBuilder.manager = manager;
      for (BuildUnit<Out> unit : cyclicResults) {
-       BuildUnit.create(unit.getPersistentPath(), unit.getGeneratedBy());
+       BuildUnit.create(unit.getPersistentPath().toPath(), unit.getGeneratedBy());
      }
      newBuilder.cyclicResults = cyclicResults;
   

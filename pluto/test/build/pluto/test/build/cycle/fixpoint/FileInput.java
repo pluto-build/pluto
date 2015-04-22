@@ -1,10 +1,9 @@
 package build.pluto.test.build.cycle.fixpoint;
 
+import java.io.File;
 import java.io.Serializable;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.AbsolutePath;
-import org.sugarj.common.path.RelativePath;
 
 public class FileInput implements Serializable{
 	/**
@@ -12,37 +11,37 @@ public class FileInput implements Serializable{
 	 */
 	private static final long serialVersionUID = 7568871870272756727L;
 	
-	private AbsolutePath workingDir;
-	private RelativePath file;
-	private RelativePath depFiles;
+	private File workingDir;
+	private File file;
+	private File depFiles;
 	
 	
 	
-	public FileInput(AbsolutePath workingDir, RelativePath file) {
+	public FileInput(File workingDir, File file) {
 		super();
 		this.workingDir = workingDir;
 		this.file = file;
-		this.depFiles = FileCommands.replaceExtension(file, "deps");
+		this.depFiles = FileCommands.replaceExtension(file.toPath(), "deps").toFile();
 	}
 	
-	public FileInput(AbsolutePath workingDir, String file) {
-		this(workingDir, new RelativePath(workingDir, file));
+	public FileInput(File workingDir, String file) {
+		this(workingDir, new File(workingDir, file));
 	}
 
-	public AbsolutePath getWorkingDir() {
+	public File getWorkingDir() {
 		return workingDir;
 	}
 	
-	public RelativePath getFile() {
+	public File getFile() {
 		return file;
 	}
 	
-	public RelativePath getDepsFile() {
+	public File getDepsFile() {
 		return depFiles;
 	}
 	
 	@Override
 	public String toString() {
-		return file.getRelativePath();
+		return file.toString();
 	}
 }

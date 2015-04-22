@@ -1,5 +1,11 @@
 package build.pluto.test.build.cycle.once.test;
 
+import static build.pluto.test.build.Validators.executedFilesOf;
+import static build.pluto.test.build.Validators.validateThat;
+import static build.pluto.test.build.once.SimpleBuildUtilities.addInputFileDep;
+import static build.pluto.test.build.once.SimpleBuildUtilities.removeInputFileDep;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -16,28 +22,25 @@ import build.pluto.test.build.TrackingBuildManager;
 import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 import build.pluto.test.build.once.SimpleCyclicAtOnceBuilder;
 
-import static build.pluto.test.build.once.SimpleBuildUtilities.*;
-import static build.pluto.test.build.Validators.*;
-
 public class NestedCycleAtOnceTest extends SimpleBuildTest{
 
 	@DefaultNamedScopedPath
-	private RelativePath main;
+	private File main;
 	
 	@DefaultNamedScopedPath
-	private RelativePath cyclePart;
+	private File cyclePart;
 	
 	@DefaultNamedScopedPath
-	private RelativePath cycleEntry;
+	private File cycleEntry;
 	
 	@DefaultNamedScopedPath
-	private RelativePath subcycleEntry;
+	private File subcycleEntry;
 	
 	@DefaultNamedScopedPath
-	private RelativePath subcyclePart1;
+	private File subcyclePart1;
 	
 	@DefaultNamedScopedPath
-	private RelativePath subcyclePart2;
+	private File subcyclePart2;
 	
 	
 	@Override

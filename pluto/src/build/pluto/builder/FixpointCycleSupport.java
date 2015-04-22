@@ -45,6 +45,7 @@ public class FixpointCycleSupport implements CycleSupport {
     int numInterations = 1;
     boolean cycleConsistent = false;
     while (!cycleConsistent) {
+      Log.log.log("Begin interation " + numInterations,  Log.CORE);
       boolean logStarted = false;
       cycleConsistent = true;
       try {
@@ -65,6 +66,7 @@ public class FixpointCycleSupport implements CycleSupport {
           Log.log.endTask();
         }
       }
+      Log.log.log("End iteration " + numInterations, Log.CORE);
       numInterations++;
       cycleManager.nextIteration();
     }

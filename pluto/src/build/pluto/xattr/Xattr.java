@@ -8,8 +8,9 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.AbsolutePath;
-import org.sugarj.common.path.Path;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import build.pluto.BuildUnit;
 
@@ -45,18 +46,18 @@ public class Xattr {
   }
  
   public void setGenBy(Path p, BuildUnit<?> unit) throws IOException {
-    strategy.setXattr(new AbsolutePath(p.getFile().getCanonicalPath()), "genBy", unit.getPersistentPath().getAbsolutePath());
+    strategy.setXattr(p.toAbsolutePath(), "genBy", unit.getPersistentPath().toPath().toAbsolutePath().toString());
   }
   
   public void removeGenBy(Path p) throws IOException {
-    strategy.removeXattr(new AbsolutePath(p.getFile().getCanonicalPath()), "genBy");
+    strategy.removeXattr(p.toAbsolutePath(), "genBy");
   }
   
   public Path getGenBy(Path p) throws IOException {
-    String val = strategy.getXattr(new AbsolutePath(p.getFile().getCanonicalPath()), "genBy");
+    String val = strategy.getXattr(p.toAbsolutePath(), "genBy");
     if (val == null)
       return null;
-    return new AbsolutePath(val);
+    return Paths.get(val);
   }
   
   public void setSynFrom(Path p, Iterable<Path> paths) throws IOException {
@@ -76,7 +77,7 @@ public class Xattr {
     
     List<Path> paths = new ArrayList<>();
     for (String s : val.split(Pattern.quote(File.pathSeparator)))
-      paths.add(new AbsolutePath(s));
+      paths.add(Paths.get(s));
     return paths;
   }
 }

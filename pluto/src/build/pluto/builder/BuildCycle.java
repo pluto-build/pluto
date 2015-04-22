@@ -1,13 +1,10 @@
 package build.pluto.builder;
 
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.sugarj.common.FileCommands;
-import org.sugarj.common.Log;
-import org.sugarj.common.path.Path;
 
 import build.pluto.BuildUnit;
 import build.pluto.dependency.BuildRequirement;
@@ -33,11 +30,11 @@ public class BuildCycle {
     
     
     public <Out extends Serializable> void setBuildResult(BuildUnit<Out> unit, Out result) {
-      this.cycleOutputs.put(unit.getPersistentPath(), new UnitResultTuple<Out>(unit, result));
+      this.cycleOutputs.put(unit.getPersistentPath().toPath().toAbsolutePath(), new UnitResultTuple<Out>(unit, result));
     }
     
     public <Out extends Serializable>  UnitResultTuple<Out> getUnitResult(BuildUnit<Out> unit) {
-      UnitResultTuple<Out> tuple = (UnitResultTuple<Out>) this.cycleOutputs.get(unit.getPersistentPath());
+      UnitResultTuple<Out> tuple = (UnitResultTuple<Out>) this.cycleOutputs.get(unit.getPersistentPath().toPath().toAbsolutePath());
       return tuple;
     }
     

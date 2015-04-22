@@ -1,26 +1,24 @@
 package build.pluto.dependency;
 
-import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.Path;
+import java.io.File;
 
-import build.pluto.BuildUnit;
 import build.pluto.builder.BuildUnitProvider;
 import build.pluto.stamp.Stamp;
 
 public class FileRequirement implements Requirement {
   private static final long serialVersionUID = -8539311813637744518L;
   
-  public final Path path;
+  public final File file;
   public final Stamp stamp;
   
-  public FileRequirement(Path path, Stamp stamp) {
-    this.path = path;
+  public FileRequirement(File file, Stamp stamp) {
+    this.file = file;
     this.stamp = stamp;
   }
   
   @Override
   public boolean isConsistent() {
-    return stamp.equals(stamp.getStamper().stampOf(path));
+    return stamp.equals(stamp.getStamper().stampOf(file));
   }
   
   @Override
@@ -30,6 +28,6 @@ public class FileRequirement implements Requirement {
   
   @Override
   public String toString() {
-    return "FileReq(" + FileCommands.tryGetRelativePath(path) + ")";
+    return "FileReq(" + file.toString() + ")";
   }
 }

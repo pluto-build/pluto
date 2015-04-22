@@ -36,7 +36,7 @@ public class DivideByBuilder extends NumericBuilder {
 
 	@Override
 	protected String description() {
-		return "Dividy by for " + this.input.getFile().getRelativePath();
+		return "Dividy by for " + this.input.getFile();
 	}
 	
 	

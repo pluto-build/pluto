@@ -26,7 +26,7 @@ public class ModuloBuilder extends NumericBuilder{
 
 	@Override
 	protected String description() {
-		return "Module Builder for " + this.input.getFile().getRelativePath();
+		return "Module Builder for " + this.input.getFile();
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package build.pluto.test.build.cycle.fixpoint;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 
@@ -11,10 +12,10 @@ public class IntegerOutput implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = -6695142649240097187L;
-	private Path resultFile;
+	private File resultFile;
 	private int value;
 
-	public IntegerOutput(Path resultFile, int value) {
+	public IntegerOutput(File resultFile, int value) {
 		super();
 		this.resultFile = resultFile;
 		this.value = value;
@@ -23,13 +24,13 @@ public class IntegerOutput implements Serializable {
 		return FileUtils.readIntFromFile(resultFile);
 	}
 	
-	public Path getResultFile() {
+	public File getResultFile() {
 		return resultFile;
 	}
 	
 	@Override
 	public String toString() {
-		return "IntegerOutput(" + value + " at " + FileCommands.tryGetRelativePath(resultFile)+")";
+		return "IntegerOutput(" + value + " at " + resultFile+")";
 	}
 	
 	
@@ -59,13 +60,5 @@ public class IntegerOutput implements Serializable {
 		if (value != other.value)
 			return false;
 		return true;
-	}
-	// TODO encode this via OutputStamper
-	public boolean isConsistent() {
-		try {
-			return FileCommands.fileExists(resultFile) && FileUtils.readIntFromFile(resultFile) == value;
-		} catch (IOException e) {
-			return false;
-		}
 	}
 }

@@ -1,7 +1,9 @@
 package build.pluto.builder;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,7 +11,6 @@ import java.util.Map;
 
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
-import org.sugarj.common.path.Path;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.InconsistenyReason;
@@ -35,7 +36,7 @@ public class BuildManager extends BuildUnitProvider {
   }
 
   public static <Out extends Serializable> BuildUnit<Out> readResult(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
-    return BuildUnit.read(buildReq.createBuilder().persistentPath());
+    return BuildUnit.read(buildReq.createBuilder().persistentPath().toFile());
   }
 
   public static <Out extends Serializable> Out build(BuildRequest<?, Out, ?, ?> buildReq, Map<? extends Path, Stamp> editedSourceFiles) {
@@ -93,7 +94,7 @@ public class BuildManager extends BuildUnitProvider {
 
   private transient RequireStack requireStack;
 
-  private transient Map<Path, BuildUnit<?>> generatedFiles;
+  private transient Map<File, BuildUnit<?>> generatedFiles;
 
   private transient boolean initialRequest = true;
 
@@ -101,7 +102,7 @@ public class BuildManager extends BuildUnitProvider {
     this.editedSourceFiles = editedSourceFiles;
     this.executingStack = new ExecutingStack();
     // this.consistencyManager = new ConsistencyManager();
-    this.generatedFiles = new HashMap<Path, BuildUnit<?>>();
+    this.generatedFiles = new HashMap<>();
     this.requireStack = new RequireStack();
   }
 
@@ -113,11 +114,11 @@ public class BuildManager extends BuildUnitProvider {
   void setUpMetaDependency(Builder<In, Out> builder, BuildUnit<Out> depResult) throws IOException {
     if (depResult != null) {
       Path builderClass = FileCommands.getRessourcePath(builder.getClass());
-      depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
+      depResult.requires(builderClass.toFile(), LastModifiedStamper.instance.stampOf(builderClass.toFile()));
       
       Path depFile = Xattr.getDefault().getGenBy(builderClass);
       if (FileCommands.exists(depFile)) {
-        BuildUnit<Serializable> metaBuilder = BuildUnit.read(depFile);
+        BuildUnit<Serializable> metaBuilder = BuildUnit.read(depFile.toFile());
         depResult.requireMeta(metaBuilder);
       }
     }
@@ -134,7 +135,7 @@ public class BuildManager extends BuildUnitProvider {
 
     this.requireStack.beginRebuild(dep);
 
-    resetGenBy(dep, BuildUnit.read(dep));
+    resetGenBy(dep, BuildUnit.read(dep.toFile()));
     BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
 
     setUpMetaDependency(builder, depResult);
@@ -254,7 +255,7 @@ public class BuildManager extends BuildUnitProvider {
         throw new AssertionError("Cyclic builder does not provide a result for " + depResult.getPersistentPath());
       }
       tuple.setOutputToUnit();
-      requireStack.markConsistent(depResult.getPersistentPath());
+      requireStack.markConsistent(depResult.getPersistentPath().toPath());
     } else {
       depResult.setState(State.FAILURE);
     }
@@ -320,7 +321,7 @@ public class BuildManager extends BuildUnitProvider {
 
     Builder<In, Out> builder = buildReq.createBuilder();
     Path dep = builder.persistentPath();
-    BuildUnit<Out> depResult = BuildUnit.read(dep);
+    BuildUnit<Out> depResult = BuildUnit.read(dep.toFile());
 
     // Dont execute require because it is cyclic, requireStack keeps track of
     // this
@@ -397,20 +398,20 @@ public class BuildManager extends BuildUnitProvider {
       throw new DuplicateBuildUnitPathException("Build unit " + depResult + " has same persistent path as build unit " + other);
 
     for (FileRequirement freq : depResult.getGeneratedFileRequirements()) {
-      other = generatedFiles.put(freq.path, depResult);
+      other = generatedFiles.put(freq.file, depResult);
       if (other != null && other != depResult)
         throw new DuplicateFileGenerationException("Build unit " + depResult + " generates same file as build unit " + other);
     }
 
     InconsistenyReason reason = depResult.isConsistentShallowReason(null);
     if (reason != InconsistenyReason.NO_REASON)
-      throw new AssertionError("Build manager does not guarantee soundness, got consistency status " + reason + " for " + FileCommands.tryGetRelativePath(depResult.getPersistentPath()));
+      throw new AssertionError("Build manager does not guarantee soundness, got consistency status " + reason + " for " + depResult.getPersistentPath());
     return depResult;
   }
 
   private void resetGenBy(Path dep, BuildUnit<?> depResult) throws IOException {
     if (depResult != null)
-      for (Path p : depResult.getGeneratedFiles())
-        BuildUnit.xattr.removeGenBy(p);
+      for (File f : depResult.getGeneratedFiles())
+        BuildUnit.xattr.removeGenBy(f.toPath());
   }
 }

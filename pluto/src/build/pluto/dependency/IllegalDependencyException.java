@@ -1,6 +1,6 @@
 package build.pluto.dependency;
 
-import org.sugarj.common.path.Path;
+import java.nio.file.Path;
 
 public class IllegalDependencyException extends RuntimeException {
 

@@ -1,11 +1,14 @@
 package build.pluto.stamp;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.Path;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * @author Sebastian Erdweg
@@ -21,29 +24,29 @@ public class FileContentStamper implements Stamper {
    * @see build.pluto.stamp.Stamper#stampOf(org.sugarj.common.path.Path)
    */
   @Override
-  public Stamp stampOf(Path p) {
-    if (!FileCommands.exists(p))
+  public Stamp stampOf(File p) {
+    if (!p.exists())
       return new ValueStamp<>(this, new byte[0]);
     
-    if (p.getFile().isDirectory()) {
-      Map<Path, Stamp> stamps = new HashMap<>();
-      stamps.put(p, new ValueStamp<>(this, p.getFile().lastModified()));
+    if (p.isDirectory()) {
+      Map<File, Stamp> stamps = new HashMap<>();
+      stamps.put(p, new ValueStamp<>(this,p.lastModified()));
       
-      for (Path sub : FileCommands.listFilesRecursive(p))
-        if (sub.getFile().isDirectory())
-          stamps.put(sub, new ValueStamp<>(this, sub.getFile().lastModified()));
+      for (Path sub : FileCommands.listFilesRecursive(p.toPath()))
+        if (Files.isDirectory(sub))
+          stamps.put(sub.toFile(), new ValueStamp<>(this, sub.toFile().lastModified()));
         else
-          stamps.put(sub, fileContentStamp(sub));
+          stamps.put(sub.toFile(), fileContentStamp(sub));
       
       return new ValueStamp<>(this, stamps);
     }
     
-    return fileContentStamp(p);
+    return fileContentStamp(p.toPath());
   }
 
   private Stamp fileContentStamp(Path p) {
     try {
-      return new ByteArrayStamp(this, FileCommands.readFileAsByteArray(p));
+      return new ByteArrayStamp(this, Files.readAllBytes(p));
     } catch (IOException e) {
       e.printStackTrace();
       return new ByteArrayStamp(this, null);

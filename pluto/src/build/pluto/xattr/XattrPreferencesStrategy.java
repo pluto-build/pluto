@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
-import org.sugarj.common.path.Path;
+import java.nio.file.Path;
 
 public class XattrPreferencesStrategy implements XattrStrategy {
 
@@ -18,7 +18,7 @@ public class XattrPreferencesStrategy implements XattrStrategy {
   
   @Override
   public void setXattr(Path p, String k, String value) throws IOException {
-    String key = p + ":" + k;
+    String key = p.toAbsolutePath() + ":" + k;
     if (key.length() > Preferences.MAX_KEY_LENGTH)
       key = p.hashCode() + ":" + k;
     prefs.put(key, value);
@@ -26,7 +26,7 @@ public class XattrPreferencesStrategy implements XattrStrategy {
   
   @Override
   public void removeXattr(Path p, String k) throws IOException {
-    String key = p + ":" + k;
+    String key = p.toAbsolutePath() + ":" + k;
     if (key.length() > Preferences.MAX_KEY_LENGTH)
       key = p.hashCode() + ":" + k;
     prefs.remove(key);
@@ -34,7 +34,7 @@ public class XattrPreferencesStrategy implements XattrStrategy {
 
   @Override
   public String getXattr(Path p, String k) throws IOException {
-    String key = p + ":" + k;
+    String key = p.toAbsolutePath() + ":" + k;
     if (key.length() > Preferences.MAX_KEY_LENGTH)
       key = p.hashCode() + ":" + k;
     String val = prefs.get(key, null);

@@ -1,10 +1,10 @@
 package build.pluto.builder;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.Collection;
-
-import org.sugarj.common.path.Path;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
@@ -97,13 +97,13 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
       }
   }
   
-  public void require(Path p) {
+  public void require(File p) {
     require(p, defaultStamper.stampOf(p));
   }
-  public void require(Path p, Stamper stamper) {
+  public void require(File p, Stamper stamper) {
     require(p, stamper.stampOf(p));
   }
-  public void require(Path p, Stamp stamp) {
+  public void require(File p, Stamp stamp) {
     try {
       result.requires(p, stamp);
     } catch (IllegalDependencyException e) {
@@ -116,10 +116,10 @@ public abstract class Builder<In extends Serializable, Out extends Serializable>
     }
   }
   
-  public void provide(Path p) {
+  public void provide(File p) {
     result.generates(p, LastModifiedStamper.instance.stampOf(p));
   }
-  public void provide(Path p, Stamper stamper) {
+  public void provide(File p, Stamper stamper) {
     result.generates(p, stamper.stampOf(p));
   }
 

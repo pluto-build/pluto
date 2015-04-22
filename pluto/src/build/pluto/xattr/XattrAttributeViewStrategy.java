@@ -6,24 +6,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.sugarj.common.path.Path;
+import java.nio.file.Path;
 
 public class XattrAttributeViewStrategy implements XattrStrategy {
 
   @Override
   public void setXattr(Path p, String key, String value) throws IOException {
-    Files.setAttribute(p.getFile().toPath(), "user:" + Xattr.PREFIX + ":" + key, value);
+    Files.setAttribute(p, "user:" + Xattr.PREFIX + ":" + key, value);
   }
   
   @Override
   public void removeXattr(Path p, String key) throws IOException {
-    Files.setAttribute(p.getFile().toPath(), "user:" + Xattr.PREFIX + ":" + key, null);
+    Files.setAttribute(p, "user:" + Xattr.PREFIX + ":" + key, null);
   }
 
   @Override
   public String getXattr(Path p, String key) throws IOException {
     try {
-      Object val = Files.getAttribute(p.getFile().toPath(), "user:" + Xattr.PREFIX + ":" + key);
+      Object val = Files.getAttribute(p, "user:" + Xattr.PREFIX + ":" + key);
       if (val == null || !(val instanceof String))
         return null;
       return (String) val;
@@ -34,7 +34,7 @@ public class XattrAttributeViewStrategy implements XattrStrategy {
 
   @Override
   public Map<String, String> getAllXattr(Path p) throws IOException {
-    Map<String, Object> vals = Files.readAttributes(p.getFile().toPath(), Xattr.PREFIX + ":*");
+    Map<String, Object> vals = Files.readAttributes(p, Xattr.PREFIX + ":*");
     Map<String, String> attrs = new HashMap<>();
     for (Entry<String, Object> e : vals.entrySet()) {
       if (e.getValue() != null && e.getValue() instanceof String)

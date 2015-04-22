@@ -5,11 +5,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.sugarj.common.path.Path;
+import java.nio.file.Path;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildCycleException;
-import build.pluto.builder.BuildCycleException.CycleState;
 import build.pluto.builder.BuildManager;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;

@@ -3,7 +3,7 @@ package build.pluto.xattr;
 import java.io.IOException;
 import java.util.Map;
 
-import org.sugarj.common.path.Path;
+import java.nio.file.Path;
 
 public interface XattrStrategy {
   public void setXattr(Path p, String key, String value) throws IOException;

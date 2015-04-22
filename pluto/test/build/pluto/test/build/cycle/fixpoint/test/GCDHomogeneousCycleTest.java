@@ -8,6 +8,7 @@ import static build.pluto.test.build.cycle.fixpoint.test.FixpointCycleTestSuite.
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -21,6 +22,7 @@ import build.pluto.builder.BuildManager;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuilderFactory;
 import build.pluto.test.build.ScopedBuildTest;
+import build.pluto.test.build.ScopedPath;
 import build.pluto.test.build.TrackingBuildManager;
 import build.pluto.test.build.cycle.fixpoint.FileInput;
 import build.pluto.test.build.cycle.fixpoint.FileUtils;
@@ -30,18 +32,18 @@ import build.pluto.test.build.cycle.fixpoint.ModuloBuilder;
 
 public class GCDHomogeneousCycleTest extends ScopedBuildTest {
 
-	private RelativePath mainFile;
-	private RelativePath cycle_gcd1File;
-	private RelativePath cycle_gcd2File;
+  @ScopedPath("cyclemodmain.modulo")
+	private File mainFile;
+	@ScopedPath("cycle_gcd1.gcd")
+	private File cycle_gcd1File;
+	@ScopedPath("cycle_gcd2.gcd")
+	private File cycle_gcd2File;
 	private BuildRequest<FileInput, IntegerOutput, ModuloBuilder, BuilderFactory<FileInput, IntegerOutput, ModuloBuilder>> mainBuildRequest;
 	
 	@Before
 	public void initFiles() {
-		mainFile = getRelativeFile("cyclemodmain.modulo");
-		cycle_gcd1File = getRelativeFile("cycle_gcd1.gcd");
-		cycle_gcd2File = getRelativeFile("cycle_gcd2.gcd");
 		mainBuildRequest  = new BuildRequest<>(
-				ModuloBuilder.factory, new FileInput(testBasePath, mainFile));
+				ModuloBuilder.factory, new FileInput(testBasePath.toFile(), mainFile));
 	}
 	
 	@Override
@@ -50,8 +52,8 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
 	}
 	
 	private void assertAllFilesConsistent() throws IOException{
-		for (RelativePath path : Arrays.asList(mainFile, cycle_gcd1File, cycle_gcd2File)) {
-			assertTrue("File " + path.getRelativePath() + " is not consistent", unitForFile(path).isConsistent(null));
+		for (File path : Arrays.asList(mainFile, cycle_gcd1File, cycle_gcd2File)) {
+			assertTrue("File " + path + " is not consistent", unitForFile(path).isConsistent(null));
 		}
  	}
 
@@ -99,7 +101,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
 		assertAllFilesConsistent();
 
 		// Then make the cycle1 inconsistent
-		FileCommands.delete(unitForFile(cycle_gcd1File).getBuildResult().getResultFile());
+		FileCommands.delete(unitForFile(cycle_gcd1File).getBuildResult().getResultFile().toPath());
 
 		TrackingBuildManager manager = new TrackingBuildManager();
 		BuildUnit<IntegerOutput> resultUnit = manager.require(mainBuildRequest);

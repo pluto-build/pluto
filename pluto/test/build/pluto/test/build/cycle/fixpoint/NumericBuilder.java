@@ -1,10 +1,11 @@
 package build.pluto.test.build.cycle.fixpoint;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.path.Path;
 import org.sugarj.common.path.RelativePath;
 
 import build.pluto.BuildUnit.State;
@@ -27,7 +28,7 @@ public abstract class NumericBuilder extends Builder<FileInput, IntegerOutput> {
 
 	@Override
 	protected final Path persistentPath() {
-		return FileCommands.addExtension(this.input.getFile(), "dep");
+		return FileCommands.addExtension(this.input.getFile().toPath(), "dep");
 	}
 
 	@Override
@@ -46,12 +47,12 @@ public abstract class NumericBuilder extends Builder<FileInput, IntegerOutput> {
 		int myNumber = FileUtils.readIntFromFile(this.input.getFile());
 
 		
-		if (FileCommands.exists(this.input.getDepsFile())) {
+		if (this.input.getDepsFile().exists()) {
 			require(this.input.getDepsFile());
-			List<RelativePath> depPaths = FileUtils.readPathsFromFile(
+			List<File> depPaths = FileUtils.readPathsFromFile(
 					this.input.getDepsFile(), this.input.getWorkingDir());
 
-			for (RelativePath path : depPaths) {
+			for (File path : depPaths) {
 				FileInput input = new FileInput(this.input.getWorkingDir(),
 						path);
 				IntegerOutput output = null;
@@ -81,7 +82,7 @@ public abstract class NumericBuilder extends Builder<FileInput, IntegerOutput> {
 			}
 		}
 		
-		Path outFile = FileCommands.replaceExtension(input.getFile(), "out");
+		File outFile = FileCommands.replaceExtension(input.getFile().toPath(), "out").toFile();
 		FileUtils.writeIntToFile(myNumber, outFile);
 		provide(outFile);
 		

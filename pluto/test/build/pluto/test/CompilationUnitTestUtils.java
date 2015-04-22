@@ -2,13 +2,12 @@ package build.pluto.test;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.sugarj.common.path.AbsolutePath;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
@@ -58,7 +57,7 @@ public class CompilationUnitTestUtils {
 
 	public static BuildUnit<NodeOutput> makeNode(String name) {
 		try {
-		BuildUnit<NodeOutput> unit = BuildUnit.create(new AbsolutePath("./"+name), new BuildRequest<>(factory, new NodeInput(name)));
+		BuildUnit<NodeOutput> unit = BuildUnit.create(Paths.get("./"+name), new BuildRequest<>(factory, new NodeInput(name)));
 		unit.setBuildResult(new NodeOutput(name));
 		return unit;
 		} catch (IOException e) {

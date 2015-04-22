@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.sugarj.common.Exec;
-import org.sugarj.common.path.Path;
+import java.nio.file.Path;
 
 public class XattrCommandStrategy implements XattrStrategy {
 
@@ -14,7 +14,7 @@ public class XattrCommandStrategy implements XattrStrategy {
   @Override
   public void setXattr(Path p, String key, String value) throws IOException {
     try {
-      exec.exec("xattr", "-w", Xattr.PREFIX + ":" + key, value, p.getAbsolutePath());
+      exec.exec("xattr", "-w", Xattr.PREFIX + ":" + key, value, p.toAbsolutePath().toString());
     } catch (Exec.ExecutionError e) {
       throw new IOException(e);
     }
@@ -23,7 +23,7 @@ public class XattrCommandStrategy implements XattrStrategy {
   @Override
   public void removeXattr(Path p, String key) throws IOException {
     try {
-      exec.exec("xattr", "-d", Xattr.PREFIX + ":" + key, p.getAbsolutePath());
+      exec.exec("xattr", "-d", Xattr.PREFIX + ":" + key, p.toAbsolutePath().toString());
     } catch (Exec.ExecutionError e) {
       throw new IOException(e);
     }
@@ -32,7 +32,7 @@ public class XattrCommandStrategy implements XattrStrategy {
   @Override
   public String getXattr(Path p, String key) throws IOException {
     try {
-      Exec.ExecutionResult out = exec.exec("xattr", "-p", Xattr.PREFIX + ":" + key, p.getAbsolutePath());
+      Exec.ExecutionResult out = exec.exec("xattr", "-p", Xattr.PREFIX + ":" + key, p.toAbsolutePath().toString());
       return out.outMsgs[0];
     } catch (Exec.ExecutionError e) {
       return null;
@@ -42,7 +42,7 @@ public class XattrCommandStrategy implements XattrStrategy {
   @Override
   public Map<String, String> getAllXattr(Path p) throws IOException {
     try {
-      Exec.ExecutionResult out = exec.exec("xattr", "-l", p.getAbsolutePath());
+      Exec.ExecutionResult out = exec.exec("xattr", "-l", p.toAbsolutePath().toString());
       
       Map<String, String> attrs = new HashMap<>();
       for (String line : out.outMsgs) {
