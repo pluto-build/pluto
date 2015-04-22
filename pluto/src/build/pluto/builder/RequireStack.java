@@ -12,20 +12,18 @@ public class RequireStack extends CycleDetectionStack<Path, Boolean> {
 
   private Set<Path> knownInconsistentUnits;
   private Set<Path> consistentUnits;
-
-  private final boolean LOG_REQUIRE = false;
-
+  
   public RequireStack() {
     this.consistentUnits = new HashSet<>();
     this.knownInconsistentUnits = new HashSet<>();
   }
 
   public void beginRebuild(Path dep) {
-    if (LOG_REQUIRE) {
-      Log.log.log("Rebuild " + dep, Log.CORE);
-      Log.log.log("Assumptions: " + printCyclicConsistentAssumtion(dep.toAbsolutePath()), Log.CORE);
-    }
-    this.knownInconsistentUnits.add(dep.toAbsolutePath());
+
+    Log.log.log("Rebuild " + dep, Log.DETAIL);
+    Log.log.log("Assumptions: " + printCyclicConsistentAssumtion(dep), Log.DETAIL);
+    
+    this.knownInconsistentUnits.add(dep);
     // TODO: Need to forget the scc where dep is in, because the graph structure
     // may change?
    // for (Path assumed : this.requireStack) {
@@ -77,16 +75,14 @@ public class RequireStack extends CycleDetectionStack<Path, Boolean> {
 
   @Override
   protected Boolean push(Path dep) {
-    if (LOG_REQUIRE)
-      Log.log.beginTask("Require " + dep, Log.CORE);
+    Log.log.beginTask("Require " + dep, Log.DETAIL);
     return super.push(dep.toAbsolutePath());
   }
 
   @Override
   public void pop(Path dep) {
     super.pop(dep.toAbsolutePath());
-    if (LOG_REQUIRE)
-      Log.log.endTask();
+    Log.log.endTask();
   }
 
   public void markConsistent(Path dep) {
@@ -95,8 +91,7 @@ public class RequireStack extends CycleDetectionStack<Path, Boolean> {
 
   @Override
   protected Boolean cycleResult(Path call, Set<Path> scc) {
-    if (LOG_REQUIRE)
-      Log.log.log("Already required " + call, Log.CORE);
+    Log.log.log("Already required " + call, Log.DETAIL);
     this.callStack.add(call.toAbsolutePath());
     return true;
   }
