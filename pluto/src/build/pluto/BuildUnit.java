@@ -303,8 +303,8 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 		return true;
 	}
 	
-	public boolean isConsistentShallow(Map<? extends Path, Stamp> editedSourceFiles) {
-	  return isConsistentShallowReason(editedSourceFiles) == InconsistenyReason.NO_REASON;
+  public boolean isConsistentShallow() {
+    return isConsistentShallowReason() == InconsistenyReason.NO_REASON;
 	}
 
 	  
@@ -327,7 +327,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
     return true;
 	}
 	  
-	public InconsistenyReason isConsistentShallowReason(Map<? extends Path, Stamp> editedSourceFiles) {
+  public InconsistenyReason isConsistentShallowReason() {
 		if (hasPersistentVersionChanged()) {
 		  return InconsistenyReason.OTHER;
 		}
@@ -351,11 +351,11 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 		return InconsistenyReason.NO_REASON;
 	}
 
-	public boolean isConsistent(final Map<? extends Path, Stamp> editedSourceFiles) {
+  public boolean isConsistent() {
 		ModuleVisitor<Boolean> isConsistentVisitor = new ModuleVisitor<Boolean>() {
 			@Override
 			public Boolean visit(BuildUnit<?> mod) {
-				return mod.isConsistentShallow(editedSourceFiles);
+        return mod.isConsistentShallow();
 			}
 
 			@Override

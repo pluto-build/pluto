@@ -97,12 +97,12 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
 
   @Override
   public boolean canCompileCycle(BuildCycle cycle) {
-    for (BuildRequirement<?> req : cycle.getCycleComponents()) {
-      if (req.getRequest().factory != this.factory) {
+    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
+      if (req.factory != this.factory) {
         System.out.println("Not the same factory");
         return false;
       }
-      if (!(req.getRequest().input instanceof ArrayList<?>)) {
+      if (!(req.input instanceof ArrayList<?>)) {
         System.out.println("No array list input");
         return false;
       }
@@ -116,11 +116,11 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
     ArrayList<In> inputs = new ArrayList<>();
     ArrayList<BuildRequest<?, Out, ?, ?>> requests = new ArrayList<>();
 
-    for (BuildRequirement<?> req : cycle.getCycleComponents()) {
-      Builder<?, ?> tmpBuilder = req.getRequest().createBuilder();
-      cyclicResults.add(BuildUnit.<Out> create(tmpBuilder.persistentPath(), (BuildRequest<?, Out, ?, ?>) req.getRequest()));
-      inputs.addAll((ArrayList<In>) req.getRequest().input);
-      requests.add((BuildRequest<?, Out, ?, ?>) req.getRequest());
+    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
+      Builder<?, ?> tmpBuilder = req.createBuilder();
+      cyclicResults.add(BuildUnit.<Out> create(tmpBuilder.persistentPath(), (BuildRequest<?, Out, ?, ?>) req));
+      inputs.addAll((ArrayList<In>) req.input);
+      requests.add((BuildRequest<?, Out, ?, ?>) req);
     }
 
     CompileCycleAtOnceBuilder<In, Out> newBuilder = factory.makeBuilder(inputs);
@@ -143,8 +143,8 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   public String getCycleDescription(BuildCycle cycle) {
     ArrayList<In> inputs = new ArrayList<>();
 
-    for (BuildRequirement<?> req : cycle.getCycleComponents()) {
-      inputs.addAll((ArrayList<In>) req.getRequest().input);
+    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
+      inputs.addAll((ArrayList<In>) req.input);
     }
     CompileCycleAtOnceBuilder<In, Out> newBuilder = factory.makeBuilder(inputs);
     return newBuilder.description();

@@ -61,7 +61,7 @@ public class RebuildInconsistentTest extends SimpleBuildTest{
 					unit);
 			assertTrue("Unit for " + file
 					+ " is not consistent",
-					unit.isConsistent(null));
+ unit.isConsistent());
 		}
 		validateThat(in(requiredFilesOf(manager)).is(mainFile).before(dep2File, dep1File));
 		validateThat(in(requiredFilesOf(manager)).is(dep2File).before(dep2_1File));
@@ -75,7 +75,7 @@ public class RebuildInconsistentTest extends SimpleBuildTest{
 
 		addInputFileContent(mainFile, "New content");
 		assertFalse("Main file is not inconsistent after change",
-				unitForFile(mainFile, testBasePath).isConsistent(null));
+ unitForFile(mainFile, testBasePath).isConsistent());
 		// Rebuild
 		TrackingBuildManager manager = new TrackingBuildManager();
 		buildMainFile(manager);
@@ -90,7 +90,7 @@ public class RebuildInconsistentTest extends SimpleBuildTest{
 
 		addInputFileContent(dep2_1File, "New content");
 		assertFalse("dep2_1File file is not inconsistent after change",
-				unitForFile(dep2_1File, testBasePath).isConsistent(null));
+ unitForFile(dep2_1File, testBasePath).isConsistent());
 		// Rebuild
 		TrackingBuildManager manager = buildMainFile();
 	
@@ -107,9 +107,9 @@ public class RebuildInconsistentTest extends SimpleBuildTest{
 		
 		addInputFileDep(dep2_1File, dep1File);
 		assertFalse("dep2_1File file is not inconsistent after change",
-				unitForFile(dep2_1File, testBasePath).isConsistent(null));
+ unitForFile(dep2_1File, testBasePath).isConsistent());
 		assertFalse("dep1File file is not inconsistent after change",
-				unitForFile(dep1File, testBasePath).isConsistent(null));
+ unitForFile(dep1File, testBasePath).isConsistent());
 		
 		// Rebuild
 		TrackingBuildManager manager = buildMainFile();

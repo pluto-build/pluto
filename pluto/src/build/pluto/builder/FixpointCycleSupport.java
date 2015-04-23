@@ -21,8 +21,8 @@ public class FixpointCycleSupport implements CycleSupport {
   @Override
   public String getCycleDescription(BuildCycle cycle) {
     String cycleName = "Fixpoint {";
-    for (BuildRequirement<?> req : cycle.getCycleComponents()) {
-      cycleName += req.getRequest().createBuilder().description() + ";";
+    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
+      cycleName += req.createBuilder().description() + ";";
     }
     cycleName = cycleName.substring(0, cycleName.length() - 1) + "}";
     return cycleName;
@@ -30,9 +30,9 @@ public class FixpointCycleSupport implements CycleSupport {
 
   @Override
   public boolean canCompileCycle(BuildCycle cycle) {
-    for (BuildRequirement<?> req : cycle.getCycleComponents()) {
+    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
       for (BuilderFactory<?, ?, ?> supportedBuilder : supportedBuilders) {
-        if (req.getRequest().factory == supportedBuilder) {
+        if (req.factory == supportedBuilder) {
           return true;
         }
       }
@@ -54,18 +54,18 @@ public class FixpointCycleSupport implements CycleSupport {
       try {
         // CycleComponents are in order if which they were required
         // Require the first one which is not consistent to their input
-        for (BuildRequirement<?> req : cycle.getCycleComponents()) {
-          final BuildUnit<?> unit = cycleUnits.get(req.getRequest());
+        for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
+          final BuildUnit<?> unit = cycleUnits.get(req);
           // Check whether the unit is shallowly consistent (if null its the
           // first iteration)
-          if (unit == null || !unit.isConsistentShallow(null)) {
+          if (unit == null || !unit.isConsistentShallow()) {
             if (!logStarted) {
               Log.log.beginTask("Compile cycle iteration " + numInterations, Log.CORE);
               logStarted = true;
             }
             cycleConsistent = false;
-            final BuildRequirement<?> newUnit = cycleManager.require(req.getRequest());
-            cycleUnits.put(req.getRequest(), newUnit.getUnit());
+            final BuildRequirement<?> newUnit = cycleManager.require(req);
+            cycleUnits.put(req, newUnit.getUnit());
           }
         }
       } finally {

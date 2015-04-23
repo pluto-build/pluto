@@ -52,7 +52,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
 	
 	private void assertAllFilesConsistent() throws IOException{
 		for (File path : Arrays.asList(mainFile, cycle_gcd1File, cycle_gcd2File)) {
-			assertTrue("File " + path + " is not consistent", unitForFile(path).isConsistent(null));
+      assertTrue("File " + path + " is not consistent", unitForFile(path).isConsistent());
 		}
  	}
 

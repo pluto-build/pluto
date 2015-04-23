@@ -50,7 +50,7 @@ public class UnitValidators {
 				@Override
 				public void validate() {
 					for (BuildUnit<?> unit : units) {
-						assertTrue(unit.getPersistentPath() + " is not consistent", unit.isConsistent(null));
+            assertTrue(unit.getPersistentPath() + " is not consistent", unit.isConsistent());
 					}
 				}
 			};

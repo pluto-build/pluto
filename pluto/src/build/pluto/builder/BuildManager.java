@@ -146,7 +146,7 @@ public class BuildManager extends BuildUnitProvider {
     setUpMetaDependency(builder, depResult);
     
     // First step: cycle detection
-    this.executingStack.push(depResult);
+    this.executingStack.push(buildReq);
 
     int inputHash = DeepEquals.deepHashCode(builder.input);
 
@@ -188,7 +188,7 @@ public class BuildManager extends BuildUnitProvider {
       analysis.check(depResult, inputHash);
       assertConsistency(depResult);
 
-      this.executingStack.pop(depResult);
+      this.executingStack.pop(buildReq);
       this.requireStack.finishRebuild(dep);
     }
 
@@ -205,10 +205,10 @@ public class BuildManager extends BuildUnitProvider {
       return e;
     }
 
-    Log.log.log("Detected a dependency cycle with root " + e.getCycleCause().getPersistentPath(), Log.CORE);
+    Log.log.log("Detected a dependency cycle with root " + e.getCycleCause().createBuilder().persistentPath(), Log.CORE);
 
     e.setCycleState(CycleState.NOT_RESOLVED);
-    BuildCycle cycle = new BuildCycle(e.getCycleComponents());
+    BuildCycle cycle = e.getCycle();
     CycleSupport cycleSupport = cycle.findCycleSupport().orElseThrow(() -> e);
    
     Log.log.beginTask("Compile cycle with: " + cycleSupport.getCycleDescription(cycle), Log.CORE);
@@ -261,7 +261,7 @@ public class BuildManager extends BuildUnitProvider {
       depResult.setState(State.FAILURE);
     }
     Log.log.log("Stopped because of cycle", Log.CORE);
-    if (e.isUnitFirstInvokedOn(depResult)) {
+    if (e.isFirstInvokedOn(buildReq)) {
       if (e.getCycleState() != CycleState.RESOLVED) {
         Log.log.log("Unable to find builder which can compile the cycle", Log.CORE);
         // Cycle cannot be handled
@@ -401,7 +401,6 @@ public class BuildManager extends BuildUnitProvider {
   }
 
   private <Out extends Output> void assertConsistency(BuildUnit<Out> depResult) {
-    assert depResult.isConsistentShallowReason(null) == InconsistenyReason.NO_REASON 
-         : "Build manager does not guarantee soundness, got consistency status " + depResult.isConsistentShallowReason(null) + " for " + depResult.getPersistentPath();
+    assert depResult.isConsistentShallowReason() == InconsistenyReason.NO_REASON : "Build manager does not guarantee soundness, got consistency status " + depResult.isConsistentShallowReason() + " for " + depResult.getPersistentPath();
   }
 }
