@@ -97,7 +97,7 @@ public abstract class PersistableEntity implements Serializable {
       return null;
     
     if (!p.exists()) {
-      inMemory.remove(p);
+      removeFromCache(p);
       return null;
     }
       
@@ -169,6 +169,12 @@ public abstract class PersistableEntity implements Serializable {
     }
   }
   
+  final protected static void removeFromCache(File p) {
+    synchronized (PersistableEntity.class) {
+      inMemory.remove(AbsoluteComparedFile.absolute(p));
+    }
+  }
+
   public String toString() {
     return getClass().getSimpleName() + "(" + persistentPath + ")";
   }
