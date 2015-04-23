@@ -69,6 +69,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
 	public void testRebuildRootUnitInconsistent() throws IOException {
 
 		// Do a first clean build
+	  BuildManager.clean(false, mainBuildRequest);
 		BuildManager.build(mainBuildRequest);
 
 		// Then make the root inconsistent

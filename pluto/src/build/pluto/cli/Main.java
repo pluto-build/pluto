@@ -81,11 +81,11 @@ public class Main {
       BuildRequest<?, ?, ?, ?> req = new BuildRequest<Serializable, Output, Builder<Serializable, Output>, BuilderFactory<Serializable, Output, Builder<Serializable, Output>>>(factory, input);
       
       if (line.hasOption(cleanOption.getLongOpt()) || line.hasOption(dryCleanOption.getLongOpt())) {
-        clean(line.hasOption(dryCleanOption.getLongOpt()), req);
+        BuildManager.clean(line.hasOption(dryCleanOption.getLongOpt()), req);
         return;
       }
       if (line.hasOption(cleanBuildOption.getLongOpt()))
-        clean(false, req);
+        BuildManager.clean(false, req);
       
       BuildManager.build(req);
       BuildUnit<?> unit = BuildManager.readResult(req);
@@ -116,25 +116,4 @@ public class Main {
     HelpFormatter formatter = new HelpFormatter();
     formatter.printHelp(command, options);
   }
-  
-  private static void clean(boolean dryRun, BuildRequest<?, ?, ?, ?> req) throws IOException {
-    BuildUnit<?> unit = BuildManager.readResult(req);
-    if (unit == null)
-      return;
-    Set<BuildUnit<?>> allUnits = unit.getTransitiveModuleDependencies();
-    for (BuildUnit<?> next : allUnits) {
-      for (File p : next.getGeneratedFiles())
-        deleteFile(p.toPath(), dryRun);
-      deleteFile(next.getPersistentPath().toPath(), dryRun);
-    }
-  }
-
-  private static void deleteFile(Path p, boolean dryRun) throws IOException {
-    Log.log.log("Delete " + p + (dryRun ? " (dry run)" : ""), Log.CORE);
-    if (!dryRun)
-      if (!Files.isDirectory(p) || Files.list(p).findAny().isPresent())
-        FileCommands.delete(p);
-  }
-
-
 }

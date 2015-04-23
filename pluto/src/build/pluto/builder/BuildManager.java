@@ -3,10 +3,13 @@ package build.pluto.builder;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
@@ -30,6 +33,25 @@ public class BuildManager extends BuildUnitProvider {
     return BuildUnit.read(buildReq.createBuilder().persistentPath());
   }
 
+  public static void clean(boolean dryRun, BuildRequest<?, ?, ?, ?> req) throws IOException {
+    BuildUnit<?> unit = BuildManager.readResult(req);
+    if (unit == null)
+      return;
+    Set<BuildUnit<?>> allUnits = unit.getTransitiveModuleDependencies();
+    for (BuildUnit<?> next : allUnits) {
+      for (File p : next.getGeneratedFiles())
+        deleteFile(p.toPath(), dryRun);
+      deleteFile(next.getPersistentPath().toPath(), dryRun);
+    }
+  }
+  private static void deleteFile(Path p, boolean dryRun) throws IOException {
+    Log.log.log("Delete " + p + (dryRun ? " (dry run)" : ""), Log.CORE);
+    if (!dryRun)
+      if (!Files.isDirectory(p) || Files.list(p).findAny().isPresent())
+        FileCommands.delete(p);
+  }
+
+  
   public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
