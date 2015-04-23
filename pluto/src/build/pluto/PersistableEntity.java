@@ -35,7 +35,7 @@ public abstract class PersistableEntity implements Serializable {
    * Path and stamp of the disk-stored version of this result.
    */
   protected File persistentPath;
-  private Stamp persistentStamp = null;
+  private Stamp persistentStamp;
   private boolean isPersisted = false;
 
   final public boolean isPersisted() {
@@ -63,7 +63,10 @@ public abstract class PersistableEntity implements Serializable {
   protected abstract void readEntity(ObjectInputStream in) throws IOException, ClassNotFoundException;
   protected abstract void writeEntity(ObjectOutputStream out) throws IOException;
   
-  protected abstract void init();
+  protected void init() {
+    this.isPersisted = false;
+    this.persistentStamp = null;
+  }
   
   final protected static <E extends PersistableEntity> E create(Class<E> clazz, File p) throws IOException {
     E entity = readFromMemoryCache(clazz, p);
@@ -93,8 +96,10 @@ public abstract class PersistableEntity implements Serializable {
     if (p == null)
       return null;
     
-    if (!p.exists())
+    if (!p.exists()) {
+      inMemory.remove(p);
       return null;
+    }
       
     ObjectInputStream in = null;
     try {

@@ -20,10 +20,11 @@ public class FixpointCycleSupport implements CycleSupport {
 
   @Override
   public String getCycleDescription(BuildCycle cycle) {
-    String cycleName = "Cycle ";
+    String cycleName = "Fixpoint {";
     for (BuildRequirement<?> req : cycle.getCycleComponents()) {
-      cycleName += req.getRequest().createBuilder().description();
+      cycleName += req.getRequest().createBuilder().description() + ";";
     }
+    cycleName = cycleName.substring(0, cycleName.length() - 1) + "}";
     return cycleName;
   }
 

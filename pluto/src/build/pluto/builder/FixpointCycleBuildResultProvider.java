@@ -87,7 +87,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
       BuildRequirement<Out> cycleComponent = (BuildRequirement<Out>) getCycleComponent(buildReq);
       if (cycleComponent != null) {
         cycleUnit = cycleComponent.getUnit();
-        previousOutput = cycleComponent.getUnit().getBuildResult();
+        previousOutput = cycleUnit.getBuildResult();
         this.requiredUnitsInIteration.put(buildReq, Pair.create(cycleUnit, previousOutput));
         
         if (cycleUnit.isConsistentShallow(null)) {

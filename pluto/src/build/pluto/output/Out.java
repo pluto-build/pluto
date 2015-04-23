@@ -19,7 +19,7 @@ public class Out<T extends Serializable> implements Output {
   
   @Override
   public int hashCode() {
-    return val.hashCode();
+    return Objects.hashCode(val);
   }
   
   @Override

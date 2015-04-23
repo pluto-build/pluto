@@ -75,6 +75,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 
 	@Override
 	protected void init() {
+	  super.init();
 	  requirements = new ArrayList<>();
 	  generatedFiles = new HashSet<>();
 	  
