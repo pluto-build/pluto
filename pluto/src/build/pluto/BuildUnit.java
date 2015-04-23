@@ -83,6 +83,8 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 		requiredFiles = new HashSet<>();
 
 		state = State.INITIALIZED;
+		generatedBy = null;
+		buildResult = null;
 	}
 
 	// *******************************

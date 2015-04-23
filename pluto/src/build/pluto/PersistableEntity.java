@@ -36,21 +36,19 @@ public abstract class PersistableEntity implements Serializable {
    */
   protected File persistentPath;
   private Stamp persistentStamp;
-  private boolean isPersisted = false;
 
   final public boolean isPersisted() {
-    return isPersisted;
+    return persistentStamp != null;
   }
   
   public boolean hasPersistentVersionChanged() {
-    return isPersisted &&
+    return isPersisted() &&
            persistentPath != null && 
            !persistentStamp.equals(persistentStamp.getStamper().stampOf(persistentPath));
   }
   
   final protected void setPersisted(Stamper stamper) throws IOException {
-    persistentStamp = stamper.stampOf(persistentPath);
-    isPersisted = true;
+    persistentStamp = Objects.requireNonNull(stamper.stampOf(persistentPath));
   }
   
   final public Stamp stamp() {
@@ -64,7 +62,6 @@ public abstract class PersistableEntity implements Serializable {
   protected abstract void writeEntity(ObjectOutputStream out) throws IOException;
   
   protected void init() {
-    this.isPersisted = false;
     this.persistentStamp = null;
   }
   
@@ -96,10 +93,8 @@ public abstract class PersistableEntity implements Serializable {
     if (p == null)
       return null;
     
-    if (!p.exists()) {
-      inMemory.remove(p);
+    if (!p.exists())
       return null;
-    }
       
     ObjectInputStream in = null;
     try {
