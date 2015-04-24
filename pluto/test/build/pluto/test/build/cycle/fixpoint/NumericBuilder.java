@@ -1,7 +1,6 @@
 package build.pluto.test.build.cycle.fixpoint;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -11,10 +10,11 @@ import org.sugarj.common.Log;
 import build.pluto.BuildUnit.State;
 import build.pluto.builder.Builder;
 import build.pluto.builder.CycleSupport;
+import build.pluto.output.Out;
 import build.pluto.stamp.FileContentStamper;
 import build.pluto.stamp.Stamper;
 
-public abstract class NumericBuilder extends Builder<FileInput, IntegerOutput> {
+public abstract class NumericBuilder extends Builder<FileInput, Out<Integer>> {
 
 	public NumericBuilder(FileInput input) {
 		super(input);
@@ -40,7 +40,7 @@ public abstract class NumericBuilder extends Builder<FileInput, IntegerOutput> {
 	}
 
 	@Override
-	protected final IntegerOutput build() throws Throwable {
+  protected final Out<Integer> build() throws Throwable {
 		require(this.input.getFile());
 		int myNumber = FileUtils.readIntFromFile(this.input.getFile());
 
@@ -53,7 +53,7 @@ public abstract class NumericBuilder extends Builder<FileInput, IntegerOutput> {
 			for (File path : depPaths) {
 				FileInput input = new FileInput(this.input.getWorkingDir(),
 						path);
-				IntegerOutput output = null;
+        Out<Integer> output = null;
 				String extension = FileCommands.getExtension(path);
 				if (extension.equals("modulo")) {
 					output = requireBuild(ModuloBuilder.factory, input);
@@ -66,28 +66,16 @@ public abstract class NumericBuilder extends Builder<FileInput, IntegerOutput> {
 							+ extension + " is unknown.");
 				}
 				// Cycle support: if there is no output currently, ignore the dependency
-				//if (output != null && FileCommands.exists(output.getResultFile())) {
 				if (output != null) {
-					try {
-            int otherNumber = output.getResult();
+            int otherNumber = output.val;
             int result = this.getOperator().apply(myNumber, otherNumber);
             Log.log.log(this.getPrintOperator().apply(myNumber, otherNumber) + " = " + result, Log.CORE);
             myNumber = result;
-				//require(output.getResultFile());
-
-					} catch (IOException e) {}
 				}
-			
-				//} 
 			}
 		}
-		
-		File outFile = FileCommands.replaceExtension(input.getFile().toPath(), "out").toFile();
-		FileUtils.writeIntToFile(myNumber, outFile);
-		provide(outFile);
-		
 		setState(State.finished(true));
-		return new IntegerOutput(outFile, myNumber);
+    return Out.of(myNumber);
 
 	}
 

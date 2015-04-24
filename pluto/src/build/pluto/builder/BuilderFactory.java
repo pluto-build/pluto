@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import build.pluto.output.Output;
 
+@FunctionalInterface
 public interface BuilderFactory
 <
   In extends Serializable, 

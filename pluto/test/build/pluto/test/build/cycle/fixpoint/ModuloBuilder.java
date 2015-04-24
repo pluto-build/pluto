@@ -4,22 +4,12 @@ import java.math.BigInteger;
 import java.util.function.BiFunction;
 
 import build.pluto.builder.BuilderFactory;
+import build.pluto.output.Out;
 
 
 public class ModuloBuilder extends NumericBuilder{
 	
-	public static final BuilderFactory<FileInput, IntegerOutput, ModuloBuilder> factory = new BuilderFactory<FileInput, IntegerOutput, ModuloBuilder>() {
-
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = 4153011353141009760L;
-
-		@Override
-		public ModuloBuilder makeBuilder(FileInput input) {
-			return new ModuloBuilder(input);
-		}
-	};
+  public static final BuilderFactory<FileInput, Out<Integer>, ModuloBuilder> factory = ModuloBuilder::new;
 	
 	public ModuloBuilder(FileInput input) {
 		super(input);

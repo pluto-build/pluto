@@ -12,6 +12,10 @@ public class Out<T extends Serializable> implements Output {
     this.val = val;
   }
   
+  public static <T extends Serializable> Out<T> of(T val) {
+    return new Out<>(val);
+  }
+
   @Override
   public boolean equals(Object obj) {
     return obj instanceof Out && Objects.equal(val, ((Out<?>) obj).val);

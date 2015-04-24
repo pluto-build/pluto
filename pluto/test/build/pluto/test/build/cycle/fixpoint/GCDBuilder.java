@@ -4,22 +4,11 @@ import java.math.BigInteger;
 import java.util.function.BiFunction;
 
 import build.pluto.builder.BuilderFactory;
+import build.pluto.output.Out;
 
 public class GCDBuilder extends NumericBuilder {
 
-	public static final BuilderFactory<FileInput, IntegerOutput, GCDBuilder> factory = new BuilderFactory<FileInput, IntegerOutput, GCDBuilder>() {
-
-	
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = -8446980413610510702L;
-
-		@Override
-		public GCDBuilder makeBuilder(FileInput input) {
-			return new GCDBuilder(input);
-		}
-	};
+  public static final BuilderFactory<FileInput, Out<Integer>, GCDBuilder> factory = GCDBuilder::new;
 	
 	public GCDBuilder(FileInput input) {
 		super(input);
