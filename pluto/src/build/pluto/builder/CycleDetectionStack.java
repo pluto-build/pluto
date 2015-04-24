@@ -2,15 +2,14 @@ package build.pluto.builder;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
-import build.pluto.util.UniteSets;
+import build.pluto.util.UniteCollections;
 
 public abstract class CycleDetectionStack<C, P> {
 
  protected List<C> callStack = new ArrayList<>();
   
-  protected UniteSets<C> sccs = new UniteSets<>();
+  protected UniteCollections<C, List<C>> sccs = new UniteCollections<>(ArrayList::new);
   
   protected P push(C unit) {
     // Check whether unit is already on the stack
@@ -19,7 +18,7 @@ public abstract class CycleDetectionStack<C, P> {
       unit = callStack.get(index);
       // Then unite the sccs of all units from the top of the stack until
       // the already existing occurence of unit
-      UniteSets<C>.Key scc = sccs.getOrCreateSet(unit);   
+      UniteCollections<C, List<C>>.Key scc = sccs.getOrCreate(unit);
       scc = callStack.stream().skip(index).reduce(scc, sccs::uniteOrAdd, sccs::unite);
       // Subclasses decide what to return
       return cycleResult(unit, sccs.getSetMembers(scc));
@@ -29,7 +28,7 @@ public abstract class CycleDetectionStack<C, P> {
     return noCycleResult();
   }
   
-  protected abstract P cycleResult(C call, Set<C> scc);
+  protected abstract P cycleResult(C call, List<C> scc);
   protected abstract P noCycleResult();
   
   public int getNumContains(C elem) {

@@ -331,10 +331,13 @@ public class BuildManager extends BuildUnitProvider {
     // otherwise dep has always been required
     boolean alreadyRequired = requireStack.push(dep);
     boolean executed = false;
-
     try {
-      boolean localInconsistent = (requireStack.isKnownInconsistent(dep)) || (depResult == null) || (!depResult.getGeneratedBy().deepEquals(buildReq)) || (!depResult.isConsistentNonrequirements());
-
+      boolean knownInconsistent = requireStack.isKnownInconsistent(dep);
+      boolean noUnit = depResult == null;
+      boolean changedInput = noUnit ? false : !depResult.getGeneratedBy().deepEquals(buildReq);
+      boolean inconsistentNoRequirements = noUnit ? false : !depResult.isConsistentNonrequirements();
+      boolean localInconsistent = knownInconsistent || noUnit || changedInput || inconsistentNoRequirements;
+      Log.log.log("Locally consistent " + !localInconsistent + ":" + (knownInconsistent ? "knownInconsistent, " : "") + (noUnit ? "noUnit, " : "") + (changedInput ? "changedInput, " : "") + (inconsistentNoRequirements ? "inconsistentNoReqs, " : ""), Log.CORE);
       if (localInconsistent) {
         // Local inconsistency should execute the builder regardless whether it
         // has been required to detect the cycle

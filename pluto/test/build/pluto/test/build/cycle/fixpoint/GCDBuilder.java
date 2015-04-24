@@ -1,6 +1,7 @@
 package build.pluto.test.build.cycle.fixpoint;
 
 import java.math.BigInteger;
+import java.util.function.BiFunction;
 
 import build.pluto.builder.BuilderFactory;
 
@@ -24,20 +25,21 @@ public class GCDBuilder extends NumericBuilder {
 		super(input);
 	}
 
-	@Override
-	protected Operator getOperator() {
-		return new Operator() {
-			
-			@Override
-			public int apply(int a, int b) {
-				return new BigInteger(Integer.toString(a)).gcd(new BigInteger(Integer.toString(b))).intValue();
-			}
-		};
-	}
+  @Override
+  protected BiFunction<Integer, Integer, Integer> getOperator() {
+    return (Integer a, Integer b) -> BigInteger.valueOf(a).gcd(BigInteger.valueOf(b)).intValue();
+  }
+
+  @Override
+  protected BiFunction<Integer, Integer, String> getPrintOperator() {
+    return (Integer a, Integer b) -> "gcd(" + a + "," + b + ")";
+  }
+
 
 	@Override
 	protected String description() {
 		return "GCD for " + this.input.getFile().getName();
 	}
+
 
 }

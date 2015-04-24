@@ -1,5 +1,7 @@
 package build.pluto.test.build.cycle.fixpoint;
 
+import java.util.function.BiFunction;
+
 import build.pluto.builder.BuilderFactory;
 
 public class DivideByBuilder extends NumericBuilder {
@@ -22,22 +24,22 @@ public class DivideByBuilder extends NumericBuilder {
 	public DivideByBuilder(FileInput input) {
 		super(input);
 	}
-	
-	@Override
-	protected Operator getOperator() {
-		return new Operator() {
-			
-			@Override
-			public int apply(int a, int b) {
-				return a/ b;
-			}
-		};
-	}
+
 
 	@Override
 	protected String description() {
 		return "Dividy by for " + this.input.getFile();
 	}
+
+  @Override
+  protected BiFunction<Integer, Integer, Integer> getOperator() {
+    return (Integer a, Integer b) -> a / b;
+  }
+
+  @Override
+  protected BiFunction<Integer, Integer, String> getPrintOperator() {
+    return (Integer a, Integer b) -> a + " / " + b;
+  }
 	
 	
 

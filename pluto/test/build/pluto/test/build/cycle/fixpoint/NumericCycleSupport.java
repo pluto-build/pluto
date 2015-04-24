@@ -4,9 +4,8 @@ import build.pluto.builder.FixpointCycleSupport;
 
 public class NumericCycleSupport extends FixpointCycleSupport {
 
-	public NumericCycleSupport() {
-		super(GCDBuilder.factory, ModuloBuilder.factory,
-				DivideByBuilder.factory);
-	}
+  public NumericCycleSupport() {
+    super(GCDBuilder.factory, ModuloBuilder.factory, DivideByBuilder.factory);
+  }
 
 }

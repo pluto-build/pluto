@@ -35,6 +35,14 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
     this.stamp = stamp;
   }
 
+  protected boolean isHasFailed() {
+    return hasFailed;
+  }
+
+  protected OutputStamp<? super Out> getStamp() {
+    return stamp;
+  }
+
   @Override
   public boolean isConsistent() {
     boolean reqsEqual = unit.getGeneratedBy().deepEquals(req);

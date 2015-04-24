@@ -1,26 +1,34 @@
 package build.pluto.util;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
+import java.util.function.Supplier;
 
-public class UniteSets<T> {
+public class UniteCollections<T, C extends Collection<T>> {
+
+  private final Supplier<C> collectionBuilder;
+
+  public UniteCollections(Supplier<C> collectionBuilder) {
+    Objects.requireNonNull(collectionBuilder);
+    this.collectionBuilder = collectionBuilder;
+  }
   
   public class Key {
   }
   
-  private Map<Key, Set<T>> repSetsMap = new HashMap<>();
+  private Map<Key, C> repSetsMap = new HashMap<>();
   private Map<T, Key> setMembership = new HashMap<>();
   
-  private Set<T> getSet(Key key) {
+  private C getCollection(Key key) {
     return repSetsMap.get(key);
   }
   
   public Key createSet(T initial) {
     Key key = new Key();
-    repSetsMap.put(key, new HashSet<T>());
-    addToSet(key, initial);
+    repSetsMap.put(key, collectionBuilder.get());
+    addTo(key, initial);
     return key;
   }
   
@@ -28,18 +36,18 @@ public class UniteSets<T> {
     return setMembership.get(elem);
   }
   
-  public Set<T> getSetMembers(Key key) {
-    return getSet(key);
+  public C getSetMembers(Key key) {
+    return getCollection(key);
   }
   
-  public void addToSet(Key setKey, T newElem) {
+  public void addTo(Key setKey, T newElem) {
     assert getSet(newElem) == null : "Cannot add an element to the set because the element is also a member of another set";
-    Set<T> set = getSet(setKey);
+    C set = getCollection(setKey);
     set.add(newElem);
     setMembership.put(newElem, setKey);
   }
   
-  public Key getOrCreateSet(T elem) {
+  public Key getOrCreate(T elem) {
     Key key = getSet(elem);
     if (key == null) {
       key = createSet(elem);
@@ -50,7 +58,7 @@ public class UniteSets<T> {
   public Key uniteOrAdd(Key key, T elem) {
     Key key2 = getSet(elem);
     if (key2 == null) {
-      addToSet(key, elem);
+      addTo(key, elem);
       return key;
     } else {
       return unite(key, key2);
@@ -61,30 +69,17 @@ public class UniteSets<T> {
     if (key1 == key2)
       return key1;
     
-    Set<T> set1 = getSet(key1);
-    Set<T> set2 = getSet(key2);
-    // Choose key for larger set to remain
-    final Key remain;
-    final Key remove;
-    if (set1.size() < set2.size()) {
-      remain = key2;
-      remove = key1;
-    } else {
-      remain = key2;
-      remove = key1;
-    }
-    
     // Move elements from one elem to other
-    final Set<T> destSet =getSet(remain);
-    final Set<T> srcSet = getSet(remove);
+    final C destSet = getCollection(key1);
+    final C srcSet = getCollection(key2);
     destSet.addAll(srcSet);
     
     for (T elem : srcSet) {
-      setMembership.put(elem, remain);
+      setMembership.put(elem, key1);
     }
-    repSetsMap.remove(remove);
+    repSetsMap.remove(key2);
     
-    return remain;
+    return key1;
   }
 
 }

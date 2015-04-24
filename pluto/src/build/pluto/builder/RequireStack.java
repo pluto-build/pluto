@@ -2,12 +2,13 @@ package build.pluto.builder;
 
 import java.io.File;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.sugarj.common.Log;
 
 import build.pluto.util.AbsoluteComparedFile;
-import build.pluto.util.UniteSets;
+import build.pluto.util.UniteCollections;
 
 public class RequireStack extends CycleDetectionStack<AbsoluteComparedFile, Boolean> {
 
@@ -37,7 +38,7 @@ public class RequireStack extends CycleDetectionStack<AbsoluteComparedFile, Bool
   }
 
   private String printCyclicConsistentAssumtion(AbsoluteComparedFile dep) {
-    UniteSets<AbsoluteComparedFile>.Key key = this.sccs.getSet(dep);
+    UniteCollections<AbsoluteComparedFile, List<AbsoluteComparedFile>>.Key key = this.sccs.getSet(dep);
     if (key == null) {
       return "";
     }
@@ -61,7 +62,7 @@ public class RequireStack extends CycleDetectionStack<AbsoluteComparedFile, Bool
   }
 
   private boolean isAssumtionKnownInconsistent(AbsoluteComparedFile dep) {
-    UniteSets<AbsoluteComparedFile>.Key key = this.sccs.getSet(dep);
+    UniteCollections<AbsoluteComparedFile, List<AbsoluteComparedFile>>.Key key = this.sccs.getSet(dep);
     if (key == null) {
       return false;
     }
@@ -102,7 +103,7 @@ public class RequireStack extends CycleDetectionStack<AbsoluteComparedFile, Bool
   }
 
   @Override
-  protected Boolean cycleResult(AbsoluteComparedFile call, Set<AbsoluteComparedFile> scc) {
+  protected Boolean cycleResult(AbsoluteComparedFile call, List<AbsoluteComparedFile> scc) {
     Log.log.log("Already required " + call.getFile(), Log.DETAIL);
     this.callStack.add(call);
     return true;

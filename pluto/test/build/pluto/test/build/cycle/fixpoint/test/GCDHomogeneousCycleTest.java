@@ -10,11 +10,13 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Arrays;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.sugarj.common.FileCommands;
+import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildManager;
@@ -58,16 +60,18 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
 
 	@Test (timeout = 1000)
 	public void testBuildGCDCycle() throws IOException {
-		BuildUnit<IntegerOutput> resultUnit = new TrackingBuildManager()
-				.require(mainBuildRequest).getUnit();
-		assertEquals("Compiliding GCD cycle has wrong result", 0, resultUnit
-				.getBuildResult().getResult());
+    assertEquals(10, BigInteger.valueOf(20).gcd(BigInteger.valueOf(10)).intValue());
+    new TrackingBuildManager().require(mainBuildRequest).getUnit();
+    assertEquals("Compiling GCD cycle has wrong result", 5, unitForFile(cycle_gcd2File).getBuildResult().getResult());
+    assertEquals("Compiling GCD cycle has wrong result", 5, unitForFile(cycle_gcd1File).getBuildResult().getResult());
+    assertEquals("Compiling GCD cycle has wrong result", 0, unitForFile(mainFile).getBuildResult().getResult());
 		assertAllFilesConsistent();
 	}
 
 	@Test (timeout = 1000)
 	public void testRebuildRootUnitInconsistent() throws IOException {
 
+    Log.log.setLoggingLevel(Log.DETAIL | Log.CORE);
 		// Do a first clean build
 	  BuildManager.clean(false, mainBuildRequest);
 		BuildManager.build(mainBuildRequest);
@@ -78,7 +82,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
 		TrackingBuildManager manager = new TrackingBuildManager();
 		BuildUnit<IntegerOutput> resultUnit = manager.require(mainBuildRequest).getUnit();
 		// Assert that the new result is correct
-		assertEquals("Rebuilding GCD cycle with inconsistent has wrong result", 4, resultUnit
+    assertEquals("Rebuilding GCD cycle with inconsistent root unit has wrong result", 4, resultUnit
 				.getBuildResult().getResult());
 		
 		// Primitive check

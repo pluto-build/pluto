@@ -3,8 +3,10 @@ package build.pluto.test.build.cycle.fixpoint;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.function.BiFunction;
 
 import org.sugarj.common.FileCommands;
+import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit.State;
 import build.pluto.builder.Builder;
@@ -14,15 +16,13 @@ import build.pluto.stamp.Stamper;
 
 public abstract class NumericBuilder extends Builder<FileInput, IntegerOutput> {
 
-	protected static interface Operator {
-		public int apply(int a, int b);
-	}
-
 	public NumericBuilder(FileInput input) {
 		super(input);
 	}
 
-	protected abstract Operator getOperator();
+  protected abstract BiFunction<Integer, Integer, Integer> getOperator();
+
+  protected abstract BiFunction<Integer, Integer, String> getPrintOperator();
 
 	@Override
 	protected final File persistentPath() {
@@ -57,8 +57,8 @@ public abstract class NumericBuilder extends Builder<FileInput, IntegerOutput> {
 				String extension = FileCommands.getExtension(path);
 				if (extension.equals("modulo")) {
 					output = requireBuild(ModuloBuilder.factory, input);
-				} else if (extension.equals("divide")) {
-					output = requireBuild(DivideByBuilder.factory, input);
+        } else if (extension.equals("divide")) {
+          output = requireBuild(DivideByBuilder.factory, input);
 				} else if (extension.equals("gcd")) {
 					output = requireBuild(GCDBuilder.factory, input);
 				} else {
@@ -69,8 +69,10 @@ public abstract class NumericBuilder extends Builder<FileInput, IntegerOutput> {
 				//if (output != null && FileCommands.exists(output.getResultFile())) {
 				if (output != null) {
 					try {
-				myNumber = this.getOperator().apply(myNumber,
-						output.getResult());
+            int otherNumber = output.getResult();
+            int result = this.getOperator().apply(myNumber, otherNumber);
+            Log.log.log(this.getPrintOperator().apply(myNumber, otherNumber) + " = " + result, Log.CORE);
+            myNumber = result;
 				//require(output.getResultFile());
 
 					} catch (IOException e) {}

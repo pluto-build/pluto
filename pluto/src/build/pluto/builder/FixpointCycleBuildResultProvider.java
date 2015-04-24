@@ -58,13 +58,13 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
     BuildUnit<Out> cycleUnit = (BuildUnit<Out>) requiredUnitsInIteration.get(buildReq);
     @SuppressWarnings("unchecked")
     Out previousOutput = (Out) outputsPreviousIteration.get(buildReq);
-    
     if (cycleUnit != null) {
+      // Log.log.log("Already there", Log.CORE);
       return new CyclicBuildRequirement<>(cycleUnit, buildReq, previousOutput);
     } else {
       
       if (cycle.getCycleComponents().contains(buildReq)) {
-
+        // Log.log.log("In cycle compile", Log.CORE);
         Log.log.beginTask(buildReq.createBuilder().description(), Log.CORE);
 
         try {
@@ -72,7 +72,11 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
             Builder<In, Out> builder = buildReq.createBuilder();
             File dep = builder.persistentPath();
             cycleUnit = BuildUnit.create(dep, buildReq);
+            cycleUnit.setBuildResult(previousOutput);
             this.requiredUnitsInIteration.put(buildReq, cycleUnit);
+
+
+
             BuildManager.setUpMetaDependency(builder, cycleUnit);
 
             Out result = builder.triggerBuild(cycleUnit, this);
@@ -95,6 +99,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
           Log.log.endTask(cycleUnit.getState() == BuildUnit.State.SUCCESS);
         }
       } else {
+        Log.log.log("Require parent", Log.CORE);
         return this.parentManager.require(buildReq);
       }
     }

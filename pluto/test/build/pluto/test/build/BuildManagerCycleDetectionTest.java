@@ -6,7 +6,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Set;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -107,19 +107,15 @@ public class BuildManagerCycleDetectionTest {
 
       assertEquals("Wrong cause path", getPathWithNumber(0), cycle.getCycleCause().input);
 
-      Set<BuildRequest<?, ?, ?, ?>> cyclicUnits = cycle.getCycle().getCycleComponents();
+      List<BuildRequest<?, ?, ?, ?>> cyclicUnits = cycle.getCycle().getCycleComponents();
 			assertEquals("Wrong number of units in cycle", 10,
 					cyclicUnits.size());
 
 			for (int i = 0; i < 10; i++) {
-        BuildRequest<?, ?, ?, ?> requirement = null;
-        for (BuildRequest<?, ?, ?, ?> req : cyclicUnits) {
-          if (req.input.equals(getPathWithNumber(i))) {
-						requirement = req;
-					}
-				}
-        assertTrue("No requirement for " + i, requirement != null);
-        assertEquals("Wrong factory for unit", testFactory, requirement.factory);
+        BuildRequest<?, ?, ?, ?> req = cyclicUnits.get(i);
+        assertTrue("Wrong request at " + i, req.input.equals(getPathWithNumber(i)));
+        assertTrue("No requirement for " + i, req != null);
+        assertEquals("Wrong factory for unit", testFactory, req.factory);
 			}
 		}
 

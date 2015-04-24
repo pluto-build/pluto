@@ -2,21 +2,20 @@ package build.pluto.builder;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.sugarj.common.Log;
 
 public class BuildCycle {
 
-  private Set<BuildRequest<?, ?, ?, ?>> cycle;
+  private List<BuildRequest<?, ?, ?, ?>> cycle;
 
-  public BuildCycle(Set<BuildRequest<?, ?, ?, ?>> cycleComponents) {
+  public BuildCycle(List<BuildRequest<?, ?, ?, ?>> cycleComponents) {
     super();
     this.cycle = cycleComponents;
   }
 
-  public Set<BuildRequest<?, ?, ?, ?>> getCycleComponents() {
+  public List<BuildRequest<?, ?, ?, ?>> getCycleComponents() {
     return cycle;
   }
 
