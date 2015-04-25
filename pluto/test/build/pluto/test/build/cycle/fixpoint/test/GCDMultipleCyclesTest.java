@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.junit.Test;
+import org.sugarj.common.Log;
 
 import build.pluto.test.build.ScopedBuildTest;
 import build.pluto.test.build.ScopedPath;
@@ -51,7 +52,7 @@ public class GCDMultipleCyclesTest extends ScopedBuildTest{
 		TrackingBuildManager manager = new TrackingBuildManager();
 		manager.require(ModuloBuilder.factory, new FileInput(testBasePath.toFile(), main));
 		
-		validateThat(unitsForPath(mainDep, cycle1Dep, cycle2Dep, cycle3Dep, leafDep).areConsistent());
+    validateThat(unitsForPath(leafDep, cycle3Dep, cycle2Dep, cycle1Dep, mainDep).areConsistent());
 		validateThat(unitsForPath(mainDep).dependsOn(cycle1Dep));
 		validateThat(unitsForPath(cycle1Dep).dependsOn(cycle2Dep));
 		validateThat(unitsForPath(cycle2Dep).dependsOn(cycle1Dep, cycle3Dep, leafDep));
@@ -70,7 +71,7 @@ public class GCDMultipleCyclesTest extends ScopedBuildTest{
 		validateThat(successfulyExecutedFilesOf(manager).containsSameElements(main, leaf, cycle1));
 	}
 	
-	@Test (timeout = 1000)
+  @Test(timeout = 1000)
 	public void testRebuildInconsistentLeafSource() throws IOException{
 		build();
 		
@@ -79,7 +80,9 @@ public class GCDMultipleCyclesTest extends ScopedBuildTest{
 		
 		// Make the source of the leaf inconsistent
 		FileUtils.writeIntToFile(81, leaf);
+    Log.log.setLoggingLevel(Log.ALWAYS);
 		
+
 		TrackingBuildManager manager = build();
 		validateThat(successfulyExecutedFilesOf(manager).containsSameElements(leaf, main, cycle2));
 		validateThat(requiredFilesOf(manager).containsSameElements(main, cycle1, cycle2, cycle3, leaf));
@@ -95,6 +98,8 @@ public class GCDMultipleCyclesTest extends ScopedBuildTest{
 		// Make the source of the leaf inconsistent
 		FileUtils.writeIntToFile(81, cycle3);
 		
+    Log.log.setLoggingLevel(Log.ALWAYS);
+
 		TrackingBuildManager manager = build();
 		validateThat(successfulyExecutedFilesOf(manager).containsSameElements(main, cycle3, cycle1));
 		validateThat(requiredFilesOf(manager).containsSameElements(main, cycle1, cycle2, cycle3, leaf));

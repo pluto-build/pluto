@@ -4,11 +4,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit;
+import build.pluto.BuildUnit.InconsistenyReason;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.CyclicBuildRequirement;
 import build.pluto.output.Output;
@@ -21,7 +24,8 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
   private Map<BuildRequest<?, ?, ?, ?>, Output> outputsPreviousIteration = new HashMap<>();
 
-  private Map<BuildRequest<?, ?, ?, ?>, BuildUnit<?>> requiredUnitsInIteration = new HashMap<>();
+  private Set<BuildUnit<?>> requiredUnitsInIteration;
+  private Map<BuildRequest<?, ?, ?, ?>, BuildUnit<?>> units = new HashMap<>();
 
   private BuildCycleResult result;
 
@@ -29,7 +33,8 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
     super();
     this.parentManager = parentManager;
     this.cycle = cycle;
-    this.requiredUnitsInIteration = new HashMap<>();
+    this.requiredUnitsInIteration = new HashSet<>();
+    units = new HashMap<>();
     this.result = new BuildCycleResult();
   }
 
@@ -39,10 +44,9 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
   public void nextIteration() {
     outputsPreviousIteration.clear();
-    requiredUnitsInIteration.forEach((BuildRequest<?, ?, ?, ?> req, BuildUnit<?> unit) -> outputsPreviousIteration.put(req, unit.getBuildResult()));
+    units.forEach((BuildRequest<?, ?, ?, ?> req, BuildUnit<?> unit) -> outputsPreviousIteration.put(req, unit.getBuildResult()));
     requiredUnitsInIteration.clear();
   }
-
 
   @Override
   public
@@ -55,35 +59,46 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
   BuildRequirement<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     @SuppressWarnings("unchecked")
-    BuildUnit<Out> cycleUnit = (BuildUnit<Out>) requiredUnitsInIteration.get(buildReq);
+    BuildUnit<Out> cycleUnit = (BuildUnit<Out>) units.get(buildReq);
+    if (cycleUnit == null)
+      cycleUnit = BuildUnit.read(buildReq.createBuilder().persistentPath());
     @SuppressWarnings("unchecked")
     Out previousOutput = (Out) outputsPreviousIteration.get(buildReq);
-    if (cycleUnit != null) {
+    if (cycleUnit != null && requiredUnitsInIteration.contains(cycleUnit)) {
       // Log.log.log("Already there", Log.CORE);
       return new CyclicBuildRequirement<>(cycleUnit, buildReq, previousOutput);
     } else {
-      
+
       if (cycle.getCycleComponents().contains(buildReq)) {
         // Log.log.log("In cycle compile", Log.CORE);
-        Log.log.beginTask(buildReq.createBuilder().description(), Log.CORE);
 
+        Builder<In, Out> builder = buildReq.createBuilder();
+        File dep = builder.persistentPath();
+
+        boolean noUnit = cycleUnit == null;
+        InconsistenyReason inconsistent = cycleUnit == null ? null : cycleUnit.isConsistentShallowReason();
+        boolean needBuild = noUnit || (inconsistent != InconsistenyReason.NO_REASON);
+        Log.log.log("Require " + buildReq.createBuilder().description() + " needs build: " + needBuild + ": " + (noUnit ? "no unit" : (inconsistent != InconsistenyReason.NO_REASON ? inconsistent : "")), Log.DETAIL);
         try {
           try {
-            Builder<In, Out> builder = buildReq.createBuilder();
-            File dep = builder.persistentPath();
-            cycleUnit = BuildUnit.create(dep, buildReq);
-            cycleUnit.setBuildResult(previousOutput);
-            this.requiredUnitsInIteration.put(buildReq, cycleUnit);
+            if (needBuild) {
+              cycleUnit = BuildUnit.create(dep, buildReq);
+              cycleUnit.setBuildResult(previousOutput);
+              Log.log.beginTask(buildReq.createBuilder().description(), Log.CORE);
+            }
+            this.requiredUnitsInIteration.add(cycleUnit);
+            this.units.put(buildReq, cycleUnit);
 
+            if (needBuild) {
 
+              BuildManager.setUpMetaDependency(builder, cycleUnit);
 
-            BuildManager.setUpMetaDependency(builder, cycleUnit);
+              Out result = builder.triggerBuild(cycleUnit, this);
+              cycleUnit.setBuildResult(result);
+              cycleUnit.setState(BuildUnit.State.finished(true));
 
-            Out result = builder.triggerBuild(cycleUnit, this);
-            cycleUnit.setBuildResult(result);
-            cycleUnit.setState(BuildUnit.State.finished(true));
-
-            this.result.setBuildResult(buildReq, result);
+              this.result.setBuildResult(buildReq, result);
+            }
             return new BuildRequirement<Out>(cycleUnit, buildReq);
 
           } catch (BuildCycleException e) {
@@ -95,8 +110,8 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
         } catch (Throwable e) {
           throw new RequiredBuilderFailed(new BuildRequirement<>(cycleUnit, buildReq), e);
         } finally {
-
-          Log.log.endTask(cycleUnit.getState() == BuildUnit.State.SUCCESS);
+          if (needBuild)
+            Log.log.endTask(cycleUnit.getState() == BuildUnit.State.SUCCESS);
         }
       } else {
         Log.log.log("Require parent", Log.CORE);

@@ -309,7 +309,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 
 	  
 	public static enum InconsistenyReason implements Comparable<InconsistenyReason>{
-	  NO_REASON, DEPENDENCIES_INCONSISTENT, FILES_NOT_CONSISTENT, OTHER, 
+    NO_REASON, DEPENDENCIES_INCONSISTENT, FILES_NOT_CONSISTENT, PERSISTENT_VERSION_CHANGED, NOT_FINISHED,
 	  
 	}
 	
@@ -329,12 +329,12 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	  
   public InconsistenyReason isConsistentShallowReason() {
 		if (hasPersistentVersionChanged()) {
-		  return InconsistenyReason.OTHER;
+      return InconsistenyReason.PERSISTENT_VERSION_CHANGED;
 		}
 		
-		if (!isFinished()) {
-      return InconsistenyReason.OTHER;
-		}
+    if (!isFinished()) {
+      return InconsistenyReason.NOT_FINISHED;
+    }
 		
 		for (FileRequirement freq : generatedFiles)
       if (!freq.isConsistent()) {

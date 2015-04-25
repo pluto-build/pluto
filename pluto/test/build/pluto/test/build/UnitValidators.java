@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import build.pluto.BuildUnit;
+import build.pluto.BuildUnit.InconsistenyReason;
 
 public class UnitValidators {
 
@@ -50,6 +51,8 @@ public class UnitValidators {
 				@Override
 				public void validate() {
 					for (BuildUnit<?> unit : units) {
+            InconsistenyReason locallyReason = unit.isConsistentShallowReason();
+            assertTrue(unit.getPersistentPath() + " is not consistent sallowly because " + locallyReason, locallyReason == InconsistenyReason.NO_REASON);
             assertTrue(unit.getPersistentPath() + " is not consistent", unit.isConsistent());
 					}
 				}

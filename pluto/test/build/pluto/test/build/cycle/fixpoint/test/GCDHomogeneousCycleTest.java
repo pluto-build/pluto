@@ -105,6 +105,8 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
     // Then make the cycle1 inconsistent
     FileCommands.delete(unitForFile(cycle_gcd1File).getPersistentPath().toPath());
 
+    Log.log.setLoggingLevel(Log.ALWAYS);
+
     TrackingBuildManager manager = new TrackingBuildManager();
     BuildUnit<Out<Integer>> resultUnit = manager.require(mainBuildRequest).getUnit();
     // Assert that the new result is correct

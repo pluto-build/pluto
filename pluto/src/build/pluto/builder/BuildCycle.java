@@ -1,5 +1,6 @@
 package build.pluto.builder;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -12,7 +13,7 @@ public class BuildCycle {
 
   public BuildCycle(List<BuildRequest<?, ?, ?, ?>> cycleComponents) {
     super();
-    this.cycle = cycleComponents;
+    this.cycle = new ArrayList<>(cycleComponents);
   }
 
   public List<BuildRequest<?, ?, ?, ?>> getCycleComponents() {
