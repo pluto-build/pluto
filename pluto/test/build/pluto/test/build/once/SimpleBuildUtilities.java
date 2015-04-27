@@ -56,6 +56,8 @@ public class SimpleBuildUtilities {
 				fileList.add(((FileInput) s).getFile());
 			} else if (s instanceof ArrayList) {
 				fileList.addAll(inputToFileList((ArrayList<Serializable>) s));
+      } else if (s instanceof File) {
+        fileList.add((File) s);
 			} else {
 				fail("Illegal input " + s.getClass());
 			}

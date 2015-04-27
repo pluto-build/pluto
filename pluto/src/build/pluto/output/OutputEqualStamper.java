@@ -38,5 +38,10 @@ public class OutputEqualStamper implements OutputStamper<Serializable> {
     public boolean equals(Object o) {
       return o instanceof OutputEqualStamp && Objects.equals(out, ((OutputEqualStamp) o).out);
     }
+
+    @Override
+    public String toString() {
+      return "OutputEqualsStamp(" + out + ")";
+    }
   }
 }

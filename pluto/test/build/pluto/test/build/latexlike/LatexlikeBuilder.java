@@ -6,11 +6,12 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.Log;
 
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
@@ -18,6 +19,7 @@ import build.pluto.builder.CycleSupport;
 import build.pluto.output.Out;
 import build.pluto.stamp.FileContentStamper;
 import build.pluto.stamp.Stamper;
+import build.pluto.test.build.latexlike.LatexlikeLog.CompilationParticipant;
 
 public class LatexlikeBuilder extends Builder<File, Out<File>> {
 
@@ -51,6 +53,8 @@ public class LatexlikeBuilder extends Builder<File, Out<File>> {
   protected Out<File> build() throws Throwable {
     Out<File> replFile = requireBuild(BibtexlikeBuilder.factory, this.input);
     
+    LatexlikeLog.logBuilderPerformedWork(CompilationParticipant.LATEXLIKE, "LATEXLIKE: Do compilation");
+
     Map<String, String> replacements;
     if (replFile.val != null) {
       require(replFile.val);
@@ -67,30 +71,26 @@ public class LatexlikeBuilder extends Builder<File, Out<File>> {
     require(outFile);
 
 
-    String text;
-    String textBefore = FileCommands.readFileAsString(input);
-    if (outFile.exists()) {
-      ObjectInputStream outInStream = new ObjectInputStream(new FileInputStream(outFile));
-      outInStream.readObject();
-      text = (String) outInStream.readObject();
-      outInStream.close();
+    String text = FileCommands.readFileAsString(input);
 
-    } else {
-      text = textBefore;
+    List<Character> replaceChars = new ArrayList<>();
+    char[] textChars = text.toCharArray();
+    for (int i = 0; i < textChars.length - 1; i++) {
+      if (textChars[i] == 'X') {
+        replaceChars.add(textChars[i + 1]);
+        i++;
+      }
     }
-
 
     for (String toReplace : replacements.keySet()) {
       text = text.replaceAll(toReplace, replacements.get(toReplace));
     }
 
     ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream(outFile));
-    outStream.writeObject(textBefore);
-    outStream.writeObject(text);
+    outStream.writeObject(replaceChars);
+    outStream.writeObject(replacements);
     outStream.close();
     provide(outFile);
-
-    Log.log.log("LATEXLIKE", Log.CORE);
 
     String pdf = text.replaceAll(" ", "\n");
     File pdfFile = FileCommands.replaceExtension(input, "pdflike");

@@ -97,7 +97,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
               cycleUnit.setBuildResult(result);
               cycleUnit.setState(BuildUnit.State.finished(true));
 
-              this.result.setBuildResult(buildReq, result);
+              this.result.setBuildResult(buildReq, result, cycleUnit);
             }
             return new BuildRequirement<Out>(cycleUnit, buildReq);
 

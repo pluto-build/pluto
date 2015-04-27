@@ -48,6 +48,7 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
 
   public void finishRebuild(BuildRequest<?, ?, ?, ?> dep) {
     this.consistentUnits.add(dep);
+    Log.log.log("MARK INCONSISTENT " + dep.createBuilder().description(), Log.CORE);
     this.knownInconsistentUnits.remove(dep);
     // Allowed to do that in any case?
     // this.assumedCyclicConsistency.remove(dep);
@@ -77,8 +78,8 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
     return new BuildCycle(dep, deps);
   }
 
-  public boolean isConsistent(File dep) {
-    return this.consistentUnits.contains(AbsoluteComparedFile.absolute(dep));
+  public boolean isConsistent(BuildRequest<?, ?, ?, ?> dep) {
+    return this.consistentUnits.contains(dep);
   }
   
   @Override
@@ -94,6 +95,7 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
   }
 
   public void markConsistent(BuildRequest<?, ?, ?, ?> dep) {
+    Log.log.log("MARK CONSISTENT " + dep.createBuilder().description(), Log.CORE);
     this.consistentUnits.add(dep);
   }
 

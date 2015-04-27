@@ -7,6 +7,8 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Objects;
 
+import org.sugarj.common.Log;
+
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuildUnitProvider;
@@ -46,13 +48,18 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
   @Override
   public boolean isConsistent() {
     boolean reqsEqual = unit.getGeneratedBy().deepEquals(req);
+    Log.log.log("Reqs equal " + reqsEqual, Log.CORE);
     if (!reqsEqual)
       return false;
     
-    boolean stampOK = stamp == null || stamp.equals(stamp.getStamper().stampOf(this.unit.getBuildResult()));
+    OutputStamp<? super Out> newStamp = stamp.getStamper().stampOf(this.unit.getBuildResult());
+    boolean stampOK = stamp == null || stamp.equals(newStamp);
+    Log.log.log("Stamp ok by " + stamp.getStamper() + " " + stampOK, Log.CORE);
+    Log.log.log("Stamp " + stamp + " < -- > " + newStamp, Log.CORE);
     if (!stampOK)
       return false;
     
+    Log.log.log("Build req " + this + " is consistent", Log.CORE);
     return true;
   }
   

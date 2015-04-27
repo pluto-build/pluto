@@ -84,7 +84,7 @@ public class GCDMultipleCyclesTest extends ScopedBuildTest{
 		
 
 		TrackingBuildManager manager = build();
-    validateThat(successfulyExecutedFilesOf(manager).containsSameElements(leaf, main, cycle1, cycle2));
+    validateThat(successfulyExecutedFilesOf(manager).containsSameElements(leaf, main, cycle2));
 		validateThat(requiredFilesOf(manager).containsSameElements(main, cycle1, cycle2, cycle3, leaf));
 	}
 	
@@ -101,7 +101,7 @@ public class GCDMultipleCyclesTest extends ScopedBuildTest{
     Log.log.setLoggingLevel(Log.ALWAYS);
 
 		TrackingBuildManager manager = build();
-    validateThat(successfulyExecutedFilesOf(manager).containsSameElements(main, cycle3, cycle2, cycle1));
+    validateThat(successfulyExecutedFilesOf(manager).containsSameElements(main, cycle3));
 		validateThat(requiredFilesOf(manager).containsSameElements(main, cycle1, cycle2, cycle3, leaf));
 	}
 	

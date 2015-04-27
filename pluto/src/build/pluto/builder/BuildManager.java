@@ -18,6 +18,7 @@ import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.InconsistenyReason;
 import build.pluto.BuildUnit.State;
 import build.pluto.builder.BuildCycleException.CycleState;
+import build.pluto.builder.BuildCycleResult.UnitOutputPair;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
@@ -214,6 +215,11 @@ public class BuildManager extends BuildUnitProvider {
     Log.log.beginTask("Compile cycle with: " + cycleSupport.getCycleDescription(cycle), Log.CORE);
     try {
       BuildCycleResult result = cycleSupport.compileCycle(this, cycle);
+      for (BuildRequest<?, ?, ?, ?> req : e.getCycle().getCycleComponents()) {
+        UnitOutputPair<?> reqResult = result.getResult(req);
+
+        this.requireStack.markConsistent(req);
+      }
       e.setCycleResult(result);
       e.setCycleState(CycleState.RESOLVED);
     } catch (BuildCycleException cyclicEx) {
@@ -252,11 +258,11 @@ public class BuildManager extends BuildUnitProvider {
         Log.log.log("Error: Cyclic builder does not provide a cycleResult " + e.hashCode(), Log.CORE);
         throw new AssertionError("Cyclic builder does not provide a cycleResult");
       }
-      Out result = e.getCycleResult().getResult(buildReq);
+      Out result = e.getCycleResult().getResult(buildReq).b;
       if (result == null) {
         throw new AssertionError("Cyclic builder does not provide a result for " + depResult.getPersistentPath());
       }
-      depResult.setBuildResult(result);
+      // depResult.setBuildResult(result);
       requireStack.markConsistent(depResult.getGeneratedBy()); // TODO or
                                                                // buildReq?
                                                                // Should be the
@@ -363,21 +369,22 @@ public class BuildManager extends BuildUnitProvider {
         }
       }
 
-      if (requireStack.isConsistent(dep))
+      if (requireStack.isConsistent(buildReq))
         return yield(buildReq, builder, depResult);
 
       for (Requirement req : depResult.getRequirements()) {
         if (!req.isConsistentInBuild(this)) {
+          Log.log.log("IS NOT CONSISTENT IN BUILD " + req, Log.CORE);
           executed = true;
           // Could get consistent because it was part of a cycle which is
           // compiled now
           // TODO better remove that for security purpose?
-          if (requireStack.isConsistent(dep))
+          if (requireStack.isConsistent(buildReq))
             return yield(buildReq, builder, depResult);
           return executeBuilder(builder, dep, buildReq);
         }
       }
-      requireStack.markConsistent(buildReq);
+      // requireStack.markConsistent(buildReq);
 
     } catch (RequiredBuilderFailed e) {
       if (executed || e.getLastAddedBuilder().getUnit().getPersistentPath().equals(depResult.getPersistentPath()))

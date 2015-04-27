@@ -134,7 +134,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
 
     BuildCycleResult result = new BuildCycleResult();
     for (int i = 0; i < outputs.size(); i++) {
-      result.setBuildResult(requests.get(i), outputs.get(i));
+      result.setBuildResult(requests.get(i), outputs.get(i), cyclicResults.get(i));
     }
     return result;
   }
