@@ -147,13 +147,10 @@ public class DynamicAnalysis {
     
     public IsConnectedTo(File requiredUnit) {
       this.requiredUnit = Objects.requireNonNull(requiredUnit);
-      Log.log.log("Is Connected to for " + requiredUnit, Log.ALWAYS);
     }
     
     @Override
     public Boolean visit(BuildUnit<?> mod) {
-
-      Log.log.log("Visit " + mod.getPersistentPath(), Log.ALWAYS);
       return AbsoluteComparedFile.equals(requiredUnit, mod.getPersistentPath());
     }
 
