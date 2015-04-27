@@ -1,6 +1,8 @@
 package build.pluto.builder;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +49,8 @@ public class FixpointCycleSupport implements CycleSupport {
     int numInterations = 1;
     boolean cycleConsistent = false;
     Map<BuildRequest<?, ?, ?, ?>, BuildUnit<?>> cycleUnits = new HashMap<>();
+    List<BuildRequest<?, ?, ?, ?>> reqList = new ArrayList<>(cycle.getCycleComponents());
+    Collections.reverse(reqList);
     while (!cycleConsistent) {
       Log.log.log("Begin interation " + numInterations,  Log.CORE);
       // Log.log.log("Cycle " +
@@ -60,7 +64,8 @@ public class FixpointCycleSupport implements CycleSupport {
       try {
         // CycleComponents are in order if which they were required
         // Require the first one which is not consistent to their input
-        for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
+        for (BuildRequest<?, ?, ?, ?> req : reqList) {
+
           final BuildUnit<?> unit = cycleUnits.get(req);
           // Log.log.log("Require " + req.createBuilder().description(),
           // Log.CORE);
@@ -74,6 +79,7 @@ public class FixpointCycleSupport implements CycleSupport {
             cycleConsistent = false;
             final BuildRequirement<?> newUnit = cycleManager.require(req);
             cycleUnits.put(req, newUnit.getUnit());
+            break;
           }
         }
       } finally {

@@ -118,7 +118,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
     // Check that only the cycle is executed
     // Main must not be executed because the cycle produces the same result as
     // before
-    validateThat(executedFilesOf(manager).containsSameElements(cycle_gcd1File, cycle_gcd2File));
+    validateThat(executedFilesOf(manager).containsSameElements(cycle_gcd1File));
 
     // And that main is required before the other ones. Because main refers to
     // gcd1, this should be before gcd2

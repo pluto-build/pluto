@@ -145,7 +145,7 @@ public abstract class PersistableEntity implements Serializable {
     }
   }
   
-  final protected static <E extends PersistableEntity> E readFromMemoryCache(Class<E> clazz, File p) {
+  final public static <E extends PersistableEntity> E readFromMemoryCache(Class<E> clazz, File p) {
     PersistableEntity e;
     synchronized (PersistableEntity.class) {
       e = inMemory.get(AbsoluteComparedFile.absolute(p));

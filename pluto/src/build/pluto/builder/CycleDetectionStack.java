@@ -22,6 +22,8 @@ public abstract class CycleDetectionStack<C, P> {
       scc = callStack.stream().skip(index).reduce(scc, sccs::uniteOrAdd, sccs::unite);
       // Subclasses decide what to return
       return cycleResult(unit, sccs.getSetMembers(scc));
+    } else {
+      sccs.getOrCreate(unit);
     }
     // No cycle, put unit on the stack
     this.callStack.add(unit);

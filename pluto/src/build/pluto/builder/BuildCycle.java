@@ -9,15 +9,21 @@ import org.sugarj.common.Log;
 
 public class BuildCycle {
 
+  private BuildRequest<?, ?, ?, ?> initial;
   private List<BuildRequest<?, ?, ?, ?>> cycle;
 
-  public BuildCycle(List<BuildRequest<?, ?, ?, ?>> cycleComponents) {
+  public BuildCycle(BuildRequest<?, ?, ?, ?> initial, List<BuildRequest<?, ?, ?, ?>> cycleComponents) {
     super();
+    this.initial = initial;
     this.cycle = new ArrayList<>(cycleComponents);
   }
 
   public List<BuildRequest<?, ?, ?, ?>> getCycleComponents() {
     return cycle;
+  }
+
+  public BuildRequest<?, ?, ?, ?> getInitial() {
+    return initial;
   }
 
   protected Optional<CycleSupport> findCycleSupport() {

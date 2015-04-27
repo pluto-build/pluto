@@ -4,9 +4,12 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.sugarj.common.Log;
 
+import build.pluto.BuildUnit;
 import build.pluto.util.AbsoluteComparedFile;
 import build.pluto.util.UniteCollections;
 
@@ -58,7 +61,23 @@ public class RequireStack extends CycleDetectionStack<AbsoluteComparedFile, Bool
 
   public boolean isKnownInconsistent(File dep) {
     AbsoluteComparedFile aDep = AbsoluteComparedFile.absolute(dep);
-    return knownInconsistentUnits.contains(aDep) || this.isAssumtionKnownInconsistent(aDep);
+    return knownInconsistentUnits.contains(aDep);// ||
+                                                 // this.isAssumtionKnownInconsistent(aDep);
+  }
+
+  public boolean isAssumtionKnownInconsistent(File dep) {
+    return isAssumtionKnownInconsistent(AbsoluteComparedFile.absolute(dep));
+  }
+
+  public BuildCycle createCycleFor(File dep) {
+    List<AbsoluteComparedFile> deps = sccs.getSetMembers(sccs.getSet(AbsoluteComparedFile.absolute(dep)));
+    Function<AbsoluteComparedFile, BuildRequest<?, ?, ?, ?>> extractReq = (AbsoluteComparedFile f) -> {
+      // try {
+      return BuildUnit.readFromMemoryCache(BuildUnit.class, f.getFile()).getGeneratedBy();
+
+    };
+    List<BuildRequest<?, ?, ?, ?>> reqs = deps.stream().map(extractReq).collect(Collectors.toList());
+    return new BuildCycle(extractReq.apply(AbsoluteComparedFile.absolute(dep)), reqs);
   }
 
   private boolean isAssumtionKnownInconsistent(AbsoluteComparedFile dep) {

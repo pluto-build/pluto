@@ -19,6 +19,7 @@ import build.pluto.dependency.FileRequirement;
 import build.pluto.dependency.IllegalDependencyException;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
+import build.pluto.util.AbsoluteComparedFile;
 import build.pluto.xattr.Xattr;
 
 import com.cedarsoftware.util.DeepEquals;
@@ -96,6 +97,7 @@ public class DynamicAnalysis {
             Log.log.log("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, Log.IMPORT);
           }
           if (dep != null) {
+
             boolean foundDep = unit.visit(new IsConnectedTo(dep), requiredUnits);
             if (!foundDep)
               throw new IllegalDependencyException(dep, 
@@ -145,11 +147,14 @@ public class DynamicAnalysis {
     
     public IsConnectedTo(File requiredUnit) {
       this.requiredUnit = Objects.requireNonNull(requiredUnit);
+      Log.log.log("Is Connected to for " + requiredUnit, Log.ALWAYS);
     }
     
     @Override
     public Boolean visit(BuildUnit<?> mod) {
-      return requiredUnit.equals(mod.getPersistentPath());
+
+      Log.log.log("Visit " + mod.getPersistentPath(), Log.ALWAYS);
+      return AbsoluteComparedFile.equals(requiredUnit, mod.getPersistentPath());
     }
 
     @Override

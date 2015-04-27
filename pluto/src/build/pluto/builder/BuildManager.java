@@ -346,8 +346,17 @@ public class BuildManager extends BuildUnitProvider {
         return executeBuilder(builder, dep, buildReq);
       }
 
+      boolean assumptionIncomplete = requireStack.isAssumtionKnownInconsistent(dep);
+      Log.log.log("Assumptions inconsistent " + assumptionIncomplete, Log.DETAIL);
       if (alreadyRequired) {
-        return yield(buildReq, builder, depResult);
+        if (!assumptionIncomplete) {
+          return yield(buildReq, builder, depResult);
+        } else {
+          Log.log.log("Deptected Require cycle for " + dep, Log.DETAIL);
+          BuildCycle cycle = requireStack.createCycleFor(dep);
+          cycle = new BuildCycle(executingStack.topMostEntry(cycle.getCycleComponents()), cycle.getCycleComponents());
+          throw new BuildCycleException("Require build cycle on " + dep, cycle.getInitial(), cycle);
+        }
       }
 
       if (requireStack.isConsistent(dep))
@@ -374,6 +383,20 @@ public class BuildManager extends BuildUnitProvider {
       if (desc != null)
         Log.log.log("Failing builder was required by \"" + desc + "\".", Log.CORE);
       throw e.enqueueBuilder(depResult, builder, false);
+    } catch (BuildCycleException e) {
+      Log.log.log("Build Cycle at " + dep + " init " + e.getCycleCause() + " rest " + e.getCycle().getCycleComponents(), Log.DETAIL);
+      BuildCycle extendedCycle = requireStack.createCycleFor(dep);
+      extendedCycle = new BuildCycle(e.getCycleCause(), extendedCycle.getCycleComponents());
+      if (e.getCycleState() == CycleState.UNHANDLED && e.getCycle().getCycleComponents().contains(extendedCycle.getInitial())) {
+        Log.log.log("Extend cycle to init " + extendedCycle.getInitial() + " rest " + extendedCycle.getCycleComponents(), Log.DETAIL);
+        if (!extendedCycle.getCycleComponents().containsAll(e.getCycle().getCycleComponents())) {
+          Log.log.log("Assert", Log.DETAIL);
+          throw new AssertionError("Cycle " + e.getCycle().getCycleComponents() + " -  extended cycle " + extendedCycle.getCycleComponents());
+        }
+        throw new BuildCycleException(e.getMessage(), e.getCycleCause(), extendedCycle);
+      } else {
+        throw e;
+      }
     } finally {
      // if (!alreadyRequired)
         requireStack.pop(dep);
