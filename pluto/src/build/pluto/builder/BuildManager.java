@@ -181,6 +181,7 @@ public class BuildManager extends BuildUnitProvider {
     } finally {
       if (!depResult.isFinished())
         depResult.setState(BuildUnit.State.FAILURE);
+      Log.log.log("WRITE " + buildReq.createBuilder().description(), Log.IMPORT);
       depResult.write();
       if (taskDescription != null)
         Log.log.endTask(depResult.getState() == BuildUnit.State.SUCCESS);
@@ -213,10 +214,10 @@ public class BuildManager extends BuildUnitProvider {
    
     Log.log.beginTask("Compile cycle with: " + cycleSupport.getCycleDescription(cycle), Log.CORE);
     try {
-      cycleSupport.compileCycle(this, cycle);
-      // Compiling successful, everything is consistent
-      for (BuildRequest<?, ?, ?, ?> req : e.getCycle().getCycleComponents()) {
-        this.requireStack.markConsistent(req);
+      Set<BuildUnit<?>> resultUnits = cycleSupport.compileCycle(this, cycle);
+      for (BuildUnit<?> resultUnit : resultUnits) {
+        resultUnit.write();
+        this.requireStack.markConsistent(resultUnit.getGeneratedBy());
       }
       e.setCycleState(CycleState.RESOLVED);
     } catch (BuildCycleException cyclicEx) {
@@ -253,6 +254,8 @@ public class BuildManager extends BuildUnitProvider {
       if (depResult.getBuildResult() == null) {
         throw new AssertionError("Cyclic builder does not provide a result for " + depResult.getPersistentPath());
       }
+      if (!depResult.isFinished())
+        depResult.setState(State.finished(true));
     } else {
       depResult.setState(State.FAILURE);
     }
@@ -331,14 +334,16 @@ public class BuildManager extends BuildUnitProvider {
       boolean knownInconsistent = requireStack.isKnownInconsistent(dep);
       boolean noUnit = depResult == null;
       boolean changedInput = noUnit ? false : !depResult.getGeneratedBy().deepEquals(buildReq);
-      boolean inconsistentNoRequirements = noUnit ? false : !depResult.isConsistentNonrequirements();
+      InconsistenyReason localInconsistencyReason = noUnit ? null : depResult.isConsistentNonrequirementsReason();
+      boolean inconsistentNoRequirements = noUnit ? false : localInconsistencyReason != InconsistenyReason.NO_REASON;
       boolean localInconsistent = knownInconsistent || noUnit || changedInput || inconsistentNoRequirements;
-      Log.log.log("Locally consistent " + !localInconsistent + ":" + (knownInconsistent ? "knownInconsistent, " : "") + (noUnit ? "noUnit, " : "") + (changedInput ? "changedInput, " : "") + (inconsistentNoRequirements ? "inconsistentNoReqs, " : ""), Log.CORE);
+      Log.log.log("Locally consistent " + !localInconsistent + ":" + (knownInconsistent ? "knownInconsistent, " : "") + (noUnit ? "noUnit, " : "") + (changedInput ? "changedInput, " : "") + (inconsistentNoRequirements ? "inconsistentNoReqs (" + localInconsistencyReason + "), " : ""), Log.CORE);
       if (localInconsistent) {
         // Local inconsistency should execute the builder regardless whether it
         // has been required to detect the cycle
         // TODO should inconsistent file requirements trigger the same, they should i think
         executed = true;
+        Log.log.log("Rebuild because locally inconsistent", Log.DETAIL);
         return executeBuilder(builder, dep, buildReq);
       }
 
@@ -365,6 +370,7 @@ public class BuildManager extends BuildUnitProvider {
           // compiled now
           if (requireStack.isConsistent(buildReq))
             return yield(buildReq, builder, depResult);
+          Log.log.log("Rebuild because " + req + " not consistent", Log.DETAIL);
           return executeBuilder(builder, dep, buildReq);
         }
       }

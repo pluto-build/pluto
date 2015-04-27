@@ -14,7 +14,9 @@ public class IgnoreOutputStamper implements OutputStamper<Serializable> {
 
   public static final IgnoreOutputStamper instance = new IgnoreOutputStamper();
 
-  private static final OutputStamp<Serializable> IGNORE_OUTPUT_STAMP = new OutputStamp<Serializable>() {
+  private static final OutputStamp<Serializable> IGNORE_OUTPUT_STAMP = new IgnoreOutputStamp();
+
+  private static class IgnoreOutputStamp implements OutputStamp<Serializable> {
 
     /**
      * 
@@ -27,7 +29,7 @@ public class IgnoreOutputStamper implements OutputStamper<Serializable> {
     }
 
     public boolean equals(Object o) {
-      return o == this;
+      return o instanceof IgnoreOutputStamp;
     };
 
   };

@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.InconsistenyReason;
@@ -58,6 +59,19 @@ public class UnitValidators {
 				}
 			};
 		}
+
+    public Validators.Validator fullfills(Predicate<BuildUnit<?>> pred) {
+      return new Validators.Validator() {
+
+        @Override
+        public void validate() {
+          for (BuildUnit<?> unit : units) {
+            assertTrue("Build unit " + unit.getPersistentPath() + " does not fullfill predicate", pred.test(unit));
+          }
+        }
+      };
+    }
+
 	}
 
 	public static UnitValiatorBuilder unitsForPath(Path... depPath)

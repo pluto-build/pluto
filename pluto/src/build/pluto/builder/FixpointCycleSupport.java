@@ -3,8 +3,10 @@ package build.pluto.builder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.sugarj.common.Log;
 
@@ -42,7 +44,7 @@ public class FixpointCycleSupport implements CycleSupport {
   }
 
   @Override
-  public void compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
+  public Set<BuildUnit<?>> compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
     FixpointCycleBuildResultProvider cycleManager = new FixpointCycleBuildResultProvider(manager, cycle);
 
     int numInterations = 1;
@@ -97,6 +99,7 @@ public class FixpointCycleSupport implements CycleSupport {
       cycleManager.nextIteration();
     }
     Log.log.log("Fixpoint detected.", Log.CORE);
+    return new HashSet<>(cycleUnits.values());
   }
 
 }

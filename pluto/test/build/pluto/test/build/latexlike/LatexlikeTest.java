@@ -17,6 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sugarj.common.Log;
 
+import build.pluto.BuildUnit;
 import build.pluto.test.build.ScopedBuildTest;
 import build.pluto.test.build.ScopedPath;
 import build.pluto.test.build.TrackingBuildManager;
@@ -59,6 +60,7 @@ public class LatexlikeTest extends ScopedBuildTest {
     validateThat(unitsForPath(texDep).dependsOn(bibDep));
     validateThat(unitsForPath(bibDep).dependsOn(texDep));
     validateThat(unitsForPath(bibDep, texDep).areConsistent());
+    validateThat(unitsForPath(bibDep, texDep).fullfills(BuildUnit::isPersisted));
   }
 
   private void writeTexlike(String text) throws IOException {

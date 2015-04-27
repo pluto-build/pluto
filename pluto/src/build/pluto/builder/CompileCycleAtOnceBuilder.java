@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
@@ -111,7 +113,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   }
 
   @Override
-  public void compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
+  public Set<BuildUnit<?>> compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
     ArrayList<BuildUnit<Out>> cyclicResults = new ArrayList<>();
     ArrayList<In> inputs = new ArrayList<>();
     ArrayList<BuildRequest<?, Out, ?, ?>> requests = new ArrayList<>();
@@ -137,6 +139,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
       unit.setBuildResult(outputs.get(i));
       unit.setState(State.finished(true));
     }
+    return new HashSet<>(cyclicResults);
   }
 
   @Override
