@@ -111,7 +111,7 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   }
 
   @Override
-  public BuildCycleResult compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
+  public void compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
     ArrayList<BuildUnit<Out>> cyclicResults = new ArrayList<>();
     ArrayList<In> inputs = new ArrayList<>();
     ArrayList<BuildRequest<?, Out, ?, ?>> requests = new ArrayList<>();
@@ -132,11 +132,11 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
       throw new AssertionError("buildAll needs to return one output for one input");
     }
 
-    BuildCycleResult result = new BuildCycleResult();
     for (int i = 0; i < outputs.size(); i++) {
-      result.setBuildResult(requests.get(i), outputs.get(i), cyclicResults.get(i));
+      BuildUnit<Out> unit = cyclicResults.get(i);
+      unit.setBuildResult(outputs.get(i));
+      unit.setState(State.finished(true));
     }
-    return result;
   }
 
   @Override

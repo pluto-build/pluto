@@ -15,8 +15,6 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
-import org.sugarj.common.Log;
-
 import build.pluto.builder.BuildRequest;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.FileRequirement;
@@ -167,7 +165,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	    for (Requirement req : requirements)
 	      if (req instanceof BuildRequirement)
 	        if (((BuildRequirement<?>) req).getUnit() != null) {
-            requiredUnits.add(((BuildRequirement<?>) req).getUnit());
+	        requiredUnits.add(((BuildRequirement<?>) req).getUnit());
 	        }
 	  }
 		return requiredUnits;
@@ -347,7 +345,6 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 		  if (req instanceof FileRequirement && !((FileRequirement) req).isConsistent()) {
 		    return InconsistenyReason.FILES_NOT_CONSISTENT;
 		  }else if (req instanceof BuildRequirement && !((BuildRequirement<?>) req).isConsistent()) {
-        Log.log.log("Req " + req + " inconsistent", Log.ALWAYS);
 		    return InconsistenyReason.DEPENDENCIES_INCONSISTENT;
 		  }
 		

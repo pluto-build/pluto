@@ -26,7 +26,6 @@ public class BuildCycleException extends RuntimeException {
    */
   private final BuildCycle cycle;
   private CycleState cycleState = CycleState.UNHANDLED;
-  private BuildCycleResult cycleResult = null;
 
   public BuildCycleException(String message, BuildRequest<?, ?, ?, ?> cycleCause, BuildCycle cycle) {
     super(message);
@@ -55,14 +54,6 @@ public class BuildCycleException extends RuntimeException {
 
   public BuildRequest<?, ?, ?, ?> getCycleCause() {
     return cycleCause;
-  }
-  
-  public void setCycleResult(BuildCycleResult cycleResult) {
-    this.cycleResult = cycleResult;
-  }
-  
-  public BuildCycleResult getCycleResult() {
-    return cycleResult;
   }
 
 }

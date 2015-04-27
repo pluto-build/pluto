@@ -28,7 +28,6 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
   private Set<BuildUnit<?>> requiredUnitsInIteration;
   private Map<BuildRequest<?, ?, ?, ?>, BuildUnit<?>> units = new HashMap<>();
 
-  private BuildCycleResult result;
 
   public FixpointCycleBuildResultProvider(BuildUnitProvider parentManager, BuildCycle cycle) {
     super();
@@ -36,11 +35,6 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
     this.cycle = cycle;
     this.requiredUnitsInIteration = new HashSet<>();
     units = new HashMap<>();
-    this.result = new BuildCycleResult();
-  }
-
-  public BuildCycleResult getResult() {
-    return result;
   }
 
   public void nextIteration() {
@@ -97,7 +91,6 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
               cycleUnit.setBuildResult(result);
               cycleUnit.setState(BuildUnit.State.finished(true));
 
-              this.result.setBuildResult(buildReq, result, cycleUnit);
             }
             return new BuildRequirement<Out>(cycleUnit, buildReq);
 

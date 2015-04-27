@@ -10,6 +10,7 @@ import build.pluto.test.build.RebuildInconsistentTest;
 import build.pluto.test.build.cycle.fixpoint.test.FixpointCycleTestSuite;
 import build.pluto.test.build.cycle.once.test.CycleAtOnceBuilderTest;
 import build.pluto.test.build.cycle.once.test.NestedCycleAtOnceTest;
+import build.pluto.test.build.latexlike.LatexlikeTest;
 import build.pluto.test.cli.InputParserCollectionTest;
 import build.pluto.test.cli.InputParserPrimitiveTest;
 
@@ -22,6 +23,7 @@ import build.pluto.test.cli.InputParserPrimitiveTest;
   RebuildInconsistentTest.class, 
   FixpointCycleTestSuite.class,
   NestedCycleAtOnceTest.class,
+ LatexlikeTest.class,
   InputParserPrimitiveTest.class, 
   InputParserCollectionTest.class})
 public class PlutoTestSuite {

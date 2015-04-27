@@ -42,7 +42,7 @@ public class FixpointCycleSupport implements CycleSupport {
   }
 
   @Override
-  public BuildCycleResult compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
+  public void compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
     FixpointCycleBuildResultProvider cycleManager = new FixpointCycleBuildResultProvider(manager, cycle);
 
     int numInterations = 1;
@@ -97,7 +97,6 @@ public class FixpointCycleSupport implements CycleSupport {
       cycleManager.nextIteration();
     }
     Log.log.log("Fixpoint detected.", Log.CORE);
-    return cycleManager.getResult();
   }
 
 }
