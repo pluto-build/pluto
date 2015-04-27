@@ -4,33 +4,27 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.sugarj.common.Log;
 
-import build.pluto.BuildUnit;
 import build.pluto.util.AbsoluteComparedFile;
 import build.pluto.util.UniteCollections;
 
-public class RequireStack extends CycleDetectionStack<AbsoluteComparedFile, Boolean> {
+public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, Boolean> {
 
-  private Set<AbsoluteComparedFile> knownInconsistentUnits;
-  private Set<AbsoluteComparedFile> consistentUnits;
+  private Set<BuildRequest<?, ?, ?, ?>> knownInconsistentUnits;
+  private Set<BuildRequest<?, ?, ?, ?>> consistentUnits;
   
   public RequireStack() {
     this.consistentUnits = new HashSet<>();
     this.knownInconsistentUnits = new HashSet<>();
   }
 
-  public void beginRebuild(File dep) {
-
-    AbsoluteComparedFile aDep = AbsoluteComparedFile.absolute(dep);
+  public void beginRebuild(BuildRequest<?, ?, ?, ?> dep) {
     
-    Log.log.log("Rebuild " + dep, Log.DETAIL);
-    Log.log.log("Assumptions: " + printCyclicConsistentAssumtion(aDep), Log.DETAIL);
+    Log.log.log("Rebuild " + dep.createBuilder().description(), Log.DETAIL);
     
-    this.knownInconsistentUnits.add(aDep);
+    this.knownInconsistentUnits.add(dep);
     // TODO: Need to forget the scc where dep is in, because the graph structure
     // may change?
    // for (Path assumed : this.requireStack) {
@@ -40,21 +34,21 @@ public class RequireStack extends CycleDetectionStack<AbsoluteComparedFile, Bool
     //}
   }
 
-  private String printCyclicConsistentAssumtion(AbsoluteComparedFile dep) {
-    UniteCollections<AbsoluteComparedFile, List<AbsoluteComparedFile>>.Key key = this.sccs.getSet(dep);
+  private String printCyclicConsistentAssumtion(BuildRequest<?, ?, ?, ?> dep) {
+    UniteCollections<BuildRequest<?, ?, ?, ?>, List<BuildRequest<?, ?, ?, ?>>>.Key key = this.sccs.getSet(dep);
     if (key == null) {
       return "";
     }
     String s = "";
-    for (AbsoluteComparedFile p : this.sccs.getSetMembers(key)) {
-      s += p.getFile() + ", ";
+    for (BuildRequest<?, ?, ?, ?> p : this.sccs.getSetMembers(key)) {
+      s += p.createBuilder().description() + ", ";
     }
     return s;
   }
 
-  public void finishRebuild(File dep) {
-    this.consistentUnits.add(AbsoluteComparedFile.absolute(dep));
-    this.knownInconsistentUnits.remove(AbsoluteComparedFile.absolute(dep));
+  public void finishRebuild(BuildRequest<?, ?, ?, ?> dep) {
+    this.consistentUnits.add(dep);
+    this.knownInconsistentUnits.remove(dep);
     // Allowed to do that in any case?
     // this.assumedCyclicConsistency.remove(dep);
   }
@@ -65,27 +59,12 @@ public class RequireStack extends CycleDetectionStack<AbsoluteComparedFile, Bool
                                                  // this.isAssumtionKnownInconsistent(aDep);
   }
 
-  public boolean isAssumtionKnownInconsistent(File dep) {
-    return isAssumtionKnownInconsistent(AbsoluteComparedFile.absolute(dep));
-  }
-
-  public BuildCycle createCycleFor(File dep) {
-    List<AbsoluteComparedFile> deps = sccs.getSetMembers(sccs.getSet(AbsoluteComparedFile.absolute(dep)));
-    Function<AbsoluteComparedFile, BuildRequest<?, ?, ?, ?>> extractReq = (AbsoluteComparedFile f) -> {
-      // try {
-      return BuildUnit.readFromMemoryCache(BuildUnit.class, f.getFile()).getGeneratedBy();
-
-    };
-    List<BuildRequest<?, ?, ?, ?>> reqs = deps.stream().map(extractReq).collect(Collectors.toList());
-    return new BuildCycle(extractReq.apply(AbsoluteComparedFile.absolute(dep)), reqs);
-  }
-
-  private boolean isAssumtionKnownInconsistent(AbsoluteComparedFile dep) {
-    UniteCollections<AbsoluteComparedFile, List<AbsoluteComparedFile>>.Key key = this.sccs.getSet(dep);
+  public boolean isAssumtionKnownInconsistent(BuildRequest<?, ?, ?, ?> dep) {
+    UniteCollections<BuildRequest<?, ?, ?, ?>, List<BuildRequest<?, ?, ?, ?>>>.Key key = this.sccs.getSet(dep);
     if (key == null) {
       return false;
     }
-    for (AbsoluteComparedFile p : this.sccs.getSetMembers(key)) {
+    for (BuildRequest<?, ?, ?, ?> p : this.sccs.getSetMembers(key)) {
       if (this.knownInconsistentUnits.contains(p)) {
         return true;
       }
@@ -93,37 +72,34 @@ public class RequireStack extends CycleDetectionStack<AbsoluteComparedFile, Bool
     return false;
   }
 
+  public BuildCycle createCycleFor(BuildRequest<?, ?, ?, ?> dep) {
+    List<BuildRequest<?, ?, ?, ?>> deps = sccs.getSetMembers(sccs.getSet(dep));
+    return new BuildCycle(dep, deps);
+  }
+
   public boolean isConsistent(File dep) {
     return this.consistentUnits.contains(AbsoluteComparedFile.absolute(dep));
   }
-
-  protected Boolean push(File dep) {
-    return push(AbsoluteComparedFile.absolute(dep));
-  }
   
   @Override
-  protected Boolean push(AbsoluteComparedFile dep) {
-    Log.log.beginTask("Require " + dep.getFile(), Log.DETAIL);
+  protected Boolean push(BuildRequest<?, ?, ?, ?> dep) {
+    Log.log.beginTask("Require " + dep.createBuilder().description(), Log.DETAIL);
     return super.push(dep);
   }
-  
-  public void pop(File dep) {
-    this.pop(AbsoluteComparedFile.absolute(dep));
-  }
 
   @Override
-  public void pop(AbsoluteComparedFile dep) {
+  public void pop(BuildRequest<?, ?, ?, ?> dep) {
     super.pop(dep);
     Log.log.endTask();
   }
 
-  public void markConsistent(File dep) {
-    this.consistentUnits.add(AbsoluteComparedFile.absolute(dep));
+  public void markConsistent(BuildRequest<?, ?, ?, ?> dep) {
+    this.consistentUnits.add(dep);
   }
 
   @Override
-  protected Boolean cycleResult(AbsoluteComparedFile call, List<AbsoluteComparedFile> scc) {
-    Log.log.log("Already required " + call.getFile(), Log.DETAIL);
+  protected Boolean cycleResult(BuildRequest<?, ?, ?, ?> call, List<BuildRequest<?, ?, ?, ?>> scc) {
+    Log.log.log("Already required " + call.createBuilder().description(), Log.DETAIL);
     this.callStack.add(call);
     return true;
   }

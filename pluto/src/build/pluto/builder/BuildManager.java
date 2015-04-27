@@ -138,7 +138,7 @@ public class BuildManager extends BuildUnitProvider {
   // @formatter:on
   BuildRequirement<Out> executeBuilder(Builder<In, Out> builder, File dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
-    this.requireStack.beginRebuild(dep);
+    this.requireStack.beginRebuild(buildReq);
 
     analysis.reset(BuildUnit.read(dep));
     BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
@@ -189,7 +189,7 @@ public class BuildManager extends BuildUnitProvider {
       assertConsistency(depResult);
 
       this.executingStack.pop(buildReq);
-      this.requireStack.finishRebuild(dep);
+      this.requireStack.finishRebuild(buildReq);
     }
 
     if (depResult.getState() == BuildUnit.State.FAILURE)
@@ -256,7 +256,10 @@ public class BuildManager extends BuildUnitProvider {
         throw new AssertionError("Cyclic builder does not provide a result for " + depResult.getPersistentPath());
       }
       depResult.setBuildResult(result);
-      requireStack.markConsistent(depResult.getPersistentPath());
+      requireStack.markConsistent(depResult.getGeneratedBy()); // TODO or
+                                                               // buildReq?
+                                                               // Should be the
+                                                               // same?
     } else {
       depResult.setState(State.FAILURE);
     }
@@ -318,7 +321,7 @@ public class BuildManager extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
-  BuildRequirement<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildRequirement<Out> require(final BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
     B builder = buildReq.createBuilder();
     File dep = builder.persistentPath();
@@ -329,7 +332,7 @@ public class BuildManager extends BuildUnitProvider {
 
     // Need to check that before putting dep on the requires Stack because
     // otherwise dep has always been required
-    boolean alreadyRequired = requireStack.push(dep);
+    boolean alreadyRequired = requireStack.push(buildReq);
     boolean executed = false;
     try {
       boolean knownInconsistent = requireStack.isKnownInconsistent(dep);
@@ -346,14 +349,14 @@ public class BuildManager extends BuildUnitProvider {
         return executeBuilder(builder, dep, buildReq);
       }
 
-      boolean assumptionIncomplete = requireStack.isAssumtionKnownInconsistent(dep);
+      boolean assumptionIncomplete = requireStack.isAssumtionKnownInconsistent(buildReq);
       Log.log.log("Assumptions inconsistent " + assumptionIncomplete, Log.DETAIL);
       if (alreadyRequired) {
         if (!assumptionIncomplete) {
           return yield(buildReq, builder, depResult);
         } else {
           Log.log.log("Deptected Require cycle for " + dep, Log.DETAIL);
-          BuildCycle cycle = requireStack.createCycleFor(dep);
+          BuildCycle cycle = requireStack.createCycleFor(buildReq);
           cycle = new BuildCycle(executingStack.topMostEntry(cycle.getCycleComponents()), cycle.getCycleComponents());
           throw new BuildCycleException("Require build cycle on " + dep, cycle.getInitial(), cycle);
         }
@@ -373,7 +376,7 @@ public class BuildManager extends BuildUnitProvider {
           return executeBuilder(builder, dep, buildReq);
         }
       }
-      requireStack.markConsistent(dep);
+      requireStack.markConsistent(buildReq);
 
     } catch (RequiredBuilderFailed e) {
       if (executed || e.getLastAddedBuilder().getUnit().getPersistentPath().equals(depResult.getPersistentPath()))
@@ -385,7 +388,7 @@ public class BuildManager extends BuildUnitProvider {
       throw e.enqueueBuilder(depResult, builder, false);
     } catch (BuildCycleException e) {
       Log.log.log("Build Cycle at " + dep + " init " + e.getCycleCause() + " rest " + e.getCycle().getCycleComponents(), Log.DETAIL);
-      BuildCycle extendedCycle = requireStack.createCycleFor(dep);
+      BuildCycle extendedCycle = requireStack.createCycleFor(buildReq);
       extendedCycle = new BuildCycle(e.getCycleCause(), extendedCycle.getCycleComponents());
       if (e.getCycleState() == CycleState.UNHANDLED && e.getCycle().getCycleComponents().contains(extendedCycle.getInitial())) {
         Log.log.log("Extend cycle to init " + extendedCycle.getInitial() + " rest " + extendedCycle.getCycleComponents(), Log.DETAIL);
@@ -398,13 +401,7 @@ public class BuildManager extends BuildUnitProvider {
         throw e;
       }
     } finally {
-     // if (!alreadyRequired)
-        requireStack.pop(dep);
-//      
-//      if (!executed && depResult.hasFailed()) {
-//        Log.log.log("Required builder \"" + builder.description() + "\" failed.", Log.CORE);
-//        throw new RequiredBuilderFailed(builder, depResult, "no rebuild of failing builder");
-//      }
+      requireStack.pop(buildReq);
     }
 
     return yield(buildReq, builder, depResult);
