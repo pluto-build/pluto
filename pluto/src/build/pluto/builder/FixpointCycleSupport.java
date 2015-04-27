@@ -2,7 +2,6 @@ package build.pluto.builder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +49,7 @@ public class FixpointCycleSupport implements CycleSupport {
     boolean cycleConsistent = false;
     Map<BuildRequest<?, ?, ?, ?>, BuildUnit<?>> cycleUnits = new HashMap<>();
     List<BuildRequest<?, ?, ?, ?>> reqList = new ArrayList<>(cycle.getCycleComponents());
-    Collections.reverse(reqList);
+
     while (!cycleConsistent) {
       Log.log.log("Begin interation " + numInterations,  Log.CORE);
       // Log.log.log("Cycle " +
@@ -74,14 +73,20 @@ public class FixpointCycleSupport implements CycleSupport {
           if (unit == null || !unit.isConsistentShallow()) {
             if (!logStarted) {
               Log.log.beginTask("Compile cycle iteration " + numInterations, Log.CORE);
+              if (unit == null)
+                Log.log.log("Because " + req.createBuilder().description() + " was never compiled", Log.CORE);
+              else
+                Log.log.log("Because " + req.createBuilder().description() + " is inconsistent", Log.CORE);
+
               logStarted = true;
             }
             cycleConsistent = false;
             final BuildRequirement<?> newUnit = cycleManager.require(req);
             cycleUnits.put(req, newUnit.getUnit());
-            break;
           }
         }
+      } catch (RequiredBuilderFailed e) {
+        throw e;
       } finally {
         if (logStarted) {
           Log.log.endTask();

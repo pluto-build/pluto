@@ -8,10 +8,6 @@ import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 
 public abstract class SimpleBuildTest extends ScopedBuildTest{
 	
-	@Override
-	protected String getTestFolderName() {
-		return this.getClass().getSimpleName();
-	}
 
 	protected TrackingBuildManager buildMainFile() throws IOException {
 		return buildMainFile(new TrackingBuildManager());

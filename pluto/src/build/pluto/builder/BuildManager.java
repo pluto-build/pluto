@@ -171,7 +171,7 @@ public class BuildManager extends BuildUnitProvider {
 
     } catch (RequiredBuilderFailed e) {
       if (taskDescription != null)
-        Log.log.logErr("Required builder failed", Log.CORE);
+        Log.log.logErr("Required builder failed " + e.getMessage(), Log.CORE);
       throw e.enqueueBuilder(depResult, builder);
 
     } catch (Throwable e) {
@@ -224,6 +224,7 @@ public class BuildManager extends BuildUnitProvider {
       e.setCycleState(cyclicEx.getCycleState());
       e.setCycleResult(cyclicEx.getCycleResult());
     } catch (Throwable t) {
+      e.setCycleState(CycleState.RESOLVED);
       Log.log.endTask("Cyclic compilation failed: " + t.getMessage());
       return t;
     }

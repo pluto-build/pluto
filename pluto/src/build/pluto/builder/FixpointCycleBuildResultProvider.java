@@ -12,6 +12,7 @@ import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.InconsistenyReason;
+import build.pluto.BuildUnit.State;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.CyclicBuildRequirement;
 import build.pluto.output.Output;
@@ -65,7 +66,6 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
     @SuppressWarnings("unchecked")
     Out previousOutput = (Out) outputsPreviousIteration.get(buildReq);
     if (cycleUnit != null && requiredUnitsInIteration.contains(cycleUnit)) {
-      // Log.log.log("Already there", Log.CORE);
       return new CyclicBuildRequirement<>(cycleUnit, buildReq, previousOutput);
     } else {
 
@@ -108,6 +108,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
         } catch (BuildCycleException e2) {
           throw e2;
         } catch (Throwable e) {
+          cycleUnit.setState(State.FAILURE);
           throw new RequiredBuilderFailed(new BuildRequirement<>(cycleUnit, buildReq), e);
         } finally {
           if (needBuild)

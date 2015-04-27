@@ -25,13 +25,15 @@ public abstract class ScopedBuildTest {
     return testBasePath.resolve(name).toFile();
   }
 
-  protected abstract String getTestFolderName();
+  protected String getTestFolderName() {
+    return this.getClass().getSimpleName();
+  }
 
   @Before
   public void initializeTestEnvironment() throws IOException {
     basePath = Paths.get("testdata", getTestFolderName()).toAbsolutePath();
     testBasePath = basePath.resolve(name.getMethodName());
-    
+
     FileCommands.delete(testBasePath);
     FileCommands.createDir(testBasePath);
 
