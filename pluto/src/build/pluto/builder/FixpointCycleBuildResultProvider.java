@@ -15,6 +15,7 @@ import build.pluto.BuildUnit.InconsistenyReason;
 import build.pluto.BuildUnit.State;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.CyclicBuildRequirement;
+import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
 
 public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
@@ -26,6 +27,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
   private Map<BuildRequest<?, ?, ?, ?>, Output> outputsPreviousIteration = new HashMap<>();
 
   private Set<BuildUnit<?>> requiredUnitsInIteration;
+  private Set<BuildUnit<?>> finishedUnitsInIteration;
   private Map<BuildRequest<?, ?, ?, ?>, BuildUnit<?>> units = new HashMap<>();
 
 
@@ -34,6 +36,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
     this.parentManager = parentManager;
     this.cycle = cycle;
     this.requiredUnitsInIteration = new HashSet<>();
+    this.finishedUnitsInIteration = new HashSet<>();
     units = new HashMap<>();
   }
 
@@ -41,6 +44,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
     outputsPreviousIteration.clear();
     units.forEach((BuildRequest<?, ?, ?, ?> req, BuildUnit<?> unit) -> outputsPreviousIteration.put(req, unit.getBuildResult()));
     requiredUnitsInIteration.clear();
+    finishedUnitsInIteration.clear();
   }
 
   @Override
@@ -60,6 +64,9 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
     @SuppressWarnings("unchecked")
     Out previousOutput = (Out) outputsPreviousIteration.get(buildReq);
     if (cycleUnit != null && requiredUnitsInIteration.contains(cycleUnit)) {
+      if (finishedUnitsInIteration.contains(cycleUnit)) {
+        return new BuildRequirement<>(cycleUnit, buildReq);
+      }
       return new CyclicBuildRequirement<>(cycleUnit, buildReq, previousOutput);
     } else {
 
@@ -78,9 +85,29 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
         // BuildManager)
 
         boolean noUnit = cycleUnit == null;
-        InconsistenyReason inconsistent = cycleUnit == null ? null : cycleUnit.isConsistentShallowReason();
+        InconsistenyReason inconsistent = cycleUnit == null ? null : cycleUnit.isConsistentNonrequirementsReason();
+
         boolean needBuild = noUnit || (inconsistent != InconsistenyReason.NO_REASON);
-        Log.log.log("Require " + buildReq.createBuilder().description() + " needs build: " + needBuild + ": " + (noUnit ? "no unit" : (inconsistent != InconsistenyReason.NO_REASON ? inconsistent : "")), Log.DETAIL);
+
+        if (cycleUnit != null) {
+
+          this.requiredUnitsInIteration.add(cycleUnit);
+          this.units.put(buildReq, cycleUnit);
+        }
+        boolean depInconsistent = false;
+
+        if (!needBuild && cycleUnit != null) {
+          for (Requirement req : cycleUnit.getRequirements()) {
+            if (!req.isConsistentInBuild(this)) {
+              depInconsistent = true;
+              break;
+            }
+          }
+        }
+
+        needBuild = needBuild || depInconsistent;
+
+        Log.log.log("Require " + buildReq.createBuilder().description() + " needs build: " + needBuild + ": " + (noUnit ? "no unit" : (inconsistent != InconsistenyReason.NO_REASON ? inconsistent : "")) + (depInconsistent ? "depInconsistent" : ""), Log.DETAIL);
         try {
           try {
             if (needBuild) {
@@ -100,6 +127,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
               cycleUnit.setState(BuildUnit.State.finished(true));
 
             }
+            finishedUnitsInIteration.add(cycleUnit);
             return new BuildRequirement<Out>(cycleUnit, buildReq);
 
           } catch (BuildCycleException e) {
@@ -121,7 +149,6 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
       }
     }
   }
-
   @Override
   protected Throwable tryCompileCycle(BuildCycleException e) {
     return this.parentManager.tryCompileCycle(e);
