@@ -15,8 +15,6 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 
-import org.sugarj.common.Log;
-
 import build.pluto.builder.BuildRequest;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.FileRequirement;
@@ -337,10 +335,8 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
       return InconsistenyReason.NOT_FINISHED;
 
     for (FileRequirement freq : generatedFiles)
-      if (!freq.isConsistent()) {
-        Log.log.log("GENERATED " + freq.file, Log.DETAIL);
+      if (!freq.isConsistent())
         return InconsistenyReason.FILES_NOT_CONSISTENT;
-      }
 
     return InconsistenyReason.NO_REASON;
   }

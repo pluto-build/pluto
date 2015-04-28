@@ -181,7 +181,6 @@ public class BuildManager extends BuildUnitProvider {
     } finally {
       if (!depResult.isFinished())
         depResult.setState(BuildUnit.State.FAILURE);
-      Log.log.log("WRITE " + buildReq.createBuilder().description(), Log.IMPORT);
       depResult.write();
       if (taskDescription != null)
         Log.log.endTask(depResult.getState() == BuildUnit.State.SUCCESS);

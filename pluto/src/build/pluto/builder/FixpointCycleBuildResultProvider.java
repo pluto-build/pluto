@@ -69,6 +69,14 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
         Builder<In, Out> builder = buildReq.createBuilder();
         File dep = builder.persistentPath();
 
+        // TODO this overapproximates: first check inconsistency without
+        // dependencies
+        // then replay the dependencies and finally check again whether after
+        // requiring
+        // the dependencies the unit is consistent again (very similiar to
+        // require in
+        // BuildManager)
+
         boolean noUnit = cycleUnit == null;
         InconsistenyReason inconsistent = cycleUnit == null ? null : cycleUnit.isConsistentShallowReason();
         boolean needBuild = noUnit || (inconsistent != InconsistenyReason.NO_REASON);
