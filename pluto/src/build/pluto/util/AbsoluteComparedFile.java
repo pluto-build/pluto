@@ -17,6 +17,8 @@ public class AbsoluteComparedFile implements Externalizable {
   }
   
   public static boolean equals(File file1, File file2) {
+    if (file1 == null || file2 == null)
+      return false;
     return file1.getAbsoluteFile().equals(file2.getAbsoluteFile());
   }
   
