@@ -167,7 +167,7 @@ public class BuildManager extends BuildUnitProvider {
         throw this.tryCompileCycle(e);
       }
     } catch (BuildCycleException e) {
-      stopBuilderInCycle(builder, buildReq, depResult, e);
+      stopBuilderInCycle(builder, buildReq, depResult, inputHash, e);
 
     } catch (RequiredBuilderFailed e) {
       if (taskDescription != null)
@@ -241,7 +241,7 @@ public class BuildManager extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>> 
   //@formatter:on
-  void stopBuilderInCycle(Builder<In, Out> builder, BuildRequest<In, Out, B, F> buildReq, BuildUnit<Out> depResult, BuildCycleException e) {
+  void stopBuilderInCycle(Builder<In, Out> builder, BuildRequest<In, Out, B, F> buildReq, BuildUnit<Out> depResult, int inputHash, BuildCycleException e) throws IOException {
     // This is the exception which has been rethrown above, but we cannot
     // handle it
     // here because compiling the cycle needs to be in the major try block
@@ -255,6 +255,8 @@ public class BuildManager extends BuildUnitProvider {
       }
       if (!depResult.isFinished())
         depResult.setState(State.finished(true));
+
+      analysis.check(depResult, inputHash);
     } else {
       depResult.setState(State.FAILURE);
     }
