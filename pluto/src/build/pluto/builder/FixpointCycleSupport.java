@@ -33,6 +33,7 @@ public class FixpointCycleSupport implements CycleSupport {
 
   @Override
   public boolean canCompileCycle(BuildCycle cycle) {
+    // Each builder in the cycle must be supported
     for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
       for (BuilderFactory<?, ?, ?> supportedBuilder : supportedBuilders) {
         if (req.factory == supportedBuilder) {
@@ -89,6 +90,9 @@ public class FixpointCycleSupport implements CycleSupport {
         }
       } catch (RequiredBuilderFailed e) {
         throw e;
+      } catch (Throwable t) {
+        t.printStackTrace();
+        throw t;
       } finally {
         if (logStarted) {
           Log.log.endTask();
@@ -96,7 +100,7 @@ public class FixpointCycleSupport implements CycleSupport {
       }
       Log.log.log("End iteration " + numInterations, Log.CORE);
       numInterations++;
-      cycleManager.nextIteration();
+      cycleManager.startNextIteration();
     }
     Log.log.log("Fixpoint detected.", Log.CORE);
     return new HashSet<>(cycleUnits.values());
