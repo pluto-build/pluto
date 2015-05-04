@@ -4,13 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
@@ -23,7 +21,6 @@ import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamp;
-import build.pluto.stamp.Util;
 
 /**
  * Dependency management for modules.
@@ -112,17 +109,6 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
     requiredUnits.add(mod);
 	}
 
-	/**
-	 * @deprecated Probably doesn't work any longer.
-	 * @param mod
-	 * @see GraphUtils#repairGraph(Set)
-	 */
-	@Deprecated
-	protected void removeModuleDependency(BuildUnit<?> mod) {
-		this.requiredUnits.remove(mod);
-	}
-
-
 	// *********************************
 	// Methods for querying dependencies
 	// *********************************
@@ -159,7 +145,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 		return requiredFiles;
 	}
 
-	public Set<BuildUnit<?>> getModuleDependencies() {
+	private Set<BuildUnit<?>> getModuleDependencies() {
 	  if (requiredUnits == null) {
 	    requiredUnits = new HashSet<>();
 	    for (Requirement req : requirements)
@@ -198,8 +184,6 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
     return transitiveUnits;
   }
   
-  
-
 	public Set<File> getExternalFileDependencies() {
 	  if (requiredFiles == null) {
       requiredFiles = new HashSet<>();
@@ -236,32 +220,6 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	public void setBuildResult(Out out) {
     this.buildResult = out;
   }
-	
-//	public Set<Path> getCircularFileDependencies() throws IOException {
-//		Set<Path> dependencies = new HashSet<Path>();
-//		Set<CompilationUnit> visited = new HashSet<>();
-//		LinkedList<CompilationUnit> queue = new LinkedList<>();
-//		queue.add(this);
-//
-//		while (!queue.isEmpty()) {
-//			CompilationUnit res = queue.pop();
-//			visited.add(res);
-//
-//			for (Path p : res.generatedFiles.keySet())
-//				if (!dependencies.contains(p) && FileCommands.exists(p))
-//					dependencies.add(p);
-//			for (Path p : res.requiredFiles.keySet())
-//				if (!dependencies.contains(p) && FileCommands.exists(p))
-//					dependencies.add(p);
-//
-//			for (CompilationUnit nextDep : res.getModuleDependencies())
-//				if (!visited.contains(nextDep) && !queue.contains(nextDep))
-//					queue.addFirst(nextDep);
-//		}
-//
-//		return dependencies;
-//	}
-
 
 	// ********************************************
 	// Methods for checking compilation consistency
@@ -287,44 +245,13 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	  return state == State.FAILURE;
 	}
 
-	protected boolean isConsistentWithSourceArtifacts(Map<? extends Path, Stamp> editedSourceFiles) {
-		boolean hasEdits = editedSourceFiles != null;
-		for (Requirement req : requirements) 
-		  if (req instanceof FileRequirement) {
-		    FileRequirement freq = (FileRequirement) req;
-  		  Stamp editStamp = hasEdits ? editedSourceFiles.get(freq.file) : null;
-  			if (editStamp != null && !editStamp.equals(freq.stamp)) {
-  				return false;
-  			} else if (editStamp == null && !Util.stampEqual(freq.stamp, freq.file)) {
-  				return false;
-  			}
-		}
-
-		return true;
-	}
-	
   public boolean isConsistentShallow() {
     return isConsistentShallowReason() == InconsistenyReason.NO_REASON;
 	}
 
-	  
 	public static enum InconsistenyReason implements Comparable<InconsistenyReason>{
     NO_REASON, DEPENDENCIES_INCONSISTENT, FILES_NOT_CONSISTENT, PERSISTENT_VERSION_CHANGED, NOT_FINISHED,
 	  
-	}
-	
-	public boolean isConsistentNonrequirements() {
-	  if (hasPersistentVersionChanged())
-      return false;
-    
-    if (!isFinished())
-      return false;
-
-    for (FileRequirement freq : generatedFiles)
-      if (!freq.isConsistent())
-        return false;
-
-    return true;
 	}
 
   public InconsistenyReason isConsistentNonrequirementsReason() {

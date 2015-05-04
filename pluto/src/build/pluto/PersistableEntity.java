@@ -163,12 +163,6 @@ public abstract class PersistableEntity implements Serializable {
       inMemory.put(AbsoluteComparedFile.absolute(persistentPath), this);
     }
   }
-  
-  final protected static void removeFromCache(File p) {
-    synchronized (PersistableEntity.class) {
-      inMemory.remove(AbsoluteComparedFile.absolute(p));
-    }
-  }
 
   public String toString() {
     return getClass().getSimpleName() + "(" + persistentPath + ")";
