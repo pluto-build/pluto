@@ -1,13 +1,9 @@
 package build.pluto.cli;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Set;
 
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -16,11 +12,10 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit;
-import build.pluto.builder.BuildManager;
+import build.pluto.builder.BuildManagers;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
@@ -81,14 +76,14 @@ public class Main {
       BuildRequest<?, ?, ?, ?> req = new BuildRequest<Serializable, Output, Builder<Serializable, Output>, BuilderFactory<Serializable, Output, Builder<Serializable, Output>>>(factory, input);
       
       if (line.hasOption(cleanOption.getLongOpt()) || line.hasOption(dryCleanOption.getLongOpt())) {
-        BuildManager.clean(line.hasOption(dryCleanOption.getLongOpt()), req);
+        BuildManagers.clean(line.hasOption(dryCleanOption.getLongOpt()), req);
         return;
       }
       if (line.hasOption(cleanBuildOption.getLongOpt()))
-        BuildManager.clean(false, req);
+        BuildManagers.clean(false, req);
       
-      BuildManager.build(req);
-      BuildUnit<?> unit = BuildManager.readResult(req);
+      BuildManagers.build(req);
+      BuildUnit<?> unit = BuildManagers.readResult(req);
       System.exit(unit.hasFailed() ? 1 : 0);
     } catch (RequiredBuilderFailed e) {
       e.printStackTrace();

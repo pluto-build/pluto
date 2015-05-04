@@ -13,7 +13,7 @@ import org.junit.Test;
 import org.sugarj.common.FileCommands;
 
 import build.pluto.builder.BuildCycleException;
-import build.pluto.builder.BuildManager;
+import build.pluto.builder.BuildManagers;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
@@ -99,7 +99,7 @@ public class BuildManagerCycleDetectionTest {
 	public void testCyclesDetected() throws IOException {
 
 		try {
-      BuildManager.build(new BuildRequest<>(testFactory, getPathWithNumber(0)));
+      BuildManagers.build(new BuildRequest<>(testFactory, getPathWithNumber(0)));
 		} catch (RequiredBuilderFailed e) {
 			assertTrue("Cause is not a cycle",
 					e.getCause() instanceof BuildCycleException);

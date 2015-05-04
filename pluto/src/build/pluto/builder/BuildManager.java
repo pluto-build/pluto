@@ -3,12 +3,6 @@ package build.pluto.builder;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.sugarj.common.FileCommands;
@@ -27,80 +21,8 @@ import com.cedarsoftware.util.DeepEquals;
 
 public class BuildManager extends BuildUnitProvider {
 
-  private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
-
-  public static <Out extends Output> BuildUnit<Out> readResult(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
-    return BuildUnit.read(buildReq.createBuilder().persistentPath());
-  }
-
-  public static void clean(boolean dryRun, BuildRequest<?, ?, ?, ?> req) throws IOException {
-    BuildUnit<?> unit = BuildManager.readResult(req);
-    if (unit == null)
-      return;
-    Set<BuildUnit<?>> allUnits = unit.getTransitiveModuleDependencies();
-    for (BuildUnit<?> next : allUnits) {
-      for (File p : next.getGeneratedFiles())
-        deleteFile(p.toPath(), dryRun);
-      deleteFile(next.getPersistentPath().toPath(), dryRun);
-    }
-  }
-  private static void deleteFile(Path p, boolean dryRun) throws IOException {
-    Log.log.log("Delete " + p + (dryRun ? " (dry run)" : ""), Log.CORE);
-    if (!dryRun)
-      if (!Files.isDirectory(p) || Files.list(p).findAny().isPresent())
-        FileCommands.delete(p);
-  }
-
-  
-  public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
-    Thread current = Thread.currentThread();
-    BuildManager manager = activeManagers.get(current);
-    boolean freshManager = manager == null;
-    if (freshManager) {
-      manager = new BuildManager();
-      activeManagers.put(current, manager);
-    }
-
-    try {
-      return manager.requireInitially(buildReq).getBuildResult();
-    } catch (IOException e) {
-      e.printStackTrace();
-      return null;
-    } finally {
-      if (freshManager)
-        activeManagers.remove(current);
-    }
-  }
-
-  public static <Out extends Output> List<Out> buildAll(BuildRequest<?, Out, ?, ?>[] buildReqs) {
-    Thread current = Thread.currentThread();
-    BuildManager manager = activeManagers.get(current);
-    boolean freshManager = manager == null;
-    if (freshManager) {
-      manager = new BuildManager();
-      activeManagers.put(current, manager);
-    }
-
-    try {
-      List<Out> out = new ArrayList<>();
-      for (BuildRequest<?, Out, ?, ?> buildReq : buildReqs)
-        if (buildReq != null)
-          try {
-            out.add(manager.requireInitially(buildReq).getBuildResult());
-          } catch (IOException e) {
-            e.printStackTrace();
-            out.add(null);
-          }
-      return out;
-    } finally {
-      if (freshManager)
-        activeManagers.remove(current);
-    }
-  }
-
   private ExecutingStack executingStack;
   private transient RequireStack requireStack;
-  private transient boolean initialRequest = true;
   private transient DynamicAnalysis analysis;
 
   protected BuildManager() {
@@ -118,13 +40,13 @@ public class BuildManager extends BuildUnitProvider {
   void setUpMetaDependency(Builder<In, Out> builder, BuildUnit<Out> depResult) throws IOException {
     if (depResult != null) {
       File builderClass = FileCommands.getRessourcePath(builder.getClass()).toFile();
-      
+
       File depFile = DynamicAnalysis.XATTR.getGenBy(builderClass);
       if (depFile != null && depFile.exists()) {
         BuildUnit<Output> metaBuilder = BuildUnit.read(depFile);
         depResult.requireMeta(metaBuilder);
       }
-      
+
       depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
     }
   }
@@ -144,7 +66,7 @@ public class BuildManager extends BuildUnitProvider {
     BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
 
     setUpMetaDependency(builder, depResult);
-    
+
     // First step: cycle detection
     this.executingStack.push(buildReq);
 
@@ -155,7 +77,7 @@ public class BuildManager extends BuildUnitProvider {
       Log.log.beginTask(taskDescription, Log.CORE);
 
     depResult.setState(BuildUnit.State.IN_PROGESS);
-    
+
     try {
       try {
         // call the actual builder
@@ -210,7 +132,7 @@ public class BuildManager extends BuildUnitProvider {
     e.setCycleState(CycleState.NOT_RESOLVED);
     BuildCycle cycle = e.getCycle();
     CycleSupport cycleSupport = cycle.findCycleSupport().orElseThrow(() -> e);
-   
+
     Log.log.beginTask("Compile cycle with: " + cycleSupport.getCycleDescription(), Log.CORE);
     try {
       Set<BuildUnit<?>> resultUnits = cycleSupport.compileCycle(this);
@@ -291,22 +213,14 @@ public class BuildManager extends BuildUnitProvider {
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
   BuildUnit<Out> requireInitially(BuildRequest<In, Out, B, F> buildReq) throws IOException {
-    boolean wasInitial = false;
-    if (initialRequest) {
-      Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
-      initialRequest = false;
-      wasInitial = true;
-    }
+    Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
     boolean successful = false;
     try {
       BuildRequirement<Out> result = require(buildReq);
       successful = !result.getUnit().hasFailed();
       return result.getUnit();
     } finally {
-      if (wasInitial) {
-        Log.log.endTask(successful);
-        initialRequest = true;
-      }
+      Log.log.endTask(successful);
     }
   }
 
@@ -342,7 +256,8 @@ public class BuildManager extends BuildUnitProvider {
       if (localInconsistent) {
         // Local inconsistency should execute the builder regardless whether it
         // has been required to detect the cycle
-        // TODO should inconsistent file requirements trigger the same, they should i think
+        // TODO should inconsistent file requirements trigger the same, they
+        // should i think
         executed = true;
         Log.log.log("Rebuild because locally inconsistent", Log.DETAIL);
         return executeBuilder(builder, dep, buildReq);
@@ -405,7 +320,7 @@ public class BuildManager extends BuildUnitProvider {
 
     return yield(buildReq, builder, depResult);
   }
-  
+
   //@formatter:off
   private
     <In extends Serializable,

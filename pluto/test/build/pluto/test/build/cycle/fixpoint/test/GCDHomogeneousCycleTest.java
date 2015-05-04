@@ -19,7 +19,7 @@ import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit;
-import build.pluto.builder.BuildManager;
+import build.pluto.builder.BuildManagers;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuilderFactory;
 import build.pluto.output.Out;
@@ -70,9 +70,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
   public void testRebuildRootUnitInconsistent() throws IOException {
 
     Log.log.setLoggingLevel(Log.DETAIL | Log.CORE);
-    // Do a first clean build
-    BuildManager.clean(false, mainBuildRequest);
-    BuildManager.build(mainBuildRequest);
+    BuildManagers.build(mainBuildRequest);
 
     // Then make the root inconsistent
     FileUtils.writeIntToFile(19, mainFile);
@@ -99,7 +97,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
   public void testRebuildCycle1UnitInconsistent() throws IOException {
 
     // Do a first clean build
-    BuildManager.build(mainBuildRequest);
+    BuildManagers.build(mainBuildRequest);
     assertAllFilesConsistent();
 
     // Then make the cycle1 inconsistent
