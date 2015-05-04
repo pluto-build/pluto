@@ -1,47 +1,53 @@
 package build.pluto.builder;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit;
-import build.pluto.dependency.BuildRequirement;
 
+/**
+ * The {@link FixpointCycleSupport} resolved cycles by fixpoint compiling: the
+ * requests in the cycle are compiled again and again until a consistent state
+ * is reached. The involved builders need to be designed to support this
+ * strategy of resolving a cycle, otherwise no fixpoint may be detected and
+ * compilation runs into an endless loop.
+ * 
+ * @author moritzlichter
+ *
+ */
 public class FixpointCycleSupport implements CycleSupport {
 
+  // All BuilderFactories which are supported
   private List<BuilderFactory<?, ?, ?>> supportedBuilders;
 
+  /**
+   * Creates a new {@link FixpointCycleSupport} which is able to handle build
+   * requests to builders created by the given factories. If the cycle contains
+   * any builder which is not from the given factories, the support rejects to
+   * compile the cycle.
+   * 
+   * @param supportedBuilders
+   *          all supported builder factories
+   */
   public FixpointCycleSupport(BuilderFactory<?, ?, ?>... supportedBuilders) {
     this.supportedBuilders = Arrays.asList(supportedBuilders);
   }
 
   @Override
   public String getCycleDescription(BuildCycle cycle) {
-    String cycleName = "Fixpoint {";
-    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
-      cycleName += req.createBuilder().description() + ";";
-    }
-    cycleName = cycleName.substring(0, cycleName.length() - 1) + "}";
-    return cycleName;
+    String descriptions = cycle.getCycleComponents().stream().map(BuildRequest::createBuilder).map(Builder::description).reduce((String desc1, String desc2) -> desc1 + "; " + desc2).get();
+    return "Fixpoint {" + descriptions + "}";
   }
 
   @Override
   public boolean canCompileCycle(BuildCycle cycle) {
     // Each builder in the cycle must be supported
-    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
-      for (BuilderFactory<?, ?, ?> supportedBuilder : supportedBuilders) {
-        if (req.factory == supportedBuilder) {
-          return true;
-        }
-      }
-    }
-    return true;
+    Predicate<BuildRequest<?,?,?,?>> buildRequestSupported = (BuildRequest<?,?,?,?> r) -> supportedBuilders.contains(r.factory);
+    return cycle.getCycleComponents().stream().allMatch(buildRequestSupported);
   }
 
   @Override
@@ -50,60 +56,30 @@ public class FixpointCycleSupport implements CycleSupport {
 
     int numInterations = 1;
     boolean cycleConsistent = false;
-    Map<BuildRequest<?, ?, ?, ?>, BuildUnit<?>> cycleUnits = new HashMap<>();
-    List<BuildRequest<?, ?, ?, ?>> reqList = new ArrayList<>(cycle.getCycleComponents());
+    List<BuildRequest<?, ?, ?, ?>> cyclicRequests = cycle.getCycleComponents();
 
+    // Compile the cycle again and again until the fixpoint is detected. The
+    // fixpoint is reached if
+    // the complete cycle is consistent, so during an iteration no builder
+    // executed
     while (!cycleConsistent) {
-      Log.log.log("Begin interation " + numInterations,  Log.CORE);
-      // Log.log.log("Cycle " +
-      // cycle.getCycleComponents().stream().map((BuildRequest r) ->
-      // r.createBuilder().description()).collect(Collectors.toList()),
-      // Log.CORE);
-      boolean logStarted = false;
-      cycleConsistent = true;// !cycleUnits.isEmpty() &&
-                             // cycleUnits.values().stream().map(BuildUnit::isConsistentShallow).reduce(true,
-                             // Boolean::logicalAnd);
+      Log.log.beginTask("Fixpoint interation " + numInterations, Log.CORE);
+      cycleManager.startNextIteration();
       try {
         // CycleComponents are in order if which they were required
         // Require the first one which is not consistent to their input
-        for (BuildRequest<?, ?, ?, ?> req : reqList) {
-
-          final BuildUnit<?> unit = cycleUnits.get(req);
-          // Log.log.log("Require " + req.createBuilder().description(),
-          // Log.CORE);
-          // Check whether the unit is shallowly consistent (if null its the
-          // first iteration)
-          if (unit == null || !unit.isConsistentShallow()) {
-            if (!logStarted) {
-              Log.log.beginTask("Compile cycle iteration " + numInterations, Log.CORE);
-              if (unit == null)
-                Log.log.log("Because " + req.createBuilder().description() + " was never compiled", Log.CORE);
-              else
-                Log.log.log("Because " + req.createBuilder().description() + " is inconsistent", Log.CORE);
-
-              logStarted = true;
-            }
-            cycleConsistent = false;
-            final BuildRequirement<?> newUnit = cycleManager.require(req);
-            cycleUnits.put(req, newUnit.getUnit());
-          }
+        for (BuildRequest<?, ?, ?, ?> req : cyclicRequests) {
+          cycleManager.require(req);
         }
+        cycleConsistent = !cycleManager.wasAnyBuilderExecutedInIteration();
       } catch (RequiredBuilderFailed e) {
         throw e;
-      } catch (Throwable t) {
-        t.printStackTrace();
-        throw t;
-      } finally {
-        if (logStarted) {
-          Log.log.endTask();
-        }
       }
-      Log.log.log("End iteration " + numInterations, Log.CORE);
+      Log.log.endTask();
       numInterations++;
-      cycleManager.startNextIteration();
     }
     Log.log.log("Fixpoint detected.", Log.CORE);
-    return new HashSet<>(cycleUnits.values());
+    return cycleManager.getAllUnitsInCycle();
   }
 
 }

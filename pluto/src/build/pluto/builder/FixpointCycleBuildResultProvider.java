@@ -76,7 +76,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
     // Clear remembered units
     requiredUnitsInIteration.clear();
     completedUnitsInIteration.clear();
-    anyBuilderExecutedInIteration = true;
+    anyBuilderExecutedInIteration = false;
   }
 
   private boolean isUnitCompletedInCurrentIteration(BuildUnit<?> unit) {
@@ -102,6 +102,10 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
   protected boolean wasAnyBuilderExecutedInIteration() {
     return anyBuilderExecutedInIteration;
+  }
+
+  protected Set<BuildUnit<?>> getAllUnitsInCycle() {
+    return new HashSet<>(units.values());
   }
 
   @SuppressWarnings("unchecked")
