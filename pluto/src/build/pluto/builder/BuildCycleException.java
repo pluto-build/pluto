@@ -1,7 +1,6 @@
 package build.pluto.builder;
 
 import java.util.Objects;
-import java.util.function.Function;
 
 import build.pluto.BuildUnit;
 
@@ -31,7 +30,7 @@ public class BuildCycleException extends RuntimeException {
     super(message);
     Objects.requireNonNull(cycle);
     Objects.requireNonNull(cycleCause);
-    assert cycle.getCycleComponents().contains(cycleCause) : "Cause " + cycleCause.createBuilder().description() + " not in cycle {" + cycle.getCycleComponents().stream().map((Function<BuildRequest<?, ?, ?, ?>, Builder<?, ?>>) BuildRequest::createBuilder).map(Builder::description).reduce((String s1, String s2) -> s2 + " , " + s2).get() + "}";
+    assert cycle.getCycleComponents().contains(cycleCause) : "Cause " + cycleCause.createBuilder().description() + " not in cycle {" + cycle.getCycleComponents().stream().map((BuildRequest<?, ?, ?, ?> r) -> r.createBuilder()).map(Builder::description).reduce((String s1, String s2) -> s2 + " , " + s2).get() + "}";
     this.cycleCause = cycleCause;
     this.cycle = cycle;
   }
