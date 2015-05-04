@@ -9,7 +9,7 @@ import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit.State;
 import build.pluto.builder.Builder;
-import build.pluto.builder.CycleSupport;
+import build.pluto.builder.CycleSupportFactory;
 import build.pluto.output.Out;
 import build.pluto.stamp.FileContentStamper;
 import build.pluto.stamp.Stamper;
@@ -35,8 +35,8 @@ public abstract class NumericBuilder extends Builder<FileInput, Out<Integer>> {
 	}
 	
 	@Override
-	protected final CycleSupport getCycleSupport() {
-		return new NumericCycleSupport();
+  protected final CycleSupportFactory getCycleSupport() {
+    return NumericCycleSupport.factory;
 	}
 
 	@Override

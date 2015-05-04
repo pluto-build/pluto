@@ -6,9 +6,10 @@ import build.pluto.BuildUnit;
 
 public interface CycleSupport {
   
-  public String getCycleDescription(BuildCycle cycle);
-  public boolean canCompileCycle(BuildCycle cycle);
+  public String getCycleDescription();
 
-  public Set<BuildUnit<?>> compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable;
+  public boolean canCompileCycle();
+
+  public Set<BuildUnit<?>> compileCycle(BuildUnitProvider manager) throws Throwable;
 
 }

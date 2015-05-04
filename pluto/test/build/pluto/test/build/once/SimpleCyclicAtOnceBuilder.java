@@ -69,7 +69,7 @@ public class SimpleCyclicAtOnceBuilder extends
 					if (!cyclicDependencies.contains(depPath)) {
 						TestBuilderInput depInput = new TestBuilderInput(
 								input.getBasePath(), depPath);
-						requireCyclicable(factory, depInput);
+            requireBuild(factory, CompileCycleAtOnceBuilder.singletonArrayList(depInput));
 					}
 				} else {
 					contentLines.add(line);
@@ -83,7 +83,7 @@ public class SimpleCyclicAtOnceBuilder extends
 			File generatedFile = FileCommands.addExtension(
 					input.getInputPath().toPath(), "gen").toFile();
 			Files.write(generatedFile.toPath(), contentLines);
-			generates(input, generatedFile);
+      provide(input, generatedFile);
 			outputs.add(None.val);
 		}
 		setState(BuildUnit.State.finished(true));

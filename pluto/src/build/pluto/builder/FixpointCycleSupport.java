@@ -21,8 +21,14 @@ import build.pluto.BuildUnit;
  */
 public class FixpointCycleSupport implements CycleSupport {
 
-  // All BuilderFactories which are supported
+  /**
+   * All BuilderFactories which are supported
+   */
   private List<BuilderFactory<?, ?, ?>> supportedBuilders;
+  /**
+   * The cycle to compile
+   */
+  private BuildCycle cycle;
 
   /**
    * Creates a new {@link FixpointCycleSupport} which is able to handle build
@@ -33,25 +39,26 @@ public class FixpointCycleSupport implements CycleSupport {
    * @param supportedBuilders
    *          all supported builder factories
    */
-  public FixpointCycleSupport(BuilderFactory<?, ?, ?>... supportedBuilders) {
+  public FixpointCycleSupport(BuildCycle cycle, BuilderFactory<?, ?, ?>... supportedBuilders) {
+    this.cycle = cycle;
     this.supportedBuilders = Arrays.asList(supportedBuilders);
   }
 
   @Override
-  public String getCycleDescription(BuildCycle cycle) {
+  public String getCycleDescription() {
     String descriptions = cycle.getCycleComponents().stream().map((BuildRequest<?, ?, ?, ?> r) -> r.createBuilder()).map(Builder::description).reduce((String desc1, String desc2) -> desc1 + "; " + desc2).get();
     return "Fixpoint {" + descriptions + "}";
   }
 
   @Override
-  public boolean canCompileCycle(BuildCycle cycle) {
+  public boolean canCompileCycle() {
     // Each builder in the cycle must be supported
     Predicate<BuildRequest<?,?,?,?>> buildRequestSupported = (BuildRequest<?,?,?,?> r) -> supportedBuilders.contains(r.factory);
     return cycle.getCycleComponents().stream().allMatch(buildRequestSupported);
   }
 
   @Override
-  public Set<BuildUnit<?>> compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
+  public Set<BuildUnit<?>> compileCycle(BuildUnitProvider manager) throws Throwable {
     FixpointCycleBuildResultProvider cycleManager = new FixpointCycleBuildResultProvider(manager, cycle);
 
     int numInterations = 1;

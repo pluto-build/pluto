@@ -38,7 +38,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   
   protected abstract Out build() throws Throwable;
 
-  protected CycleSupport getCycleSupport() {
+  protected CycleSupportFactory getCycleSupport() {
     return null;
   }
   

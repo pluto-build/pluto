@@ -1,21 +1,17 @@
 package build.pluto.builder;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
-import build.pluto.dependency.BuildRequirement;
 import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
 
-public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out extends Output> extends Builder<ArrayList<In>, Out> implements CycleSupport {
+public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out extends Output> extends Builder<ArrayList<In>, Out> {
 
   public static <X> ArrayList<X> singletonArrayList(X elem) {
     return new ArrayList<X>(Collections.<X> singletonList(elem));
@@ -33,13 +29,13 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   }
 
   @Override
-  protected CycleSupport getCycleSupport() {
-    return this;
+  protected CycleSupportFactory getCycleSupport() {
+    return (BuildCycle cycle) -> new CompileAtOnceCycleSupport<>(cycle, this.factory);
   }
 
   protected abstract File singletonPersistencePath(In input);
 
-  private List<BuildUnit<Out>> cyclicResults;
+  protected List<BuildUnit<Out>> cyclicResults;
 
   @Override
   public void require(File p) {
@@ -48,19 +44,12 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
     }
   }
 
-  protected <In_ extends Serializable, Out_ extends Output, B_ extends Builder<ArrayList<In_>, Out_>, F_ extends BuilderFactory<ArrayList<In_>, Out_, B_>> Out_ requireCyclicable(F_ factory, In_ input) throws IOException {
-    BuildRequest<ArrayList<In_>, Out_, B_, F_> req = new BuildRequest<ArrayList<In_>, Out_, B_, F_>(factory, CompileCycleAtOnceBuilder.singletonArrayList(input));
-    BuildRequirement<Out_> e = manager.require(req);
-    result.requires(e);
-    return e.getUnit().getBuildResult();
-  }
-
   @Override
   public void provide(File p) {
-    throw new AssertionError();
-  };
+    throw new AssertionError("Cannot provide a file. Use provide(In, File) to make clear which input provides which file.");
+  }
 
-  public void generates(In input, File p) {
+  public void provide(In input, File p) {
     for (int i = 0; i < this.input.size(); i++) {
       if (this.input.get(i) == input) {
         this.cyclicResults.get(i).generates(p, LastModifiedStamper.instance.stampOf(p));
@@ -97,60 +86,6 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
 
   protected abstract List<Out> buildAll() throws Throwable;
 
-  @Override
-  public boolean canCompileCycle(BuildCycle cycle) {
-    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
-      if (req.factory != this.factory) {
-        System.out.println("Not the same factory");
-        return false;
-      }
-      if (!(req.input instanceof ArrayList<?>)) {
-        System.out.println("No array list input");
-        return false;
-      }
-    }
-    return true;
-  }
 
-  @Override
-  public Set<BuildUnit<?>> compileCycle(BuildUnitProvider manager, BuildCycle cycle) throws Throwable {
-    ArrayList<BuildUnit<Out>> cyclicResults = new ArrayList<>();
-    ArrayList<In> inputs = new ArrayList<>();
-    ArrayList<BuildRequest<?, Out, ?, ?>> requests = new ArrayList<>();
-
-    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
-      Builder<?, ?> tmpBuilder = req.createBuilder();
-      cyclicResults.add(BuildUnit.<Out> create(tmpBuilder.persistentPath(), (BuildRequest<?, Out, ?, ?>) req));
-      inputs.addAll((ArrayList<In>) req.input);
-      requests.add((BuildRequest<?, Out, ?, ?>) req);
-    }
-
-    CompileCycleAtOnceBuilder<In, Out> newBuilder = factory.makeBuilder(inputs);
-    newBuilder.manager = manager;
-    newBuilder.cyclicResults = cyclicResults;
-
-    List<Out> outputs = newBuilder.buildAll();
-    if (outputs.size() != inputs.size()) {
-      throw new AssertionError("buildAll needs to return one output for one input");
-    }
-
-    for (int i = 0; i < outputs.size(); i++) {
-      BuildUnit<Out> unit = cyclicResults.get(i);
-      unit.setBuildResult(outputs.get(i));
-      unit.setState(State.finished(true));
-    }
-    return new HashSet<>(cyclicResults);
-  }
-
-  @Override
-  public String getCycleDescription(BuildCycle cycle) {
-    ArrayList<In> inputs = new ArrayList<>();
-
-    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
-      inputs.addAll((ArrayList<In>) req.input);
-    }
-    CompileCycleAtOnceBuilder<In, Out> newBuilder = factory.makeBuilder(inputs);
-    return newBuilder.description();
-  }
 
 }
