@@ -21,8 +21,8 @@ public class CompileAtOnceCycleSupport
 //@formatter:on
 implements CycleSupport {
 
-  private BuildCycle cycle;
-  private F builderFactory;
+  private final BuildCycle cycle;
+  private final F builderFactory;
 
   protected CompileAtOnceCycleSupport(BuildCycle cycle, F builderFactory) {
     super();
@@ -32,19 +32,10 @@ implements CycleSupport {
 
   @Override
   public boolean canCompileCycle() {
-    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
-      if (req.factory != builderFactory) {
-        System.out.println("Not the same factory");
-        return false;
-      }
-      if (!(req.input instanceof ArrayList<?>)) {
-        System.out.println("No array list input");
-        return false;
-      }
-    }
-    return true;
+    return cycle.getCycleComponents().stream().allMatch((BuildRequest<?, ?, ?, ?> req) -> req.factory == builderFactory && (req.input instanceof ArrayList<?>));
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Set<BuildUnit<?>> compileCycle(BuildUnitProvider manager) throws Throwable {
     ArrayList<BuildUnit<Out>> cyclicResults = new ArrayList<>();
@@ -53,6 +44,8 @@ implements CycleSupport {
 
     for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents()) {
       Builder<?, ?> tmpBuilder = req.createBuilder();
+      // Casts are safe, otherwise the cycle support would had rejected to
+      // compile the cycle
       cyclicResults.add(BuildUnit.<Out> create(tmpBuilder.persistentPath(), (BuildRequest<?, Out, ?, ?>) req));
       inputs.addAll((ArrayList<In>) req.input);
       requests.add((BuildRequest<?, Out, ?, ?>) req);
@@ -75,10 +68,12 @@ implements CycleSupport {
     return new HashSet<>(cyclicResults);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public String getCycleDescription() {
     ArrayList<In> inputs = new ArrayList<>(cycle.getCycleComponents().size());
     for (BuildRequest<?, ?, ?, ?> request : cycle.getCycleComponents()) {
+      // Cast is safe, otherwise cycle handler rejected to compile the cycle
       inputs.addAll((ArrayList<In>) request.input);
     }
     return builderFactory.makeBuilder(inputs).description();

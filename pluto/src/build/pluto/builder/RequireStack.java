@@ -8,7 +8,6 @@ import java.util.Set;
 import org.sugarj.common.Log;
 
 import build.pluto.util.AbsoluteComparedFile;
-import build.pluto.util.UniteCollections;
 
 public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, Boolean> {
 
@@ -21,36 +20,15 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
   }
 
   public void beginRebuild(BuildRequest<?, ?, ?, ?> dep) {
-    
     Log.log.log("Rebuild " + dep.createBuilder().description(), Log.DETAIL);
-    
     this.knownInconsistentUnits.add(dep);
     // TODO: Need to forget the scc where dep is in, because the graph structure
     // may change?
-   // for (Path assumed : this.requireStack) {
-      // This could be too strict
-      // this.knownInconsistentUnits.add(assumed);
-     // this.consistentUnits.remove(assumed);
-    //}
-  }
-
-  private String printCyclicConsistentAssumtion(BuildRequest<?, ?, ?, ?> dep) {
-    UniteCollections<BuildRequest<?, ?, ?, ?>, List<BuildRequest<?, ?, ?, ?>>>.Key key = this.sccs.getSet(dep);
-    if (key == null) {
-      return "";
-    }
-    String s = "";
-    for (BuildRequest<?, ?, ?, ?> p : this.sccs.getSetMembers(key)) {
-      s += p.createBuilder().description() + ", ";
-    }
-    return s;
   }
 
   public void finishRebuild(BuildRequest<?, ?, ?, ?> dep) {
     this.knownConsistentUnits.add(dep);
     this.knownInconsistentUnits.remove(dep);
-    // Allowed to do that in any case?
-    // this.assumedCyclicConsistency.remove(dep);
   }
 
   public boolean isKnownInconsistent(File dep) {

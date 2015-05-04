@@ -24,11 +24,11 @@ public class FixpointCycleSupport implements CycleSupport {
   /**
    * All BuilderFactories which are supported
    */
-  private List<BuilderFactory<?, ?, ?>> supportedBuilders;
+  private final List<BuilderFactory<?, ?, ?>> supportedBuilders;
   /**
    * The cycle to compile
    */
-  private BuildCycle cycle;
+  private final BuildCycle cycle;
 
   /**
    * Creates a new {@link FixpointCycleSupport} which is able to handle build
