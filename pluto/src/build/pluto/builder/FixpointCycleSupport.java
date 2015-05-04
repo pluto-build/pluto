@@ -39,7 +39,7 @@ public class FixpointCycleSupport implements CycleSupport {
 
   @Override
   public String getCycleDescription(BuildCycle cycle) {
-    String descriptions = cycle.getCycleComponents().stream().map(BuildRequest::createBuilder).map(Builder::description).reduce((String desc1, String desc2) -> desc1 + "; " + desc2).get();
+    String descriptions = cycle.getCycleComponents().stream().map((BuildRequest<?, ?, ?, ?> r) -> r.createBuilder()).map(Builder::description).reduce((String desc1, String desc2) -> desc1 + "; " + desc2).get();
     return "Fixpoint {" + descriptions + "}";
   }
 
