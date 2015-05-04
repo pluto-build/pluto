@@ -13,10 +13,10 @@ import build.pluto.util.UniteCollections;
 public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, Boolean> {
 
   private Set<BuildRequest<?, ?, ?, ?>> knownInconsistentUnits;
-  private Set<BuildRequest<?, ?, ?, ?>> consistentUnits;
+  private Set<BuildRequest<?, ?, ?, ?>> knownConsistentUnits;
   
   public RequireStack() {
-    this.consistentUnits = new HashSet<>();
+    this.knownConsistentUnits = new HashSet<>();
     this.knownInconsistentUnits = new HashSet<>();
   }
 
@@ -47,7 +47,7 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
   }
 
   public void finishRebuild(BuildRequest<?, ?, ?, ?> dep) {
-    this.consistentUnits.add(dep);
+    this.knownConsistentUnits.add(dep);
     this.knownInconsistentUnits.remove(dep);
     // Allowed to do that in any case?
     // this.assumedCyclicConsistency.remove(dep);
@@ -55,21 +55,15 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
 
   public boolean isKnownInconsistent(File dep) {
     AbsoluteComparedFile aDep = AbsoluteComparedFile.absolute(dep);
-    return knownInconsistentUnits.contains(aDep);// ||
-                                                 // this.isAssumtionKnownInconsistent(aDep);
+    return knownInconsistentUnits.contains(aDep);
   }
 
-  public boolean isAssumtionKnownInconsistent(BuildRequest<?, ?, ?, ?> dep) {
-    UniteCollections<BuildRequest<?, ?, ?, ?>, List<BuildRequest<?, ?, ?, ?>>>.Key key = this.sccs.getSet(dep);
-    if (key == null) {
-      return false;
-    }
-    for (BuildRequest<?, ?, ?, ?> p : this.sccs.getSetMembers(key)) {
-      if (this.knownInconsistentUnits.contains(p)) {
-        return true;
-      }
-    }
-    return false;
+  public boolean existsInconsistentCyclicRequest(BuildRequest<?, ?, ?, ?> dep) {
+    return this.sccs.getSetMembers(dep).stream().anyMatch(this.knownInconsistentUnits::contains);
+  }
+
+  public boolean areAllCyclicRequestsConsistent(BuildRequest<?, ?, ?, ?> dep) {
+    return this.sccs.getSetMembers(dep).stream().allMatch(this.knownConsistentUnits::contains);
   }
 
   public BuildCycle createCycleFor(BuildRequest<?, ?, ?, ?> dep) {
@@ -78,7 +72,7 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
   }
 
   public boolean isConsistent(BuildRequest<?, ?, ?, ?> dep) {
-    return this.consistentUnits.contains(dep);
+    return this.knownConsistentUnits.contains(dep);
   }
   
   @Override
@@ -94,7 +88,7 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
   }
 
   public void markConsistent(BuildRequest<?, ?, ?, ?> dep) {
-    this.consistentUnits.add(dep);
+    this.knownConsistentUnits.add(dep);
   }
 
   @Override

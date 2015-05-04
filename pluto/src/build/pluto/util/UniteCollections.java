@@ -3,6 +3,7 @@ package build.pluto.util;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -40,6 +41,14 @@ public class UniteCollections<T, C extends Collection<T>> {
     return getCollection(key);
   }
   
+  public C getSetMembers(T elem) {
+    Key set = getSet(elem);
+    if (set != null)
+      return getCollection(set);
+    else
+      throw new NoSuchElementException("No set for the elem " + elem + " exists");
+  }
+
   public void addTo(Key setKey, T newElem) {
     assert getSet(newElem) == null : "Cannot add an element to the set because the element is also a member of another set";
     C set = getCollection(setKey);
