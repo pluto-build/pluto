@@ -30,7 +30,6 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
   private Set<BuildUnit<?>> finishedUnitsInIteration;
   private Map<BuildRequest<?, ?, ?, ?>, BuildUnit<?>> units = new HashMap<>();
 
-
   public FixpointCycleBuildResultProvider(BuildUnitProvider parentManager, BuildCycle cycle) {
     super();
     this.parentManager = parentManager;
@@ -47,6 +46,23 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
     finishedUnitsInIteration.clear();
   }
 
+  private boolean isUnitCompletedInCurrentIteration(BuildUnit<?> unit) {
+    return finishedUnitsInIteration.contains(unit);
+  }
+
+  private boolean isUnitRequiredInCurrentIteration(BuildUnit<?> unit) {
+    return unit != null && requiredUnitsInIteration.contains(unit);
+  }
+
+  private boolean isBuildRequestPartOfCycle(BuildRequest<?, ?, ?, ?> req) {
+    return cycle.getCycleComponents().contains(req);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <Out> Out getOutputInPreviousIteration(BuildRequest<?, ?, ?, ?> req) {
+    return (Out) outputsPreviousIteration.get(req);
+  }
+
   @Override
   public
 //@formatter:off
@@ -57,98 +73,108 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 //@formatter:on
   BuildRequirement<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
 
+    // Get the unit: either it has already been seen or read it
     @SuppressWarnings("unchecked")
     BuildUnit<Out> cycleUnit = (BuildUnit<Out>) units.get(buildReq);
     if (cycleUnit == null)
       cycleUnit = BuildUnit.read(buildReq.createBuilder().persistentPath());
-    @SuppressWarnings("unchecked")
-    Out previousOutput = (Out) outputsPreviousIteration.get(buildReq);
-    if (cycleUnit != null && requiredUnitsInIteration.contains(cycleUnit)) {
-      if (finishedUnitsInIteration.contains(cycleUnit)) {
+
+    // Check whether the unit has already been required in the interation, then
+    // do not compile it
+    if (isUnitRequiredInCurrentIteration(cycleUnit)) {
+      // If the unit is already completed, this is a normal build requirement,
+      // other the units
+      // requires itself transitivly, this a cyclic requirement
+      if (isUnitCompletedInCurrentIteration(cycleUnit))
         return new BuildRequirement<>(cycleUnit, buildReq);
-      }
-      return new CyclicBuildRequirement<>(cycleUnit, buildReq, previousOutput);
+      else
+        return new CyclicBuildRequirement<>(cycleUnit, buildReq, getOutputInPreviousIteration(buildReq));
     } else {
-
-      if (cycle.getCycleComponents().contains(buildReq)) {
-        // Log.log.log("In cycle compile", Log.CORE);
-
-        Builder<In, Out> builder = buildReq.createBuilder();
-        File dep = builder.persistentPath();
-
-        // TODO this overapproximates: first check inconsistency without
-        // dependencies
-        // then replay the dependencies and finally check again whether after
-        // requiring
-        // the dependencies the unit is consistent again (very similiar to
-        // require in
-        // BuildManager)
-
-        boolean noUnit = cycleUnit == null;
-        InconsistenyReason inconsistent = cycleUnit == null ? null : cycleUnit.isConsistentNonrequirementsReason();
-
-        boolean needBuild = noUnit || (inconsistent != InconsistenyReason.NO_REASON);
-
-        if (cycleUnit != null) {
-
-          this.requiredUnitsInIteration.add(cycleUnit);
-          this.units.put(buildReq, cycleUnit);
-        }
-        boolean depInconsistent = false;
-
-        if (!needBuild && cycleUnit != null) {
-          for (Requirement req : cycleUnit.getRequirements()) {
-            if (!req.isConsistentInBuild(this)) {
-              depInconsistent = true;
-              break;
-            }
-          }
-        }
-
-        needBuild = needBuild || depInconsistent;
-
-        Log.log.log("Require " + buildReq.createBuilder().description() + " needs build: " + needBuild + ": " + (noUnit ? "no unit" : (inconsistent != InconsistenyReason.NO_REASON ? inconsistent : "")) + (depInconsistent ? "depInconsistent" : ""), Log.DETAIL);
-        try {
-          try {
-            if (needBuild) {
-              cycleUnit = BuildUnit.create(dep, buildReq);
-              cycleUnit.setBuildResult(previousOutput);
-              Log.log.beginTask(buildReq.createBuilder().description(), Log.CORE);
-            }
-            this.requiredUnitsInIteration.add(cycleUnit);
-            this.units.put(buildReq, cycleUnit);
-
-            if (needBuild) {
-
-              BuildManager.setUpMetaDependency(builder, cycleUnit);
-
-              Out result = builder.triggerBuild(cycleUnit, this);
-              cycleUnit.setBuildResult(result);
-              cycleUnit.setState(BuildUnit.State.finished(true));
-
-            }
-            finishedUnitsInIteration.add(cycleUnit);
-            return new BuildRequirement<Out>(cycleUnit, buildReq);
-
-          } catch (BuildCycleException e) {
-            Log.log.log("Stopped because of cycle", Log.CORE);
-            throw this.tryCompileCycle(e);
-          }
-        } catch (BuildCycleException e2) {
-          throw e2;
-        } catch (Throwable e) {
-          cycleUnit.setState(State.FAILURE);
-          throw new RequiredBuilderFailed(new BuildRequirement<>(cycleUnit, buildReq), e);
-        } finally {
-          if (needBuild)
-            Log.log.endTask(cycleUnit.getState() == BuildUnit.State.SUCCESS);
-        }
-      } else {
-        Log.log.log("Require parent", Log.CORE);
+      // If the request is part of the cycle, we need to handle it, otherwise
+      // just delegate it to the parent
+      if (isBuildRequestPartOfCycle(buildReq))
+        return requireInCycle(buildReq, cycleUnit);
+      else
         return this.parentManager.require(buildReq);
-      }
     }
   }
+
+  private
+//@formatter:off
+  <In extends Serializable,
+   Out extends Output,
+   B extends Builder<In, Out>,
+   F extends BuilderFactory<In, Out, B>>
+//@formatter:on
+  BuildRequirement<Out> requireInCycle(BuildRequest<In, Out, B, F> buildReq, BuildUnit<Out> cycleUnit) throws IOException {
+
+    Builder<In, Out> builder = buildReq.createBuilder();
+    File dep = builder.persistentPath();
+
+
+    // Local inconsistency check
+    boolean noUnit = cycleUnit == null;
+    InconsistenyReason inconsistent = noUnit ? null : cycleUnit.isConsistentNonrequirementsReason();
+    boolean needBuild = noUnit || (inconsistent != InconsistenyReason.NO_REASON);
+
+    if (!noUnit) {
+      this.requiredUnitsInIteration.add(cycleUnit);
+      this.units.put(buildReq, cycleUnit);
+    }
+    
+    // Consistency check of requirements
+    boolean depInconsistent = false;
+    if (!needBuild && !noUnit) {
+      for (Requirement req : cycleUnit.getRequirements()) {
+        if (!req.isConsistentInBuild(this)) {
+          depInconsistent = true;
+          break;
+        }
+      }
+    }
+
+    needBuild = needBuild || depInconsistent;
+
+    Log.log.log("Require " + buildReq.createBuilder().description() + " needs build: " + needBuild + ": " + (noUnit ? "no unit" : (inconsistent != InconsistenyReason.NO_REASON ? inconsistent : "")) + (depInconsistent ? "depInconsistent" : ""), Log.DETAIL);
+    try {
+      try {
+        if (needBuild) {
+          cycleUnit = BuildUnit.create(dep, buildReq);
+          // Initialize the output to the old one, so units, which require this
+          // units cylicly can work with the old result
+          cycleUnit.setBuildResult(getOutputInPreviousIteration(buildReq));
+          Log.log.beginTask(buildReq.createBuilder().description(), Log.CORE);
+        }
+        this.requiredUnitsInIteration.add(cycleUnit);
+        this.units.put(buildReq, cycleUnit);
+
+        if (needBuild) {
+
+          BuildManager.setUpMetaDependency(builder, cycleUnit);
+
+          Out result = builder.triggerBuild(cycleUnit, this);
+          cycleUnit.setBuildResult(result);
+          cycleUnit.setState(BuildUnit.State.finished(true));
+
+        }
+        finishedUnitsInIteration.add(cycleUnit);
+        return new BuildRequirement<Out>(cycleUnit, buildReq);
+
+      } catch (BuildCycleException e) {
+        Log.log.log("Stopped because of cycle", Log.CORE);
+        throw this.tryCompileCycle(e);
+      }
+    } catch (BuildCycleException e) {
+      throw e;
+    } catch (Throwable e) {
+      cycleUnit.setState(State.FAILURE);
+      throw new RequiredBuilderFailed(new BuildRequirement<>(cycleUnit, buildReq), e);
+    } finally {
+      if (needBuild)
+        Log.log.endTask(cycleUnit.getState() == BuildUnit.State.SUCCESS);
+    }
+  }
+
   @Override
   protected Throwable tryCompileCycle(BuildCycleException e) {
     return this.parentManager.tryCompileCycle(e);
