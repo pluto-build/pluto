@@ -26,8 +26,8 @@ public class GCDBuilder extends NumericBuilder {
 
 
 	@Override
-	protected String description() {
-		return "GCD for " + this.input.getFile().getName();
+  protected String description(FileInput input) {
+    return "GCD for " + input.getFile().getName();
 	}
 
 

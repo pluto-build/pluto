@@ -68,12 +68,12 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 	}
 
 	@Override
-	protected String description() {
+  protected String description(TestBuilderInput input) {
 		return "Test Builder for " + input.getInputPath();
 	}
 
 	@Override
-	protected File persistentPath() {
+  protected File persistentPath(TestBuilderInput input) {
 		return FileCommands.addExtension(input.inputPath.toPath(), "dep").toFile();
 	}
 
@@ -83,7 +83,7 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 	}
 
 	@Override
-	protected None build() throws IOException {
+  protected None build(TestBuilderInput input) throws IOException {
 		require(input.inputPath);
 		List<String> allLines = Files.readAllLines(input.inputPath.toPath());
 

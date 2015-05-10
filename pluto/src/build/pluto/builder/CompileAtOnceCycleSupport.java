@@ -55,7 +55,7 @@ implements CycleSupport {
     newBuilder.manager = manager;
     newBuilder.cyclicResults = cyclicResults;
 
-    List<Out> outputs = newBuilder.buildAll();
+    List<Out> outputs = newBuilder.buildAll(inputs);
     if (outputs.size() != inputs.size()) {
       throw new AssertionError("buildAll needs to return one output for one input");
     }

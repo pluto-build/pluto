@@ -50,8 +50,8 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   }
 
   public void provide(In input, File p) {
-    for (int i = 0; i < this.input.size(); i++) {
-      if (this.input.get(i) == input) {
+    for (int i = 0; i < this.getInput().size(); i++) {
+      if (this.getInput().get(i) == input) {
         this.cyclicResults.get(i).generates(p, LastModifiedStamper.instance.stampOf(p));
       }
 
@@ -66,25 +66,25 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   }
 
   @Override
-  protected File persistentPath() {
-    if (this.input.size() == 1) {
-      return this.singletonPersistencePath(this.input.get(0));
+  protected File persistentPath(ArrayList<In> input) {
+    if (input.size() == 1) {
+      return this.singletonPersistencePath(input.get(0));
     } else {
       throw new AssertionError("Should not occur");
     }
   }
 
   @Override
-  protected Out build() throws Throwable {
+  protected Out build(ArrayList<In> input) throws Throwable {
     this.cyclicResults = Collections.singletonList(super.result);
-    List<Out> result = this.buildAll();
+    List<Out> result = this.buildAll(input);
     if (result.size() != 1) {
       throw new AssertionError("buildAll needs to return one output for one input");
     }
     return result.get(0);
   }
 
-  protected abstract List<Out> buildAll() throws Throwable;
+  protected abstract List<Out> buildAll(ArrayList<In> input) throws Throwable;
 
 
 

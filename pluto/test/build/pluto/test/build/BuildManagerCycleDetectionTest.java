@@ -51,12 +51,12 @@ public class BuildManagerCycleDetectionTest {
 		}
 
 		@Override
-		protected String description() {
+    protected String description(AbsoluteComparedFile input) {
       return "Test Builder " + input.getFile();
 		}
 
 		@Override
-		protected File persistentPath() {
+    protected File persistentPath(AbsoluteComparedFile input) {
       return FileCommands.replaceExtension(input.getFile().toPath(), "dep").toFile();
 		}
 
@@ -66,7 +66,7 @@ public class BuildManagerCycleDetectionTest {
 		}
 
 		@Override
-		protected EmptyBuildOutput build() throws IOException {
+    protected EmptyBuildOutput build(AbsoluteComparedFile input) throws IOException {
 			File req;
 			int number = 0;
       String inputWithoutExt = FileCommands.dropExtension(input.getFile().getPath());

@@ -44,12 +44,12 @@ public class SimpleCyclicAtOnceBuilder extends
 	}
 	
 	@Override
-	protected List<None> buildAll() throws Throwable {
+  protected List<None> buildAll(ArrayList<TestBuilderInput> inputs) throws Throwable {
 
-		List<None> outputs = new ArrayList<>(this.input.size());
+    List<None> outputs = new ArrayList<>(inputs.size());
 
 		Set<File> cyclicDependencies = new HashSet<>();
-		for (TestBuilderInput input : this.input) {
+    for (TestBuilderInput input : inputs) {
 			// System.out.println(input.getInputPath().getRelativePath());
 			cyclicDependencies.add(input.getInputPath());
 			require(input.getInputPath());
@@ -57,7 +57,7 @@ public class SimpleCyclicAtOnceBuilder extends
 
 		List<String> contentLines = new ArrayList<>();
 
-		for (TestBuilderInput input : this.input) {
+    for (TestBuilderInput input : inputs) {
 			List<String> allLines = Files.readAllLines(input
 					.getInputPath().toPath());
 
@@ -77,7 +77,7 @@ public class SimpleCyclicAtOnceBuilder extends
 			}
 		}
 
-		for (TestBuilderInput input : this.input) {
+    for (TestBuilderInput input : inputs) {
 
 			// Write the content to a generated file
 			File generatedFile = FileCommands.addExtension(
@@ -91,9 +91,9 @@ public class SimpleCyclicAtOnceBuilder extends
 	}
 
 	@Override
-	protected String description() {
+  protected String description(ArrayList<TestBuilderInput> inputs) {
 		String descr = "Cyclic SimpleBuilder for ";
-		for (TestBuilderInput input : this.input) {
+    for (TestBuilderInput input : inputs) {
 			descr += input.getInputPath().getName() + ", ";
 		}
 		return descr;

@@ -30,13 +30,13 @@ public class LatexlikeBuilder extends Builder<File, Out<File>> {
   }
 
   @Override
-  protected String description() {
-    return "Latexlike for " + this.input.getName();
+  protected String description(File input) {
+    return "Latexlike for " + input.getName();
   }
 
   @Override
-  protected File persistentPath() {
-    return FileCommands.addExtension(this.input, "dep");
+  protected File persistentPath(File input) {
+    return FileCommands.addExtension(input, "dep");
   }
 
   @Override
@@ -49,9 +49,10 @@ public class LatexlikeBuilder extends Builder<File, Out<File>> {
     return FileContentStamper.instance;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
-  protected Out<File> build() throws Throwable {
-    Out<File> replFile = requireBuild(BibtexlikeBuilder.factory, this.input);
+  protected Out<File> build(File input) throws Throwable {
+    Out<File> replFile = requireBuild(BibtexlikeBuilder.factory, input);
     
     LatexlikeLog.logBuilderPerformedWork(CompilationParticipant.LATEXLIKE, "LATEXLIKE: Do compilation");
 
@@ -67,7 +68,7 @@ public class LatexlikeBuilder extends Builder<File, Out<File>> {
 
     require(input);
 
-    File outFile = FileCommands.replaceExtension(this.input, "outlike");
+    File outFile = FileCommands.replaceExtension(input, "outlike");
     require(outFile);
 
 

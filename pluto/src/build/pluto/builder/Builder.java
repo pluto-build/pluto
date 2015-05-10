@@ -36,7 +36,7 @@ import build.pluto.stamp.Stamper;
  */
 public abstract class Builder<In extends Serializable, Out extends Output> {
 
-  protected final In input;
+  private final In input;
 
   transient BuildUnit<Out> result;
   transient BuildUnitProvider manager;
@@ -46,7 +46,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     this.input = input;
   }
 
-  public In getInput() {
+  protected In getInput() {
     return input;
   }
 
@@ -56,7 +56,11 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    * 
    * @return the task description or `null` if no logging is wanted.
    */
-  protected abstract String description();
+  protected abstract String description(In input);
+
+  final String description() {
+    return this.description(this.input);
+  }
 
   /**
    * Returns the file to persist the build summary for the input of the builder.
@@ -65,7 +69,11 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    * 
    * @return the file where to persist the build summary
    */
-  protected abstract File persistentPath();
+  protected abstract File persistentPath(In input);
+
+  final File persistentPath() {
+    return this.persistentPath(input);
+  }
 
   /**
    * Performs the build action for the input of the builder. The method may
@@ -78,7 +86,11 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    * @throws Throwable
    *           any exception raised during compilation to fail the build
    */
-  protected abstract Out build() throws Throwable;
+  protected abstract Out build(In input) throws Throwable;
+
+  final Out build() throws Throwable {
+    return build(this.input);
+  }
 
   /**
    * Returns the {@link CycleSupportFactory} this builder provides if it is
@@ -101,7 +113,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     this.manager = manager;
     this.defaultStamper = defaultStamper();
     try {
-      return build();
+      return build(this.input);
     } finally {
       this.result = null;
       this.manager = null;

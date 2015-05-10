@@ -70,7 +70,7 @@ public class BuildManager extends BuildUnitProvider {
     // First step: cycle detection
     this.executingStack.push(buildReq);
 
-    int inputHash = DeepEquals.deepHashCode(builder.input);
+    int inputHash = DeepEquals.deepHashCode(builder.getInput());
 
     String taskDescription = builder.description();
     if (taskDescription != null)

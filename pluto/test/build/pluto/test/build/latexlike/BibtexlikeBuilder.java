@@ -31,13 +31,13 @@ public class BibtexlikeBuilder extends Builder<File, Out<File>> {
   }
 
   @Override
-  protected String description() {
-    return "Bibtexlike for " + this.input.getName();
+  protected String description(File input) {
+    return "Bibtexlike for " + input.getName();
   }
 
   @Override
-  protected File persistentPath() {
-    return FileCommands.addExtension(new File(this.input.getParentFile(), "bib.biblike"), "dep");
+  protected File persistentPath(File input) {
+    return FileCommands.addExtension(new File(input.getParentFile(), "bib.biblike"), "dep");
   }
 
   @Override
@@ -51,22 +51,23 @@ public class BibtexlikeBuilder extends Builder<File, Out<File>> {
   }
 
   @Override
-  protected Out<File> build() throws Throwable {
+  protected Out<File> build(File input) throws Throwable {
     requireBuild(new BuildRequest<>(LatexlikeBuilder.factory, input, IgnoreOutputStamper.instance));
 
-    File outFile = FileCommands.replaceExtension(this.input, "outlike");
+    File outFile = FileCommands.replaceExtension(input, "outlike");
     require(outFile, BibtexlikeStamper.instance);
 
     if (!outFile.exists()) {
       return Out.of(null);
     }
 
-    File bibFile = new File(this.input.getParentFile(), "bib.biblike");
+    File bibFile = new File(input.getParentFile(), "bib.biblike");
     require(bibFile);
 
     LatexlikeLog.logBuilderPerformedWork(CompilationParticipant.BIBLIKE, "BIBLIKE: Do compile");
 
     ObjectInputStream outStream = new ObjectInputStream(new FileInputStream(outFile));
+    @SuppressWarnings("unchecked")
     List<Character> replacements = (List<Character>) outStream.readObject();
     outStream.close();
 
@@ -85,7 +86,7 @@ public class BibtexlikeBuilder extends Builder<File, Out<File>> {
       replaceTexts.put(Character.toString('X') + toReplace, bib.getOrDefault(toReplace, ""));
     }
 
-    File replaceFile = FileCommands.replaceExtension(this.input, "rep");
+    File replaceFile = FileCommands.replaceExtension(input, "rep");
 
     ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(replaceFile));
     stream.writeObject(replaceTexts);

@@ -14,8 +14,8 @@ public class DivideByBuilder extends NumericBuilder {
   }
 
   @Override
-  protected String description() {
-    return "Dividy by for " + this.input.getFile();
+  protected String description(FileInput input) {
+    return "Dividy by for " + input.getFile();
   }
 
   @Override
