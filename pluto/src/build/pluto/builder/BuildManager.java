@@ -247,21 +247,6 @@ public class BuildManager extends BuildUnitProvider {
     boolean executed = false;
     try {
       boolean knownInconsistent = requireStack.isKnownInconsistent(dep);
-      boolean noUnit = depResult == null;
-      boolean changedInput = noUnit ? false : !depResult.getGeneratedBy().deepEquals(buildReq);
-      InconsistenyReason localInconsistencyReason = noUnit ? null : depResult.isConsistentNonrequirementsReason();
-      boolean inconsistentNoRequirements = noUnit ? false : localInconsistencyReason != InconsistenyReason.NO_REASON;
-      boolean localInconsistent = knownInconsistent || noUnit || changedInput || inconsistentNoRequirements;
-      Log.log.log("Locally consistent " + !localInconsistent + ":" + (knownInconsistent ? "knownInconsistent, " : "") + (noUnit ? "noUnit, " : "") + (changedInput ? "changedInput, " : "") + (inconsistentNoRequirements ? "inconsistentNoReqs (" + localInconsistencyReason + "), " : ""), Log.CORE);
-      if (localInconsistent) {
-        // Local inconsistency should execute the builder regardless whether it
-        // has been required to detect the cycle
-        // TODO should inconsistent file requirements trigger the same, they
-        // should i think
-        executed = true;
-        Log.log.log("Rebuild because locally inconsistent", Log.DETAIL);
-        return executeBuilder(builder, dep, buildReq);
-      }
 
       boolean assumptionIncomplete = requireStack.existsInconsistentCyclicRequest(buildReq);
       Log.log.log("Assumptions inconsistent " + assumptionIncomplete, Log.DETAIL);
@@ -278,6 +263,22 @@ public class BuildManager extends BuildUnitProvider {
 
       if (requireStack.isConsistent(buildReq))
         return yield(buildReq, builder, depResult);
+
+      boolean noUnit = depResult == null;
+      boolean changedInput = noUnit ? false : !depResult.getGeneratedBy().deepEquals(buildReq);
+      InconsistenyReason localInconsistencyReason = noUnit ? null : depResult.isConsistentNonrequirementsReason();
+      boolean inconsistentNoRequirements = noUnit ? false : localInconsistencyReason != InconsistenyReason.NO_REASON;
+      boolean localInconsistent = knownInconsistent || noUnit || changedInput || inconsistentNoRequirements;
+      Log.log.log("Locally consistent " + !localInconsistent + ":" + (knownInconsistent ? "knownInconsistent, " : "") + (noUnit ? "noUnit, " : "") + (changedInput ? "changedInput, " : "") + (inconsistentNoRequirements ? "inconsistentNoReqs (" + localInconsistencyReason + "), " : ""), Log.CORE);
+      if (localInconsistent) {
+        // Local inconsistency should execute the builder regardless whether it
+        // has been required to detect the cycle
+        // TODO should inconsistent file requirements trigger the same, they
+        // should i think
+        executed = true;
+        Log.log.log("Rebuild because locally inconsistent", Log.DETAIL);
+        return executeBuilder(builder, dep, buildReq);
+      }
 
       for (Requirement req : depResult.getRequirements()) {
         if (!req.isConsistentInBuild(this)) {
