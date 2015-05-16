@@ -28,7 +28,6 @@ public abstract class PersistableEntity implements Serializable {
 
   private final static Map<AbsoluteComparedFile, PersistableEntity> inMemory = new HashMap<>();
   
-  
   public PersistableEntity() { /* for deserialization only */ }
       
   /**

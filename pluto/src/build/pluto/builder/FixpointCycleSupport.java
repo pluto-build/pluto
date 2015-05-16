@@ -53,7 +53,7 @@ public class FixpointCycleSupport implements CycleSupport {
   @Override
   public boolean canCompileCycle() {
     // Each builder in the cycle must be supported
-    Predicate<BuildRequest<?,?,?,?>> buildRequestSupported = (BuildRequest<?,?,?,?> r) -> supportedBuilders.contains(r.factory);
+    Predicate<BuildRequest<?, ?, ?, ?>> buildRequestSupported = (BuildRequest<?, ?, ?, ?> r) -> supportedBuilders.contains(r.factory);
     return cycle.getCycleComponents().stream().allMatch(buildRequestSupported);
   }
 
