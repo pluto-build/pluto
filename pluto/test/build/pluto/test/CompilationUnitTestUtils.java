@@ -61,6 +61,14 @@ public class CompilationUnitTestUtils {
 			throw new UnsupportedOperationException();
 		}
 
+    public boolean equals(Object obj) {
+      return obj == factory;
+    };
+
+    private Object readResolve() {
+      return factory;
+    }
+
 	};
 
 	public static BuildUnit<NodeOutput> makeNode(String name) {

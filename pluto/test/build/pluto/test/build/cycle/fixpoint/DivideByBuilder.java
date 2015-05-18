@@ -7,7 +7,7 @@ import build.pluto.output.Out;
 
 public class DivideByBuilder extends NumericBuilder {
 
-  public static final BuilderFactory<FileInput, Out<Integer>, DivideByBuilder> factory = DivideByBuilder::new;
+  public static final BuilderFactory<FileInput, Out<Integer>, DivideByBuilder> factory = BuilderFactory.of(DivideByBuilder.class, FileInput.class);
 
   public DivideByBuilder(FileInput input) {
     super(input);
@@ -15,7 +15,7 @@ public class DivideByBuilder extends NumericBuilder {
 
   @Override
   protected String description(FileInput input) {
-    return "Dividy by for " + input.getFile();
+    return "Divide by for " + input.getFile();
   }
 
   @Override

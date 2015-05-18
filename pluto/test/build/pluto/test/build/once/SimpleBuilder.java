@@ -20,16 +20,7 @@ import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 
 public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 
-	public static BuilderFactory<TestBuilderInput, None, SimpleBuilder> factory = new BuilderFactory<TestBuilderInput, None, SimpleBuilder>() {
-
-	
-		private static final long serialVersionUID = -6787456873371906431L;
-
-		@Override
-		public SimpleBuilder makeBuilder(TestBuilderInput input) {
-			return new SimpleBuilder(input);
-		}
-	};
+  public static BuilderFactory<TestBuilderInput, None, SimpleBuilder> factory = BuilderFactory.of(SimpleBuilder.class, TestBuilderInput.class);
 	
 
 	public static class TestBuilderInput implements Serializable {
@@ -63,7 +54,7 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 	}
 
 	
-	private SimpleBuilder(TestBuilderInput input) {
+  public SimpleBuilder(TestBuilderInput input) {
 		super(input);
 	}
 

@@ -20,18 +20,27 @@ import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 public class SimpleCyclicAtOnceBuilder extends
 		CompileCycleAtOnceBuilder<TestBuilderInput, None> {
 
-	public static BuilderFactory<ArrayList<TestBuilderInput>, None, SimpleCyclicAtOnceBuilder> factory = new BuilderFactory<ArrayList<TestBuilderInput>, None, SimpleCyclicAtOnceBuilder>() {
+  public static BuilderFactory<ArrayList<TestBuilderInput>, None, SimpleCyclicAtOnceBuilder> factory = SimpleCyclicAtOnceBuilderFactor.instance;
+
+  private static class SimpleCyclicAtOnceBuilderFactor implements BuilderFactory<ArrayList<TestBuilderInput>, None, SimpleCyclicAtOnceBuilder> {
 
 		/**
 		 * 
 		 */
 		private static final long serialVersionUID = 1L;
 
+    private static final SimpleCyclicAtOnceBuilderFactor instance = new SimpleCyclicAtOnceBuilderFactor();
+
 		@Override
 		public SimpleCyclicAtOnceBuilder makeBuilder(
 				ArrayList<TestBuilderInput> input) {
 			return new SimpleCyclicAtOnceBuilder(input);
 		}
+
+    private Object readResolve() {
+      return instance;
+    }
+
 	};
 
 	public SimpleCyclicAtOnceBuilder(ArrayList<TestBuilderInput> input) {

@@ -23,9 +23,9 @@ import build.pluto.test.build.latexlike.LatexlikeLog.CompilationParticipant;
 
 public class LatexlikeBuilder extends Builder<File, Out<File>> {
 
-  public static final BuilderFactory<File, Out<File>, LatexlikeBuilder> factory = LatexlikeBuilder::new;
+  public static final BuilderFactory<File, Out<File>, LatexlikeBuilder> factory = BuilderFactory.of(LatexlikeBuilder.class, File.class);
 
-  private LatexlikeBuilder(File input) {
+  public LatexlikeBuilder(File input) {
     super(input);
   }
 

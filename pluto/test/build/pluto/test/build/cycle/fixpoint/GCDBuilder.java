@@ -8,7 +8,7 @@ import build.pluto.output.Out;
 
 public class GCDBuilder extends NumericBuilder {
 
-  public static final BuilderFactory<FileInput, Out<Integer>, GCDBuilder> factory = GCDBuilder::new;
+  public static final BuilderFactory<FileInput, Out<Integer>, GCDBuilder> factory = BuilderFactory.of(GCDBuilder.class, FileInput.class);
 	
 	public GCDBuilder(FileInput input) {
 		super(input);

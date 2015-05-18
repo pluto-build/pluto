@@ -9,7 +9,7 @@ import build.pluto.output.Out;
 
 public class ModuloBuilder extends NumericBuilder{
 	
-  public static final BuilderFactory<FileInput, Out<Integer>, ModuloBuilder> factory = ModuloBuilder::new;
+  public static final BuilderFactory<FileInput, Out<Integer>, ModuloBuilder> factory = BuilderFactory.of(ModuloBuilder.class, FileInput.class);
 	
 	public ModuloBuilder(FileInput input) {
 		super(input);

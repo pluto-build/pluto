@@ -24,7 +24,7 @@ import build.pluto.test.build.latexlike.LatexlikeLog.CompilationParticipant;
 
 public class BibtexlikeBuilder extends Builder<File, Out<File>> {
 
-  public static final BuilderFactory<File, Out<File>, BibtexlikeBuilder> factory = BibtexlikeBuilder::new;
+  public static final BuilderFactory<File, Out<File>, BibtexlikeBuilder> factory = BuilderFactory.of(BibtexlikeBuilder.class, File.class);
 
   public BibtexlikeBuilder(File input) {
     super(input);

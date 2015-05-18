@@ -33,20 +33,11 @@ public class BuildManagerCycleDetectionTest {
 		FileCommands.createDir(baseDir.toPath());
 	}
 
-  public static final BuilderFactory<AbsoluteComparedFile, EmptyBuildOutput, TestBuilder> testFactory = new BuilderFactory<AbsoluteComparedFile, EmptyBuildOutput, TestBuilder>() {
+  public static final BuilderFactory<AbsoluteComparedFile, EmptyBuildOutput, TestBuilder> testFactory = BuilderFactory.of(TestBuilder.class, AbsoluteComparedFile.class);
 
-		private static final long serialVersionUID = 3231801709410953205L;
+  public static class TestBuilder extends Builder<AbsoluteComparedFile, EmptyBuildOutput> {
 
-		@Override
-    public TestBuilder makeBuilder(AbsoluteComparedFile input) {
-			return new TestBuilder(input);
-		}
-
-	};
-
-  private static class TestBuilder extends Builder<AbsoluteComparedFile, EmptyBuildOutput> {
-
-    private TestBuilder(AbsoluteComparedFile input) {
+    public TestBuilder(AbsoluteComparedFile input) {
 			super(input);
 		}
 
