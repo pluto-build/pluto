@@ -146,6 +146,11 @@ extends Serializable {
         return true;
       }
 
+      @Override
+      public String toString() {
+        return builderClass.toString() + "(" + inputClass.toString() + ")";
+      }
+
     }
     return new ReflectionBuilderFactory(builderClass, inputClass);
 
