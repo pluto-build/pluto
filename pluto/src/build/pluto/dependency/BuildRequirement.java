@@ -1,10 +1,14 @@
 package build.pluto.dependency;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.util.Objects;
 
 import build.pluto.BuildUnit;
@@ -26,6 +30,9 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
 
   public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req) {
     this(unit, req, req.stamper.stampOf(unit.getBuildResult()));
+    if (!assertStampSerializable()) {
+      throw new AssertionError("Stamp of deserialized result is not equal to stamp of result of " + unit.getGeneratedBy().createBuilder().description() + "  " + ((build.pluto.output.Out) unit.getBuildResult()).val.getClass());
+    }
   }
   
   protected BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req, OutputStamp<? super Out> stamp) {
@@ -33,6 +40,22 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
     this.unit = unit;
     this.req = req;
     this.stamp = stamp;
+  }
+
+  private boolean assertStampSerializable() {
+    try {
+      ByteArrayOutputStream memBufferOutput = new ByteArrayOutputStream();
+      ObjectOutputStream oStream = new ObjectOutputStream(memBufferOutput);
+      oStream.writeObject(unit.getBuildResult());
+      ByteArrayInputStream memBufferInput = new ByteArrayInputStream(memBufferOutput.toByteArray());
+      ObjectInputStream iStream = new ObjectInputStream(memBufferInput);
+      @SuppressWarnings("unchecked")
+      Out deserializedOutput = (Out) iStream.readObject();
+      return req.stamper.stampOf(deserializedOutput).equals(stamp);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
   }
 
   protected boolean isHasFailed() {

@@ -35,6 +35,9 @@ public class BuildRequest<
     Objects.requireNonNull(stamper);
     if (!assertFactorySerializable(factory))
       throw new IllegalArgumentException("The given BuilderFactory does not fullfil its contract: its serialized and deseriablized object is not equal to itself");
+    if (!assertInputSerializable(input))
+      throw new IllegalArgumentException("The given Input does not fullfil its contract: its serialized and deseriablized object is not equal to itself: " + input);
+
     this.factory = factory;
     this.input = input;
     this.stamper = stamper;
@@ -85,6 +88,22 @@ public class BuildRequest<
       @SuppressWarnings("unchecked")
       F deserializedFactory = (F) iStream.readObject();
       return factory.equals(deserializedFactory) && deserializedFactory.equals(factory);
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+  }
+
+  private boolean assertInputSerializable(In input) {
+    try {
+      ByteArrayOutputStream memBufferOutput = new ByteArrayOutputStream();
+      ObjectOutputStream oStream = new ObjectOutputStream(memBufferOutput);
+      oStream.writeObject(input);
+      ByteArrayInputStream memBufferInput = new ByteArrayInputStream(memBufferOutput.toByteArray());
+      ObjectInputStream iStream = new ObjectInputStream(memBufferInput);
+      @SuppressWarnings("unchecked")
+      In deserializedInput = (In) iStream.readObject();
+      return DeepEquals.deepEquals(input, deserializedInput) && DeepEquals.deepEquals(deserializedInput, input);
     } catch (Exception e) {
       e.printStackTrace();
       return false;
