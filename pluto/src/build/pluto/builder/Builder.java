@@ -58,7 +58,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    */
   protected abstract String description(In input);
 
-  final String description() {
+  public final String description() {
     return this.description(this.input);
   }
 

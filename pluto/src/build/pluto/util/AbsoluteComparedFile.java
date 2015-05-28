@@ -29,6 +29,13 @@ public class AbsoluteComparedFile implements Externalizable {
     this.absoluteFile = this.file.getAbsoluteFile();
   }
   
+  @Deprecated
+  /**
+   * @deprecated for deserialization only
+   */
+  public AbsoluteComparedFile() {
+  }
+
   public File getFile() {
     return file;
   }

@@ -269,7 +269,7 @@ public class BuildManager extends BuildUnitProvider {
       InconsistenyReason localInconsistencyReason = noUnit ? null : depResult.isConsistentNonrequirementsReason();
       boolean inconsistentNoRequirements = noUnit ? false : localInconsistencyReason != InconsistenyReason.NO_REASON;
       boolean localInconsistent = knownInconsistent || noUnit || changedInput || inconsistentNoRequirements;
-      Log.log.log("Locally consistent " + !localInconsistent + ":" + (knownInconsistent ? "knownInconsistent, " : "") + (noUnit ? "noUnit, " : "") + (changedInput ? "changedInput, " : "") + (inconsistentNoRequirements ? "inconsistentNoReqs (" + localInconsistencyReason + "), " : ""), Log.CORE);
+      Log.log.log("Locally consistent " + !localInconsistent + ":" + (knownInconsistent ? "knownInconsistent, " : "") + (noUnit ? "noUnit, " : "") + (changedInput ? "changedInput, " : "") + (inconsistentNoRequirements ? "inconsistentNoReqs (" + localInconsistencyReason + "), " : ""), Log.DETAIL);
       if (localInconsistent) {
         // Local inconsistency should execute the builder regardless whether it
         // has been required to detect the cycle

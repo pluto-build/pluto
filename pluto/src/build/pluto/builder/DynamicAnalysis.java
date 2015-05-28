@@ -98,7 +98,7 @@ public class DynamicAnalysis {
           }
           if (dep != null) {
 
-            boolean foundDep = unit.visit(new IsConnectedTo(dep), requiredUnits);
+            boolean foundDep = AbsoluteComparedFile.equals(unit.getPersistentPath(), dep) || unit.visit(new IsConnectedTo(dep), requiredUnits);
             if (!foundDep)
               throw new IllegalDependencyException(dep, 
                   "Build unit " + unit.getPersistentPath() + " has a hidden dependency on file " + file 
@@ -125,8 +125,8 @@ public class DynamicAnalysis {
         if (o instanceof Output) {
           BuildUnit<?> generator = generatedOutput.get(o);
           if (generator != null) {
-            File dep = unit.getPersistentPath();
-            boolean foundDep = unit.visit(new IsConnectedTo(dep));
+            File dep = generator.getPersistentPath();
+            boolean foundDep = AbsoluteComparedFile.equals(unit.getPersistentPath(), dep) || unit.visit(new IsConnectedTo(dep));
             if (!foundDep)
               throw new IllegalDependencyException(dep, 
                   "Build unit " + dep + " has a hidden dependency on the "

@@ -145,7 +145,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 		return requiredFiles;
 	}
 
-	private Set<BuildUnit<?>> getModuleDependencies() {
+  public Set<BuildUnit<?>> getModuleDependencies() {
 	  if (requiredUnits == null) {
 	    requiredUnits = new HashSet<>();
 	    for (Requirement req : requirements)
