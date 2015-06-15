@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.cli.BasicParser;
@@ -19,11 +20,6 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import build.pluto.cli.InputParser;
-
-import build.pluto.cli.InputParser;
-
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 public class InputParserCollectionTest {
 
@@ -123,6 +119,22 @@ public class InputParserCollectionTest {
     assertEquals(empty.foo4, prim.foo4);
   }
   
+  @SafeVarargs
+  public static <T> ArrayList<T>newArrayList(T... ts) {
+    ArrayList<T> ls = new ArrayList<T>(ts.length);
+    for (T t : ts)
+      ls.add(t);
+      return ls;
+  }
+  
+  @SafeVarargs
+  public static <T> HashSet<T>newHashSet(T... ts) {
+    HashSet<T> ls = new HashSet<T>(ts.length);
+    for (T t : ts)
+      ls.add(t);
+      return ls;
+  }
+  
   @Test
   public void testParse5() throws ParseException {
     Collections prim = parse(Collections.class, "--foo3", "101");
@@ -130,7 +142,7 @@ public class InputParserCollectionTest {
     Collections empty = new Collections();
     assertArrayEquals(empty.foo1, prim.foo1);
     assertArrayEquals(empty.foo2, prim.foo2);
-    assertEquals(Lists.newArrayList(101), prim.foo3);
+    assertEquals(newArrayList(101), prim.foo3);
     assertEquals(empty.foo4, prim.foo4);
   }
   
@@ -141,7 +153,7 @@ public class InputParserCollectionTest {
     Collections empty = new Collections();
     assertArrayEquals(empty.foo1, prim.foo1);
     assertArrayEquals(empty.foo2, prim.foo2);
-    assertEquals(Lists.newArrayList(101, 1020), prim.foo3);
+    assertEquals(newArrayList(101, 1020), prim.foo3);
     assertEquals(empty.foo4, prim.foo4);
   }
   
@@ -152,8 +164,8 @@ public class InputParserCollectionTest {
     Collections empty = new Collections();
     assertArrayEquals(empty.foo1, prim.foo1);
     assertArrayEquals(empty.foo2, prim.foo2);
-    assertEquals(Lists.newArrayList(101, 1020), prim.foo3);
-    assertEquals(Sets.newHashSet(new File("/tmp/foobar")), prim.foo4);
+    assertEquals(newArrayList(101, 1020), prim.foo3);
+    assertEquals(newHashSet(new File("/tmp/foobar")), prim.foo4);
   }
   
   @Test
@@ -163,7 +175,7 @@ public class InputParserCollectionTest {
     Collections empty = new Collections();
     assertArrayEquals(empty.foo1, prim.foo1);
     assertArrayEquals(empty.foo2, prim.foo2);
-    assertEquals(Lists.newArrayList(101, 1020), prim.foo3);
-    assertEquals(Sets.newHashSet(new File("/tmp/foobar"), new File("/tmp/foobar2")), prim.foo4);
+    assertEquals(newArrayList(101, 1020), prim.foo3);
+    assertEquals(newHashSet(new File("/tmp/foobar"), new File("/tmp/foobar2")), prim.foo4);
   }
 }
