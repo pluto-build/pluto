@@ -1,5 +1,5 @@
 sudo: false
-script: mvn deploy -U
+script: (cd pluto; mvn deploy -U --batch-mode) && (cd pluto-eclipse; mvn deploy -U --batch-mode)
 
 cache:
   directories:
