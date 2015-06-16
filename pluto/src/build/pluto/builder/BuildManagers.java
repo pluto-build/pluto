@@ -53,7 +53,7 @@ public class BuildManagers {
     }
 
     try {
-      return manager.requireInitially(buildReq).getBuildResult();
+      return freshManager ? manager.requireInitially(buildReq).getBuildResult() : manager.require(buildReq).getUnit().getBuildResult();
     } catch (IOException e) {
       e.printStackTrace();
       return null;
@@ -77,7 +77,7 @@ public class BuildManagers {
       for (BuildRequest<?, Out, ?, ?> buildReq : buildReqs)
         if (buildReq != null)
           try {
-            out.add(manager.requireInitially(buildReq).getBuildResult());
+            out.add(freshManager ? manager.requireInitially(buildReq).getBuildResult() : manager.require(buildReq).getUnit().getBuildResult());
           } catch (IOException e) {
             e.printStackTrace();
             out.add(null);
