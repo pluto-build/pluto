@@ -1,32 +1,7 @@
 package build.pluto.output;
 
-import java.io.Serializable;
-import java.util.Objects;
+public interface Out<T> extends Output {
 
-public class Out<T extends Serializable> implements Output {
-  private static final long serialVersionUID = -897559877130499097L;
+  public T val();
   
-  public final T val;
-  public Out(T val) {
-    this.val = val;
-  }
-  
-  public static <T extends Serializable> Out<T> of(T val) {
-    return new Out<>(val);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    return obj instanceof Out && Objects.equals(val, ((Out<?>) obj).val);
-  }
-  
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(val);
-  }
-  
-  @Override
-  public String toString() {
-    return "Out(" + val + ")";
-  }
 }

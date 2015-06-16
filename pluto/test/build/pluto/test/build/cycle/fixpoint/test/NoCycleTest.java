@@ -7,7 +7,7 @@ import java.io.IOException;
 import org.junit.Test;
 
 import build.pluto.BuildUnit;
-import build.pluto.output.Out;
+import build.pluto.output.OutputPersisted;
 import build.pluto.test.build.ScopedBuildTest;
 import build.pluto.test.build.TrackingBuildManager;
 import build.pluto.test.build.cycle.fixpoint.FileInput;
@@ -22,7 +22,7 @@ public class NoCycleTest extends ScopedBuildTest{
 	
 	@Test
 	public void testBuildNoCycle() throws IOException {
-    BuildUnit<Out<Integer>> resultUnit = new TrackingBuildManager().require(ModuloBuilder.factory, new FileInput(testBasePath.toFile(), "main1.modulo")).getUnit();
+    BuildUnit<OutputPersisted<Integer>> resultUnit = new TrackingBuildManager().require(ModuloBuilder.factory, new FileInput(testBasePath.toFile(), "main1.modulo")).getUnit();
     assertEquals("No cycle produced wrong output", 1, resultUnit.getBuildResult().val.intValue());
 	}
 

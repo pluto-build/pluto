@@ -4,11 +4,11 @@ import java.math.BigInteger;
 import java.util.function.BiFunction;
 
 import build.pluto.builder.BuilderFactory;
-import build.pluto.output.Out;
+import build.pluto.output.OutputPersisted;
 
 public class GCDBuilder extends NumericBuilder {
 
-  public static final BuilderFactory<FileInput, Out<Integer>, GCDBuilder> factory = BuilderFactory.of(GCDBuilder.class, FileInput.class);
+  public static final BuilderFactory<FileInput, OutputPersisted<Integer>, GCDBuilder> factory = BuilderFactory.of(GCDBuilder.class, FileInput.class);
 	
 	public GCDBuilder(FileInput input) {
 		super(input);

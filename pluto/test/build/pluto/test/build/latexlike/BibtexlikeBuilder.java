@@ -16,15 +16,15 @@ import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
 import build.pluto.builder.CycleSupportFactory;
-import build.pluto.output.Out;
+import build.pluto.output.OutputPersisted;
 import build.pluto.stamp.FileContentStamper;
 import build.pluto.stamp.IgnoreOutputStamper;
 import build.pluto.stamp.Stamper;
 import build.pluto.test.build.latexlike.LatexlikeLog.CompilationParticipant;
 
-public class BibtexlikeBuilder extends Builder<File, Out<File>> {
+public class BibtexlikeBuilder extends Builder<File, OutputPersisted<File>> {
 
-  public static final BuilderFactory<File, Out<File>, BibtexlikeBuilder> factory = BuilderFactory.of(BibtexlikeBuilder.class, File.class);
+  public static final BuilderFactory<File, OutputPersisted<File>, BibtexlikeBuilder> factory = BuilderFactory.of(BibtexlikeBuilder.class, File.class);
 
   public BibtexlikeBuilder(File input) {
     super(input);
@@ -51,14 +51,14 @@ public class BibtexlikeBuilder extends Builder<File, Out<File>> {
   }
 
   @Override
-  protected Out<File> build(File input) throws Throwable {
+  protected OutputPersisted<File> build(File input) throws Throwable {
     requireBuild(new BuildRequest<>(LatexlikeBuilder.factory, input, IgnoreOutputStamper.instance));
 
     File outFile = FileCommands.replaceExtension(input, "outlike");
     require(outFile, BibtexlikeStamper.instance);
 
     if (!outFile.exists()) {
-      return Out.of(null);
+      return OutputPersisted.of(null);
     }
 
     File bibFile = new File(input.getParentFile(), "bib.biblike");
@@ -94,7 +94,7 @@ public class BibtexlikeBuilder extends Builder<File, Out<File>> {
 
     provide(replaceFile);
 
-    return Out.of(replaceFile);
+    return OutputPersisted.of(replaceFile);
 
   }
 

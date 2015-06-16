@@ -10,11 +10,11 @@ import org.sugarj.common.Log;
 import build.pluto.BuildUnit.State;
 import build.pluto.builder.Builder;
 import build.pluto.builder.CycleSupportFactory;
-import build.pluto.output.Out;
+import build.pluto.output.OutputPersisted;
 import build.pluto.stamp.FileContentStamper;
 import build.pluto.stamp.Stamper;
 
-public abstract class NumericBuilder extends Builder<FileInput, Out<Integer>> {
+public abstract class NumericBuilder extends Builder<FileInput, OutputPersisted<Integer>> {
 
   public NumericBuilder(FileInput input) {
     super(input);
@@ -40,7 +40,7 @@ public abstract class NumericBuilder extends Builder<FileInput, Out<Integer>> {
   }
 
   @Override
-  protected final Out<Integer> build(FileInput input) throws Throwable {
+  protected final OutputPersisted<Integer> build(FileInput input) throws Throwable {
     require(input.getFile());
     int myNumber = FileUtils.readIntFromFile(input.getFile());
 
@@ -50,7 +50,7 @@ public abstract class NumericBuilder extends Builder<FileInput, Out<Integer>> {
 
       for (File path : depPaths) {
         FileInput finput = new FileInput(input.getWorkingDir(), path);
-        Out<Integer> output = null;
+        OutputPersisted<Integer> output = null;
         String extension = FileCommands.getExtension(path);
         if (extension.equals("modulo")) {
           output = requireBuild(ModuloBuilder.factory, finput);
@@ -71,7 +71,7 @@ public abstract class NumericBuilder extends Builder<FileInput, Out<Integer>> {
       }
     }
     setState(State.finished(true));
-    return Out.of(myNumber);
+    return OutputPersisted.of(myNumber);
 
   }
 

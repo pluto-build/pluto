@@ -9,7 +9,7 @@ import org.junit.runners.Suite.SuiteClasses;
 import org.sugarj.common.FileCommands;
 
 import build.pluto.BuildUnit;
-import build.pluto.output.Out;
+import build.pluto.output.OutputPersisted;
 
 @RunWith(Suite.class)
 @SuiteClasses({NoCycleTest.class,GCDHomogeneousCycleTest.class, GCDMultipleCyclesTest.class})
@@ -17,7 +17,7 @@ public class FixpointCycleTestSuite {
 
 	static final String FIXPOINT_BUILDER_CYCLE_TEST = "FixpointBuilderCycleTest";
 
-  static BuildUnit<Out<Integer>> unitForFile(File path) throws IOException {
+  static BuildUnit<OutputPersisted<Integer>> unitForFile(File path) throws IOException {
 		return BuildUnit.read(FileCommands.addExtension(path.toPath(), "dep").toFile());
 	}
 	

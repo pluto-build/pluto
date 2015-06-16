@@ -16,14 +16,14 @@ import org.sugarj.common.FileCommands;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
 import build.pluto.builder.CycleSupportFactory;
-import build.pluto.output.Out;
+import build.pluto.output.OutputPersisted;
 import build.pluto.stamp.FileContentStamper;
 import build.pluto.stamp.Stamper;
 import build.pluto.test.build.latexlike.LatexlikeLog.CompilationParticipant;
 
-public class LatexlikeBuilder extends Builder<File, Out<File>> {
+public class LatexlikeBuilder extends Builder<File, OutputPersisted<File>> {
 
-  public static final BuilderFactory<File, Out<File>, LatexlikeBuilder> factory = BuilderFactory.of(LatexlikeBuilder.class, File.class);
+  public static final BuilderFactory<File, OutputPersisted<File>, LatexlikeBuilder> factory = BuilderFactory.of(LatexlikeBuilder.class, File.class);
 
   public LatexlikeBuilder(File input) {
     super(input);
@@ -51,8 +51,8 @@ public class LatexlikeBuilder extends Builder<File, Out<File>> {
 
   @SuppressWarnings("unchecked")
   @Override
-  protected Out<File> build(File input) throws Throwable {
-    Out<File> replFile = requireBuild(BibtexlikeBuilder.factory, input);
+  protected OutputPersisted<File> build(File input) throws Throwable {
+    OutputPersisted<File> replFile = requireBuild(BibtexlikeBuilder.factory, input);
     
     LatexlikeLog.logBuilderPerformedWork(CompilationParticipant.LATEXLIKE, "LATEXLIKE: Do compilation");
 
@@ -98,7 +98,7 @@ public class LatexlikeBuilder extends Builder<File, Out<File>> {
     Files.write(pdfFile.toPath(), Collections.singleton(pdf));
     provide(pdfFile);
 
-    return Out.of(pdfFile);
+    return OutputPersisted.of(pdfFile);
 
   }
 

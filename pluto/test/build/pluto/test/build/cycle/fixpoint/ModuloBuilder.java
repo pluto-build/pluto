@@ -4,12 +4,12 @@ import java.math.BigInteger;
 import java.util.function.BiFunction;
 
 import build.pluto.builder.BuilderFactory;
-import build.pluto.output.Out;
+import build.pluto.output.OutputPersisted;
 
 
 public class ModuloBuilder extends NumericBuilder{
 	
-  public static final BuilderFactory<FileInput, Out<Integer>, ModuloBuilder> factory = BuilderFactory.of(ModuloBuilder.class, FileInput.class);
+  public static final BuilderFactory<FileInput, OutputPersisted<Integer>, ModuloBuilder> factory = BuilderFactory.of(ModuloBuilder.class, FileInput.class);
 	
 	public ModuloBuilder(FileInput input) {
 		super(input);

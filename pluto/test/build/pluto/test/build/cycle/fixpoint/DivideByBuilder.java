@@ -3,11 +3,11 @@ package build.pluto.test.build.cycle.fixpoint;
 import java.util.function.BiFunction;
 
 import build.pluto.builder.BuilderFactory;
-import build.pluto.output.Out;
+import build.pluto.output.OutputPersisted;
 
 public class DivideByBuilder extends NumericBuilder {
 
-  public static final BuilderFactory<FileInput, Out<Integer>, DivideByBuilder> factory = BuilderFactory.of(DivideByBuilder.class, FileInput.class);
+  public static final BuilderFactory<FileInput, OutputPersisted<Integer>, DivideByBuilder> factory = BuilderFactory.of(DivideByBuilder.class, FileInput.class);
 
   public DivideByBuilder(FileInput input) {
     super(input);

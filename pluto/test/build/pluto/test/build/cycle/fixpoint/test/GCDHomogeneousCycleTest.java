@@ -22,7 +22,7 @@ import build.pluto.BuildUnit;
 import build.pluto.builder.BuildManagers;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuilderFactory;
-import build.pluto.output.Out;
+import build.pluto.output.OutputPersisted;
 import build.pluto.test.build.ScopedBuildTest;
 import build.pluto.test.build.ScopedPath;
 import build.pluto.test.build.TrackingBuildManager;
@@ -38,7 +38,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
   private File cycle_gcd1File;
   @ScopedPath("cycle_gcd2.gcd")
   private File cycle_gcd2File;
-  private BuildRequest<FileInput, Out<Integer>, ModuloBuilder, BuilderFactory<FileInput, Out<Integer>, ModuloBuilder>> mainBuildRequest;
+  private BuildRequest<FileInput, OutputPersisted<Integer>, ModuloBuilder, BuilderFactory<FileInput, OutputPersisted<Integer>, ModuloBuilder>> mainBuildRequest;
 
   @Before
   public void initFiles() {
@@ -76,7 +76,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
     FileUtils.writeIntToFile(19, mainFile);
 
     TrackingBuildManager manager = new TrackingBuildManager();
-    BuildUnit<Out<Integer>> resultUnit = manager.require(mainBuildRequest).getUnit();
+    BuildUnit<OutputPersisted<Integer>> resultUnit = manager.require(mainBuildRequest).getUnit();
     // Assert that the new result is correct
     assertEquals("Rebuilding GCD cycle with inconsistent root unit has wrong result", 4, resultUnit.getBuildResult().val.intValue());
 
@@ -106,7 +106,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
     Log.log.setLoggingLevel(Log.ALWAYS);
 
     TrackingBuildManager manager = new TrackingBuildManager();
-    BuildUnit<Out<Integer>> resultUnit = manager.require(mainBuildRequest).getUnit();
+    BuildUnit<OutputPersisted<Integer>> resultUnit = manager.require(mainBuildRequest).getUnit();
     // Assert that the new result is correct
     assertEquals("Rebuilding GCD cycle with inconsistent has wrong result", 0, resultUnit.getBuildResult().val.intValue());
 
