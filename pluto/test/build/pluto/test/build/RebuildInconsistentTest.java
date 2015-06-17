@@ -25,7 +25,7 @@ import build.pluto.test.build.once.SimpleBuilder;
 import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 import build.pluto.test.build.once.SimpleRequirement;
 
-public class RebuildInconsistentTest extends SimpleBuildTest{
+public class RebuildInconsistentTest extends SimpleBuildTest {
 
 	private File mainFile;
 	private File dep1File;
