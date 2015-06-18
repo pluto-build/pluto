@@ -218,7 +218,7 @@ public class BuildManager extends BuildUnitProvider {
     Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
     boolean successful = false;
     try {
-      BuildRequirement<Out> result = require(buildReq);
+      BuildRequirement<Out> result = require(buildReq, true);
       successful = !result.getUnit().hasFailed();
       return result.getUnit();
     } finally {
@@ -234,7 +234,7 @@ public class BuildManager extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
-  BuildRequirement<Out> require(final BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildRequirement<Out> require(final BuildRequest<In, Out, B, F> buildReq, boolean needBuildResult) throws IOException {
 
     B builder = buildReq.createBuilder();
     File dep = builder.persistentPath();
@@ -272,7 +272,7 @@ public class BuildManager extends BuildUnitProvider {
       boolean inconsistentNoRequirements = noUnit ? false : localInconsistencyReason != InconsistenyReason.NO_REASON;
       boolean noOut = noUnit || !(depResult.getBuildResult() instanceof build.pluto.output.Out<?>);
       boolean expiredOutput = noUnit || noOut ? false : ((build.pluto.output.Out<?>) depResult.getBuildResult()).expired();
-      boolean localInconsistent = knownInconsistent || noUnit || changedInput || inconsistentNoRequirements || expiredOutput;
+      boolean localInconsistent = knownInconsistent || noUnit || changedInput || inconsistentNoRequirements || (needBuildResult && expiredOutput);
       Log.log.log("Locally consistent " + !localInconsistent + ":" + (knownInconsistent ? "knownInconsistent, " : "") + (noUnit ? "noUnit, " : "") + (changedInput ? "changedInput, " : "") + (inconsistentNoRequirements ? "inconsistentNoReqs (" + localInconsistencyReason + "), " : ""), Log.DETAIL);
       if (localInconsistent) {
         // Local inconsistency should execute the builder regardless whether it

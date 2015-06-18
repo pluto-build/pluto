@@ -19,7 +19,7 @@ public class ValueStamp<T> implements Stamp {
   }
   
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(Stamp o) {
     return o instanceof ValueStamp && Objects.equals(val, ((ValueStamp<?>) o).val);
   }
 

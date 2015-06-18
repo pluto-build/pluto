@@ -121,7 +121,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
 //@formatter:on
-  BuildRequirement<Out> require(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildRequirement<Out> require(BuildRequest<In, Out, B, F> buildReq, boolean needBuildResult) throws IOException {
 
     // Get the unit: either it has already been seen or read it
     @SuppressWarnings("unchecked")
@@ -145,7 +145,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
       if (isBuildRequestPartOfCycle(buildReq))
         return requireInCycle(buildReq, cycleUnit);
       else
-        return this.parentManager.require(buildReq);
+        return this.parentManager.require(buildReq, needBuildResult);
     }
   }
 

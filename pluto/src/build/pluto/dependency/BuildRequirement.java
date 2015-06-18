@@ -55,7 +55,7 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
       ObjectInputStream iStream = new ObjectInputStream(memBufferInput);
       @SuppressWarnings("unchecked")
       Out deserializedOutput = (Out) iStream.readObject();
-      return req.stamper.stampOf(deserializedOutput).isConsistent(stamp);
+      return req.stamper.stampOf(deserializedOutput).equals(stamp);
     } catch (Exception e) {
       e.printStackTrace();
       return false;
@@ -76,7 +76,7 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
     if (!reqsEqual)
       return false;
     
-    boolean stampOK = stamp == null || stamp.isConsistent(stamp.getStamper().stampOf(this.unit.getBuildResult()));
+    boolean stampOK = stamp == null || stamp.equals(stamp.getStamper().stampOf(this.unit.getBuildResult()));
     if (!stampOK)
       return false;
     
@@ -86,13 +86,13 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
   @Override
   public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException{
     boolean wasFailed = hasFailed || unit != null && unit.hasFailed();
-    BuildUnit<Out> newUnit = manager.require(this.req).getUnit();
+    BuildUnit<Out> newUnit = manager.require(this.req, false).getUnit();
     hasFailed = newUnit.hasFailed();
 
     if (wasFailed && !hasFailed)
       return false;
     
-    boolean stampOK = stamp == null || stamp.isConsistentInBuild(stamp.getStamper().stampOf(newUnit.getBuildResult()));
+    boolean stampOK = stamp == null || stamp.equals(stamp.getStamper().stampOf(newUnit.getBuildResult()));
     if (!stampOK)
       return false;
     

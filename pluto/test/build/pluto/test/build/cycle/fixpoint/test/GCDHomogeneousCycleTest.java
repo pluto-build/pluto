@@ -59,7 +59,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
   @Test(timeout = 1000)
   public void testBuildGCDCycle() throws IOException {
     assertEquals(10, BigInteger.valueOf(20).gcd(BigInteger.valueOf(10)).intValue());
-    new TrackingBuildManager().require(mainBuildRequest).getUnit();
+    new TrackingBuildManager().require(mainBuildRequest, true).getUnit();
     assertEquals("Compiling GCD cycle has wrong result", 5, unitForFile(cycle_gcd2File).getBuildResult().val.intValue());
     assertEquals("Compiling GCD cycle has wrong result", 5, unitForFile(cycle_gcd1File).getBuildResult().val.intValue());
     assertEquals("Compiling GCD cycle has wrong result", 0, unitForFile(mainFile).getBuildResult().val.intValue());

@@ -164,7 +164,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    F_ extends BuilderFactory<In_, Out_, B_>>
 //@formatter:on
   Out_ requireBuild(BuildRequest<In_, Out_, B_, F_> req) throws IOException {
-    BuildRequirement<Out_> e = manager.require(req);
+    BuildRequirement<Out_> e = manager.require(req, true);
     result.requires(e);
     return e.getUnit().getBuildResult();
   }
@@ -180,7 +180,8 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   protected void requireBuild(Collection<? extends BuildRequest<?, ?, ?, ?>> reqs) throws IOException {
     if (reqs != null)
       for (BuildRequest<?, ?, ?, ?> req : reqs) {
-        requireBuild(req);
+        BuildRequirement<?> e = manager.require(req, false);
+        result.requires(e);
       }
   }
 

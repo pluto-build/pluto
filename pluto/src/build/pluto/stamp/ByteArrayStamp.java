@@ -19,7 +19,7 @@ public class ByteArrayStamp implements Stamp {
   }
   
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(Stamp o) {
     return o instanceof ByteArrayStamp && Arrays.equals(val, ((ByteArrayStamp) o).val);
   }
 

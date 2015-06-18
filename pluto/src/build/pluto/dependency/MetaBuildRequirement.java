@@ -27,7 +27,7 @@ public class MetaBuildRequirement<Out extends Output> extends BuildRequirement<O
       throw new IOException("Could not enable Metabuilding...");
     }
 
-    manager.require(this.getRequest());
+    manager.require(this.getRequest(), false);
 
     return true;
 

@@ -95,6 +95,7 @@ public class OutputTransientTest extends SimpleBuildTest {
 
 
   private void buildClean() throws IOException {
+    System.out.println("Clean build");
     buildMainFile();
     checkAllOutputs();
   }
@@ -116,9 +117,10 @@ public class OutputTransientTest extends SimpleBuildTest {
     TrackingBuildManager manager = new TrackingBuildManager();
     buildMainFile(manager);
 
+    // executes all builders because output is needed (transitively) for recomputation of root
     validateThat(requiredFilesOf(manager).containsAll(mainFile, dep2File, dep2_1File));
     validateThat(in(requiredFilesOf(manager)).is(mainFile).before(dep2File, dep1File));
-    validateThat(executedFilesOf(manager).containsSameElements(mainFile));
+    validateThat(executedFilesOf(manager).containsSameElements(mainFile, dep1File, dep2File, dep2_1File));
     checkAllOutputs();
   }
 

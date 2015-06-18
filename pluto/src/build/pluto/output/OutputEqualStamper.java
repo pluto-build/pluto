@@ -3,7 +3,7 @@ package build.pluto.output;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class OutputEqualStamper implements OutputStamper<Serializable> {
+public class OutputEqualStamper implements OutputStamper<Output> {
 
   private static final long serialVersionUID = -820125647502953082L;
   
@@ -16,11 +16,11 @@ public class OutputEqualStamper implements OutputStamper<Serializable> {
   private OutputEqualStamper() { }
   
   @Override
-  public OutputStamp<Serializable> stampOf(Serializable out) {
+  public OutputStamp<Output> stampOf(Output out) {
     return new OutputEqualStamp(out);
   }
   
-  public static class OutputEqualStamp implements OutputStamp<Serializable> {
+  public static class OutputEqualStamp implements OutputStamp<Output> {
 
     private static final long serialVersionUID = -5404621797279839303L;
 
@@ -30,23 +30,12 @@ public class OutputEqualStamper implements OutputStamper<Serializable> {
     }
     
     @Override
-    public OutputStamper<Serializable> getStamper() {
+    public OutputStamper<Output> getStamper() {
       return instance();
     }
     
     @Override
-    public boolean isConsistent(OutputStamp<?> o) {
-      if (o instanceof OutputEqualStamp) {
-        Serializable oout = ((OutputEqualStamp) o).out;
-        if (out instanceof OutputTransient<?> && oout instanceof OutputTransient<?>)
-          return true;
-        return Objects.equals(out, oout);
-      }
-      return false;
-    }
-    
-    @Override
-    public boolean isConsistentInBuild(OutputStamp<?> o) {
+    public boolean equals(OutputStamp<?> o) {
       if (o instanceof OutputEqualStamp) {
         Serializable oout = ((OutputEqualStamp) o).out;
         return Objects.equals(out, oout);

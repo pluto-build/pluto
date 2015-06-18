@@ -76,7 +76,7 @@ public class FixpointCycleSupport implements CycleSupport {
         // CycleComponents are in order if which they were required
         // Require the first one which is not consistent to their input
         for (BuildRequest<?, ?, ?, ?> req : cyclicRequests) {
-          cycleManager.require(req);
+          cycleManager.require(req, true);
         }
         cycleConsistent = !cycleManager.wasAnyBuilderExecutedInIteration();
       } catch (RequiredBuilderFailed e) {

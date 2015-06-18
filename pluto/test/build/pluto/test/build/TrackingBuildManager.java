@@ -6,7 +6,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import build.pluto.BuildUnit;
 import build.pluto.builder.BuildCycleException;
 import build.pluto.builder.BuildManager;
 import build.pluto.builder.BuildRequest;
@@ -25,17 +24,22 @@ public class TrackingBuildManager extends BuildManager {
 		super();
 	}
 
-	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildRequirement<Out> require(
-			F factory, In input) throws IOException {
+	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildRequirement<Out> 
+	    require(F factory, In input) throws IOException {
+    return require(factory, input, true);
+  }
+
+	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildRequirement<Out> 
+	    require(F factory, In input, boolean needBuildResult) throws IOException {
 		requiredInputs.add(input);
-		return super.require(new BuildRequest<>(factory, input));
+		return super.require(new BuildRequest<>(factory, input), needBuildResult);
 	}
 
 	@Override
-	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildRequirement<Out> require(
-			BuildRequest<In, Out, B, F> buildReq) throws IOException {
+	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildRequirement<Out> 
+	    require(BuildRequest<In, Out, B, F> buildReq, boolean needBuildResult) throws IOException {
 		requiredInputs.add(buildReq.input);
-		return super.require(buildReq);
+		return super.require(buildReq, needBuildResult);
 	}
 
 	 // @formatter:off
