@@ -13,7 +13,7 @@ import org.junit.Test;
 
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuilderFactory;
-import build.pluto.builder.CompileCycleAtOnceBuilder;
+import build.pluto.builder.BuildCycleAtOnceBuilder;
 import build.pluto.output.None;
 import build.pluto.test.build.DefaultNamedScopedPath;
 import build.pluto.test.build.SimpleBuildTest;
@@ -44,7 +44,7 @@ public class NestedCycleAtOnceTest extends SimpleBuildTest{
 	
 	@Override
 	protected BuildRequest<?,?,?,?> requirementForInput(TestBuilderInput input) {
-		return new BuildRequest<ArrayList<TestBuilderInput>,None, SimpleCyclicAtOnceBuilder, BuilderFactory<ArrayList<TestBuilderInput>, None, SimpleCyclicAtOnceBuilder>> (SimpleCyclicAtOnceBuilder.factory, CompileCycleAtOnceBuilder.singletonArrayList(input));
+		return new BuildRequest<ArrayList<TestBuilderInput>,None, SimpleCyclicAtOnceBuilder, BuilderFactory<ArrayList<TestBuilderInput>, None, SimpleCyclicAtOnceBuilder>> (SimpleCyclicAtOnceBuilder.factory, BuildCycleAtOnceBuilder.singletonArrayList(input));
 	}
 	
 	@Test(timeout=2000)

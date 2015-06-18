@@ -135,9 +135,9 @@ public class BuildManager extends BuildUnitProvider {
     BuildCycle cycle = e.getCycle();
     CycleSupport cycleSupport = cycle.findCycleSupport().orElseThrow(() -> e);
 
-    Log.log.beginTask("Compile cycle with: " + cycleSupport.getCycleDescription(), Log.CORE);
+    Log.log.beginTask("Compile cycle with: " + cycleSupport.cycleDescription(), Log.CORE);
     try {
-      Set<BuildUnit<?>> resultUnits = cycleSupport.compileCycle(this);
+      Set<BuildUnit<?>> resultUnits = cycleSupport.buildCycle(this);
       for (BuildUnit<?> resultUnit : resultUnits) {
         resultUnit.write();
         this.requireStack.markConsistent(resultUnit.getGeneratedBy());

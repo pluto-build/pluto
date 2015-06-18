@@ -28,7 +28,7 @@ public class BuildCycle {
   }
 
   protected Optional<CycleSupport> findCycleSupport() {
-    Set<CycleSupportFactory> matchingSupports = this.cycle.stream().map((BuildRequest<?, ?, ?, ?> req) -> req.createBuilder().getCycleSupport()).filter((CycleSupportFactory c) -> c != null && c.createCycleSupport(this).canCompileCycle()).collect(Collectors.toSet());
+    Set<CycleSupportFactory> matchingSupports = this.cycle.stream().map((BuildRequest<?, ?, ?, ?> req) -> req.createBuilder().getCycleSupport()).filter((CycleSupportFactory c) -> c != null && c.createCycleSupport(this).canBuildCycle()).collect(Collectors.toSet());
 
     if (matchingSupports.size() > 1) {
       Log.log.log("Found " + matchingSupports.size() + " matching cycle supports for cycle.", Log.CORE);

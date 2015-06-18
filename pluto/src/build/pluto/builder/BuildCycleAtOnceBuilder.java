@@ -9,28 +9,27 @@ import java.util.List;
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
 import build.pluto.output.Output;
-import build.pluto.stamp.LastModifiedStamper;
 
-public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out extends Output> extends Builder<ArrayList<In>, Out> {
+public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out extends Output> extends Builder<ArrayList<In>, Out> {
 
   public static <X> ArrayList<X> singletonArrayList(X elem) {
     return new ArrayList<X>(Collections.<X> singletonList(elem));
   }
 
-  private final BuilderFactory<ArrayList<In>, Out, ? extends CompileCycleAtOnceBuilder<In, Out>> factory;
+  private final BuilderFactory<ArrayList<In>, Out, ? extends BuildCycleAtOnceBuilder<In, Out>> factory;
 
-  public CompileCycleAtOnceBuilder(In input, BuilderFactory<ArrayList<In>, Out, ? extends CompileCycleAtOnceBuilder<In, Out>> factory) {
+  public BuildCycleAtOnceBuilder(In input, BuilderFactory<ArrayList<In>, Out, ? extends BuildCycleAtOnceBuilder<In, Out>> factory) {
     this(singletonArrayList(input), factory);
   }
 
-  public CompileCycleAtOnceBuilder(ArrayList<In> input, BuilderFactory<ArrayList<In>, Out, ? extends CompileCycleAtOnceBuilder<In, Out>> factory) {
+  public BuildCycleAtOnceBuilder(ArrayList<In> input, BuilderFactory<ArrayList<In>, Out, ? extends BuildCycleAtOnceBuilder<In, Out>> factory) {
     super(input);
     this.factory = factory;
   }
 
   @Override
   protected CycleSupportFactory getCycleSupport() {
-    return (BuildCycle cycle) -> new CompileAtOnceCycleSupport<>(cycle, this.factory);
+    return (BuildCycle cycle) -> new BuildAtOnceCycleSupport<>(cycle, this.factory);
   }
 
   protected abstract File singletonPersistencePath(In input);
@@ -52,9 +51,9 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   public void provide(In input, File p) {
     for (int i = 0; i < this.getInput().size(); i++) {
       if (this.getInput().get(i) == input) {
-        this.cyclicResults.get(i).generates(p, LastModifiedStamper.instance.stampOf(p));
+        this.cyclicResults.get(i).generates(p, defaultStamper().stampOf(p));
+        break;
       }
-
     }
   }
 
@@ -85,7 +84,5 @@ public abstract class CompileCycleAtOnceBuilder<In extends Serializable, Out ext
   }
 
   protected abstract List<Out> buildAll(ArrayList<In> input) throws Throwable;
-
-
 
 }
