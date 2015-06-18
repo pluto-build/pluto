@@ -11,6 +11,7 @@ import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.IllegalDependencyException;
 import build.pluto.output.None;
 import build.pluto.output.Output;
+import build.pluto.output.OutputStamper;
 import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamp;
 import build.pluto.stamp.Stamper;
@@ -131,6 +132,33 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    *          the builder factory, which produces a builder used to build
    * @param input
    *          the build input
+   * @param ostamper
+   *          the stamper used for stamping the required build's output
+   * @return the output of the build
+   * @throws IOException
+   */
+  protected 
+//@formatter:off
+  <In_ extends Serializable, 
+   Out_ extends Output, 
+   B_ extends Builder<In_, Out_>, 
+   F_ extends BuilderFactory<In_, Out_, B_>, 
+   SubIn_ extends In_>
+//@formatter:on
+  Out_ requireBuild(F_ factory, SubIn_ input, OutputStamper<Out_> ostamper) throws IOException {
+    return requireBuild(new BuildRequest<In_, Out_, B_, F_>(factory, input, ostamper));
+  }
+
+  /**
+   * Requires that the build result of the given factory with the given build
+   * result is consistent. This may execute the builder or not. After a call
+   * this builder may require any file provided by this build (or a transitive
+   * build).
+   * 
+   * @param factory
+   *          the builder factory, which produces a builder used to build
+   * @param input
+   *          the build input
    * @return the output of the build
    * @throws IOException
    */
@@ -146,6 +174,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     return requireBuild(new BuildRequest<In_, Out_, B_, F_>(factory, input));
   }
 
+  
   /**
    * Requires the result of the given build request is consistent. After such a
    * call this builder may require any file provided by building the build
