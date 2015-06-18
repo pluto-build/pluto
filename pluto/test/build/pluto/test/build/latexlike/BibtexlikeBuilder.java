@@ -16,9 +16,9 @@ import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
 import build.pluto.builder.CycleSupportFactory;
+import build.pluto.output.IgnoreOutputStamper;
 import build.pluto.output.OutputPersisted;
 import build.pluto.stamp.FileContentStamper;
-import build.pluto.stamp.IgnoreOutputStamper;
 import build.pluto.stamp.Stamper;
 import build.pluto.test.build.latexlike.LatexlikeLog.CompilationParticipant;
 

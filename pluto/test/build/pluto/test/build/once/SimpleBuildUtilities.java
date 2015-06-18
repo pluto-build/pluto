@@ -41,8 +41,9 @@ public class SimpleBuildUtilities {
 	public static BuildUnit<None> unitForFile(File path, Path testBasePath)
 			throws IOException {
 		SimpleRequirement req = new SimpleRequirement(SimpleBuilder.factory,new TestBuilderInput(testBasePath.toFile(), path));
-		
-    BuildUnit<None> unit = BuildUnit.read(req.factory.makeBuilder(req.input).persistentPath(req.input));
+		File p = req.factory.makeBuilder(req.input).persistentPath(req.input);
+		p.setLastModified(p.lastModified() + 10000);
+    BuildUnit<None> unit = BuildUnit.read(p);
 		return unit;
 	}
 

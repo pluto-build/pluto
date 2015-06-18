@@ -12,25 +12,24 @@ public class MetaBuildRequirement<Out extends Output> extends BuildRequirement<O
   public MetaBuildRequirement() {
 
   }
-  
+
   public MetaBuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req) {
     super(unit, req);
   }
-  
+
   @Override
-  public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException{
+  public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException {
     // try to set metaBuilding
-    IMetaBuildingEnabled meta = (IMetaBuildingEnabled)this.getRequest().input;
-    if (meta != null)
-    {
+    IMetaBuildingEnabled meta = (IMetaBuildingEnabled) this.getRequest().input;
+    if (meta != null) {
       meta.setMetaBuilding(true);
     } else {
       throw new IOException("Could not enable Metabuilding...");
     }
-    
+
     manager.require(this.getRequest());
-    
-   return true;
-   
+
+    return true;
+
   }
 }

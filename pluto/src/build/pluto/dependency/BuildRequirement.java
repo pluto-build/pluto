@@ -33,7 +33,7 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
   public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req) {
     this(unit, req, req.stamper.stampOf(unit.getBuildResult()));
     if (BuildManager.ASSERT_SERIALIZABLE && !assertStampSerializable()) {
-      throw new AssertionError("Stamp of deserialized result is not equal to stamp of result of " + unit.getGeneratedBy().createBuilder().description() + "  " + ((build.pluto.output.Out) unit.getBuildResult()).val().getClass());
+      throw new AssertionError("Stamp of deserialized result is not equal to stamp of result of " + unit.getGeneratedBy().createBuilder().description() + "  " + ((build.pluto.output.Out<?>) unit.getBuildResult()).val().getClass());
     }
   }
   
@@ -55,7 +55,7 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
       ObjectInputStream iStream = new ObjectInputStream(memBufferInput);
       @SuppressWarnings("unchecked")
       Out deserializedOutput = (Out) iStream.readObject();
-      return req.stamper.stampOf(deserializedOutput).equals(stamp);
+      return req.stamper.stampOf(deserializedOutput).isConsistent(stamp);
     } catch (Exception e) {
       e.printStackTrace();
       return false;
@@ -76,7 +76,7 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
     if (!reqsEqual)
       return false;
     
-    boolean stampOK = stamp == null || stamp.equals(stamp.getStamper().stampOf(this.unit.getBuildResult()));
+    boolean stampOK = stamp == null || stamp.isConsistent(stamp.getStamper().stampOf(this.unit.getBuildResult()));
     if (!stampOK)
       return false;
     
@@ -92,7 +92,7 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
     if (wasFailed && !hasFailed)
       return false;
     
-    boolean stampOK = stamp == null || stamp.equals(stamp.getStamper().stampOf(newUnit.getBuildResult()));
+    boolean stampOK = stamp == null || stamp.isConsistentInBuild(stamp.getStamper().stampOf(newUnit.getBuildResult()));
     if (!stampOK)
       return false;
     

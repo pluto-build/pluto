@@ -1,15 +1,9 @@
-package build.pluto.stamp;
+package build.pluto.output;
 
 import java.io.Serializable;
 
-import build.pluto.output.OutputStamp;
-import build.pluto.output.OutputStamper;
-
 public class IgnoreOutputStamper implements OutputStamper<Serializable> {
 
-  /**
-   * 
-   */
   private static final long serialVersionUID = 4432267738282131473L;
 
   public static final IgnoreOutputStamper instance = new IgnoreOutputStamper();
@@ -18,9 +12,6 @@ public class IgnoreOutputStamper implements OutputStamper<Serializable> {
 
   private static class IgnoreOutputStamp implements OutputStamp<Serializable> {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 8496940185179778842L;
 
     @Override
@@ -28,7 +19,13 @@ public class IgnoreOutputStamper implements OutputStamper<Serializable> {
       return IgnoreOutputStamper.instance;
     }
 
-    public boolean equals(Object o) {
+    @Override
+    public boolean isConsistent(OutputStamp<?> o) {
+      return o instanceof IgnoreOutputStamp;
+    };
+
+    @Override
+    public boolean isConsistentInBuild(OutputStamp<?> o) {
       return o instanceof IgnoreOutputStamp;
     };
 

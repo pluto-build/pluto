@@ -25,24 +25,24 @@ import build.pluto.builder.BuilderFactory;
 import build.pluto.output.None;
 import build.pluto.output.Out;
 import build.pluto.output.Output;
-import build.pluto.output.OutputPersisted;
+import build.pluto.output.OutputTransient;
 import build.pluto.test.build.SimpleBuildTest;
 import build.pluto.test.build.TrackingBuildManager;
 import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 
-public class OutputPersistedTest extends SimpleBuildTest {
+public class OutputTransientTest extends SimpleBuildTest {
 
   
-  public static class OutputPersistedBuilder extends SimpleOutputBuilder {
-    public static BuilderFactory<TestBuilderInput, Output, SimpleOutputBuilder> factory = BuilderFactory.of(OutputPersistedBuilder.class, TestBuilderInput.class);
+  public static class OutputTransientBuilder extends SimpleOutputBuilder {
+    public static BuilderFactory<TestBuilderInput, Output, SimpleOutputBuilder> factory = BuilderFactory.of(OutputTransientBuilder.class, TestBuilderInput.class);
 
-    public OutputPersistedBuilder(TestBuilderInput input) {
+    public OutputTransientBuilder(TestBuilderInput input) {
       super(input);
     }
 
     @Override
     protected Output output(TestBuilderInput input) {
-      return OutputPersisted.of(input.getInputPath());
+      return OutputTransient.of(input.getInputPath());
     }
 
     @Override
@@ -80,7 +80,7 @@ public class OutputPersistedTest extends SimpleBuildTest {
 
   @Override
   protected BuildRequest<?,?,?,?> requirementForInput(TestBuilderInput input) {
-    return new SimpleOutputBuilderRequirement(OutputPersistedBuilder.factory, input);
+    return new SimpleOutputBuilderRequirement(OutputTransientBuilder.factory, input);
   }
   
   private void checkAllOutputs() throws IOException {

@@ -31,6 +31,11 @@ public class OutputPersisted<T extends Serializable> implements Out<T> {
   
   @Override
   public String toString() {
-    return "Out(" + val + ")";
+    return "OutputPersisted(" + val + ")";
+  }
+
+  @Override
+  public boolean expired() {
+    return false;
   }
 }

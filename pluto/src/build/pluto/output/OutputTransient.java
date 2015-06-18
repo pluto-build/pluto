@@ -6,9 +6,12 @@ import java.util.Objects;
 public class OutputTransient<T> implements Out<T> {
   private static final long serialVersionUID = -2569694506974721681L;
   
-  public final transient T val;
+  private transient boolean constructed;
+  private final transient T val;
+  
   public OutputTransient(T val) {
     this.val = val;
+    this.constructed = true;
   }
   
   public T val() { 
@@ -31,6 +34,11 @@ public class OutputTransient<T> implements Out<T> {
   
   @Override
   public String toString() {
-    return "OutInMemory(" + val + ")";
+    return "OutputTransient(" + val + ")";
+  }
+
+  @Override
+  public boolean expired() {
+    return !constructed;
   }
 }

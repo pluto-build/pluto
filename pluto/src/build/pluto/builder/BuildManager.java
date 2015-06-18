@@ -45,7 +45,7 @@ public class BuildManager extends BuildUnitProvider {
 
       File depFile = DynamicAnalysis.XATTR.getGenBy(builderClass);
       if (depFile != null && depFile.exists()) {
-        BuildUnit<Output> metaBuilder = BuildUnit.read(depFile);
+        BuildUnit<Out> metaBuilder = BuildUnit.read(depFile);
         depResult.requireMeta(metaBuilder);
       }
 
@@ -270,7 +270,9 @@ public class BuildManager extends BuildUnitProvider {
       boolean changedInput = noUnit ? false : !depResult.getGeneratedBy().deepEquals(buildReq);
       InconsistenyReason localInconsistencyReason = noUnit ? null : depResult.isConsistentNonrequirementsReason();
       boolean inconsistentNoRequirements = noUnit ? false : localInconsistencyReason != InconsistenyReason.NO_REASON;
-      boolean localInconsistent = knownInconsistent || noUnit || changedInput || inconsistentNoRequirements;
+      boolean noOut = noUnit || !(depResult.getBuildResult() instanceof build.pluto.output.Out<?>);
+      boolean expiredOutput = noUnit || noOut ? false : ((build.pluto.output.Out<?>) depResult.getBuildResult()).expired();
+      boolean localInconsistent = knownInconsistent || noUnit || changedInput || inconsistentNoRequirements || expiredOutput;
       Log.log.log("Locally consistent " + !localInconsistent + ":" + (knownInconsistent ? "knownInconsistent, " : "") + (noUnit ? "noUnit, " : "") + (changedInput ? "changedInput, " : "") + (inconsistentNoRequirements ? "inconsistentNoReqs (" + localInconsistencyReason + "), " : ""), Log.DETAIL);
       if (localInconsistent) {
         // Local inconsistency should execute the builder regardless whether it

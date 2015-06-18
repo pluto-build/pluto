@@ -35,8 +35,23 @@ public class OutputEqualStamper implements OutputStamper<Serializable> {
     }
     
     @Override
-    public boolean equals(Object o) {
-      return o instanceof OutputEqualStamp && Objects.equals(out, ((OutputEqualStamp) o).out);
+    public boolean isConsistent(OutputStamp<?> o) {
+      if (o instanceof OutputEqualStamp) {
+        Serializable oout = ((OutputEqualStamp) o).out;
+        if (out instanceof OutputTransient<?> && oout instanceof OutputTransient<?>)
+          return true;
+        return Objects.equals(out, oout);
+      }
+      return false;
+    }
+    
+    @Override
+    public boolean isConsistentInBuild(OutputStamp<?> o) {
+      if (o instanceof OutputEqualStamp) {
+        Serializable oout = ((OutputEqualStamp) o).out;
+        return Objects.equals(out, oout);
+      }
+      return false;
     }
 
     @Override
