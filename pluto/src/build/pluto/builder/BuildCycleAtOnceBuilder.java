@@ -3,7 +3,6 @@ package build.pluto.builder;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -54,14 +53,6 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
       if (this.getInput().get(i) == input) {
         this.cyclicResults.get(i).generates(p, defaultStamper().stampOf(p));
         break;
-      }
-    }
-  }
-
-  public void provide(Collection<In> input, File p) {
-    for (int i = 0; i < this.getInput().size(); i++) {
-      if (input.contains(this.getInput().get(i))) {
-        this.cyclicResults.get(i).generates(p, defaultStamper().stampOf(p));
       }
     }
   }
