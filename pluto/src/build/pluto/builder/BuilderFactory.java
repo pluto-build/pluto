@@ -63,21 +63,17 @@ extends Serializable {
     Out_ extends Output,
     B_ extends Builder<In_, Out_>
   > //@formatter:on
-  BuilderFactory<In_, Out_, B_> of(Class<B_> builderClass, Class<In_> inputClass) {
+  BuilderFactory<In_, Out_, B_> of(Class<? extends B_> builderClass, Class<In_> inputClass) {
 
 
     class ReflectionBuilderFactory implements BuilderFactory<In_, Out_, B_> {
-
-      /**
-         * 
-         */
       private static final long serialVersionUID = -7269299134693061223L;
 
-      private Class<B_> builderClass;
+      private Class<? extends B_> builderClass;
       private Class<In_> inputClass;
-      private Constructor<B_> builderConstructor;
+      private Constructor<? extends B_> builderConstructor;
 
-      public ReflectionBuilderFactory(Class<B_> builderClass, Class<In_> inputClass) {
+      public ReflectionBuilderFactory(Class<? extends B_> builderClass, Class<In_> inputClass) {
         this.builderClass = builderClass;
         this.inputClass = inputClass;
         this.initContructor();

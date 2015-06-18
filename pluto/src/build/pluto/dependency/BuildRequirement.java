@@ -12,6 +12,7 @@ import java.io.ObjectOutputStream;
 import java.util.Objects;
 
 import build.pluto.BuildUnit;
+import build.pluto.builder.BuildManager;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuildUnitProvider;
 import build.pluto.output.Output;
@@ -31,9 +32,9 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
 
   public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req) {
     this(unit, req, req.stamper.stampOf(unit.getBuildResult()));
-//    if (!assertStampSerializable()) {
-//      throw new AssertionError("Stamp of deserialized result is not equal to stamp of result of " + unit.getGeneratedBy().createBuilder().description() + "  " + ((build.pluto.output.Out) unit.getBuildResult()).val().getClass());
-//    }
+    if (BuildManager.ASSERT_SERIALIZABLE && !assertStampSerializable()) {
+      throw new AssertionError("Stamp of deserialized result is not equal to stamp of result of " + unit.getGeneratedBy().createBuilder().description() + "  " + ((build.pluto.output.Out) unit.getBuildResult()).val().getClass());
+    }
   }
   
   protected BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req, OutputStamp<? super Out> stamp) {

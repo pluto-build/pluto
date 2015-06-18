@@ -33,9 +33,9 @@ public class BuildRequest<
     Objects.requireNonNull(factory);
     Objects.requireNonNull(input);
     Objects.requireNonNull(stamper);
-    if (!assertFactorySerializable(factory))
+    if (BuildManager.ASSERT_SERIALIZABLE && !assertFactorySerializable(factory))
       throw new IllegalArgumentException("The given BuilderFactory does not fullfil its contract: its serialized and deseriablized object is not equal to itself");
-    if (!assertInputSerializable(input))
+    if (BuildManager.ASSERT_SERIALIZABLE && !assertInputSerializable(input))
       throw new IllegalArgumentException("The given Input does not fullfil its contract: its serialized and deseriablized object is not equal to itself: " + input);
 
     this.factory = factory;
