@@ -21,7 +21,7 @@ import com.cedarsoftware.util.DeepEquals;
 
 public class BuildManager extends BuildUnitProvider {
 
-  public final static boolean ASSERT_SERIALIZABLE = true;
+  public static boolean ASSERT_SERIALIZABLE = false;
   
   private ExecutingStack executingStack;
   private transient RequireStack requireStack;
