@@ -3,13 +3,13 @@ package build.pluto.builder;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
 import build.pluto.output.Output;
-import build.pluto.stamp.LastModifiedStamper;
 
 public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out extends Output> extends Builder<ArrayList<In>, Out> {
 
@@ -52,9 +52,17 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
   public void provide(In input, File p) {
     for (int i = 0; i < this.getInput().size(); i++) {
       if (this.getInput().get(i) == input) {
-        this.cyclicResults.get(i).generates(p, LastModifiedStamper.instance.stampOf(p));
+        this.cyclicResults.get(i).generates(p, defaultStamper().stampOf(p));
+        break;
       }
+    }
+  }
 
+  public void provide(Collection<In> input, File p) {
+    for (int i = 0; i < this.getInput().size(); i++) {
+      if (input.contains(this.getInput().get(i))) {
+        this.cyclicResults.get(i).generates(p, defaultStamper().stampOf(p));
+      }
     }
   }
 
@@ -85,7 +93,5 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
   }
 
   protected abstract List<Out> buildAll(ArrayList<In> input) throws Throwable;
-
-
 
 }

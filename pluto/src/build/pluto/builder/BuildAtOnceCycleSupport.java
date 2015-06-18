@@ -20,7 +20,7 @@ public class BuildAtOnceCycleSupport
 //@formatter:on
 implements CycleSupport {
 
-  private final BuildCycle cycle;
+  protected final BuildCycle cycle;
   private final F builderFactory;
 
   protected BuildAtOnceCycleSupport(BuildCycle cycle, F builderFactory) {
