@@ -11,14 +11,14 @@ import org.sugarj.common.FileCommands;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuilderFactory;
-import build.pluto.builder.CompileCycleAtOnceBuilder;
+import build.pluto.builder.BuildCycleAtOnceBuilder;
 import build.pluto.output.None;
 import build.pluto.stamp.FileContentStamper;
 import build.pluto.stamp.Stamper;
 import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 
 public class SimpleCyclicAtOnceBuilder extends
-		CompileCycleAtOnceBuilder<TestBuilderInput, None> {
+		BuildCycleAtOnceBuilder<TestBuilderInput, None> {
 
   public static BuilderFactory<ArrayList<TestBuilderInput>, None, SimpleCyclicAtOnceBuilder> factory = SimpleCyclicAtOnceBuilderFactor.instance;
 
@@ -78,7 +78,7 @@ public class SimpleCyclicAtOnceBuilder extends
 					if (!cyclicDependencies.contains(depPath)) {
 						TestBuilderInput depInput = new TestBuilderInput(
 								input.getBasePath(), depPath);
-            requireBuild(factory, CompileCycleAtOnceBuilder.singletonArrayList(depInput));
+            requireBuild(factory, BuildCycleAtOnceBuilder.singletonArrayList(depInput));
 					}
 				} else {
 					contentLines.add(line);

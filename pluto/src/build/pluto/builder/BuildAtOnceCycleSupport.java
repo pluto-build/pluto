@@ -10,12 +10,11 @@ import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
 import build.pluto.output.Output;
 
-public class CompileAtOnceCycleSupport
-//@formatter:off
+public class BuildAtOnceCycleSupport
 <
   In extends Serializable,
   Out extends Output,
-  B extends CompileCycleAtOnceBuilder<In, Out>,
+  B extends BuildCycleAtOnceBuilder<In, Out>,
   F extends BuilderFactory<ArrayList<In>, Out, B>
 >
 //@formatter:on
@@ -24,20 +23,20 @@ implements CycleSupport {
   private final BuildCycle cycle;
   private final F builderFactory;
 
-  protected CompileAtOnceCycleSupport(BuildCycle cycle, F builderFactory) {
+  protected BuildAtOnceCycleSupport(BuildCycle cycle, F builderFactory) {
     super();
     this.cycle = cycle;
     this.builderFactory = builderFactory;
   }
 
   @Override
-  public boolean canCompileCycle() {
+  public boolean canBuildCycle() {
     return cycle.getCycleComponents().stream().allMatch((BuildRequest<?, ?, ?, ?> req) -> req.factory == builderFactory && (req.input instanceof ArrayList<?>));
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public Set<BuildUnit<?>> compileCycle(BuildUnitProvider manager) throws Throwable {
+  public Set<BuildUnit<?>> buildCycle(BuildUnitProvider manager) throws Throwable {
     ArrayList<BuildUnit<Out>> cyclicResults = new ArrayList<>();
     ArrayList<In> inputs = new ArrayList<>();
     ArrayList<BuildRequest<?, Out, ?, ?>> requests = new ArrayList<>();
@@ -70,7 +69,7 @@ implements CycleSupport {
 
   @SuppressWarnings("unchecked")
   @Override
-  public String getCycleDescription() {
+  public String cycleDescription() {
     ArrayList<In> inputs = new ArrayList<>(cycle.getCycleComponents().size());
     for (BuildRequest<?, ?, ?, ?> request : cycle.getCycleComponents()) {
       // Cast is safe, otherwise cycle handler rejected to compile the cycle

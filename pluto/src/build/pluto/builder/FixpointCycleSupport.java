@@ -21,6 +21,10 @@ import build.pluto.BuildUnit;
  */
 public class FixpointCycleSupport implements CycleSupport {
 
+  public static final CycleSupportFactory of(BuilderFactory<?, ?, ?>... builders) {
+    return (BuildCycle cycle) -> new FixpointCycleSupport(cycle, builders);
+  }
+
   /**
    * All BuilderFactories which are supported
    */
@@ -45,20 +49,20 @@ public class FixpointCycleSupport implements CycleSupport {
   }
 
   @Override
-  public String getCycleDescription() {
+  public String cycleDescription() {
     String descriptions = cycle.getCycleComponents().stream().map((BuildRequest<?, ?, ?, ?> r) -> r.createBuilder()).map(Builder::description).reduce((String desc1, String desc2) -> desc1 + "; " + desc2).get();
     return "Fixpoint {" + descriptions + "}";
   }
 
   @Override
-  public boolean canCompileCycle() {
+  public boolean canBuildCycle() {
     // Each builder in the cycle must be supported
     Predicate<BuildRequest<?, ?, ?, ?>> buildRequestSupported = (BuildRequest<?, ?, ?, ?> r) -> supportedBuilders.contains(r.factory);
     return cycle.getCycleComponents().stream().allMatch(buildRequestSupported);
   }
 
   @Override
-  public Set<BuildUnit<?>> compileCycle(BuildUnitProvider manager) throws Throwable {
+  public Set<BuildUnit<?>> buildCycle(BuildUnitProvider manager) throws Throwable {
     FixpointCycleBuildResultProvider cycleManager = new FixpointCycleBuildResultProvider(manager, cycle);
 
     int numInterations = 1;
