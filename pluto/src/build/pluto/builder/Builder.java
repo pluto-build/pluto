@@ -145,7 +145,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    F_ extends BuilderFactory<In_, Out_, B_>, 
    SubIn_ extends In_>
 //@formatter:on
-  Out_ requireBuild(F_ factory, SubIn_ input, OutputStamper<Out_> ostamper) throws IOException {
+  Out_ requireBuild(F_ factory, SubIn_ input, OutputStamper<? super Out_> ostamper) throws IOException {
     return requireBuild(new BuildRequest<In_, Out_, B_, F_>(factory, input, ostamper));
   }
 

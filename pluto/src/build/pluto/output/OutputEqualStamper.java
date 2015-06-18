@@ -45,7 +45,7 @@ public class OutputEqualStamper implements OutputStamper<Output> {
 
     @Override
     public String toString() {
-      return "OutputEqualsStamp(" + out + ")";
+      return "OutputEqualStamp(" + out + ")";
     }
   }
 }
