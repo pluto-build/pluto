@@ -8,6 +8,7 @@ import java.util.Set;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
+import build.pluto.dependency.BuildRequirement;
 import build.pluto.output.Output;
 
 public class BuildAtOnceCycleSupport
@@ -50,6 +51,7 @@ implements CycleSupport {
       requests.add((BuildRequest<?, Out, ?, ?>) req);
     }
 
+
     B newBuilder = builderFactory.makeBuilder(inputs);
     newBuilder.manager = manager;
     newBuilder.cyclicResults = cyclicResults;
@@ -64,6 +66,13 @@ implements CycleSupport {
       unit.setBuildResult(outputs.get(i));
       unit.setState(State.finished(true));
     }
+    for (BuildUnit<Out> out1 : cyclicResults) {
+      for (BuildUnit<Out> out2 : cyclicResults) {
+        if (out1 != out2)
+          out1.requires(new BuildRequirement<>(out2, out2.getGeneratedBy()));
+      }
+    }
+
     return new HashSet<>(cyclicResults);
   }
 
