@@ -41,7 +41,7 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
   }
 
   public boolean areAllCyclicRequestsConsistent(BuildRequest<?, ?, ?, ?> dep) {
-    return this.sccs.getSetMembers(dep).stream().allMatch(this.knownConsistentUnits::contains);
+    return this.sccs.getSetMembers(dep).stream().filter((BuildRequest<?, ?, ?, ?> req) -> req != dep).allMatch(this.knownConsistentUnits::contains);
   }
 
   public BuildCycle createCycleFor(BuildRequest<?, ?, ?, ?> dep) {
