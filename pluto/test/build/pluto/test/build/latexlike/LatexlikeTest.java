@@ -92,6 +92,18 @@ public class LatexlikeTest extends ScopedBuildTest {
   }
 
   @Test
+  public void testBuildConsistent() throws IOException {
+    build();
+    cleanLog();
+
+    build();
+
+    assertResultCorrect();
+
+    assertBuildOrder();
+  }
+
+  @Test
   public void testSimpleTextChange() throws IOException {
     build();
     cleanLog();

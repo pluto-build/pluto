@@ -296,8 +296,19 @@ public class BuildManager extends BuildUnitProvider {
         }
       }
 
-      if (requireStack.areAllCyclicRequestsConsistent(buildReq)) {
-        requireStack.markConsistent(buildReq);
+      // Note: This handles the non cyclic case too, then all other cyclic
+      // requests are empty, thus all assumed
+
+      // Checks whether all other cyclic requests are assumed to be consistent,
+      // which means, that all of them reached this point
+      // already, thus checked all assumptions
+      if (requireStack.areAllOtherCyclicRequestsAssumed(buildReq)) {
+        // If yes, together with this unit, all cyclic requests are checked and
+        // the cycle is consistent
+        requireStack.markAllConsistent(buildReq);
+      } else {
+        // No, then only mark this as assummed
+        requireStack.markAssumed(buildReq);
       }
 
     } catch (RequiredBuilderFailed e) {

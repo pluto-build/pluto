@@ -13,10 +13,12 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
 
   private Set<BuildRequest<?, ?, ?, ?>> knownInconsistentUnits;
   private Set<BuildRequest<?, ?, ?, ?>> knownConsistentUnits;
+  private Set<BuildRequest<?, ?, ?, ?>> assumedUnits;
   
   public RequireStack() {
     this.knownConsistentUnits = new HashSet<>();
     this.knownInconsistentUnits = new HashSet<>();
+    this.assumedUnits = new HashSet<>();
   }
 
   public void beginRebuild(BuildRequest<?, ?, ?, ?> dep) {
@@ -40,8 +42,8 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
     return this.sccs.getSetMembers(dep).stream().anyMatch(this.knownInconsistentUnits::contains);
   }
 
-  public boolean areAllCyclicRequestsConsistent(BuildRequest<?, ?, ?, ?> dep) {
-    return this.sccs.getSetMembers(dep).stream().filter((BuildRequest<?, ?, ?, ?> req) -> req != dep).allMatch(this.knownConsistentUnits::contains);
+  public boolean areAllOtherCyclicRequestsAssumed(BuildRequest<?, ?, ?, ?> dep) {
+    return this.sccs.getSetMembers(dep).stream().filter((BuildRequest<?, ?, ?, ?> req) -> req != dep).allMatch(this.assumedUnits::contains);
   }
 
   public BuildCycle createCycleFor(BuildRequest<?, ?, ?, ?> dep) {
@@ -67,6 +69,14 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
 
   public void markConsistent(BuildRequest<?, ?, ?, ?> dep) {
     this.knownConsistentUnits.add(dep);
+  }
+
+  public void markAllConsistent(BuildRequest<?, ?, ?, ?> dep) {
+    this.sccs.getSetMembers(dep).forEach(this.knownConsistentUnits::add);
+  }
+
+  public void markAssumed(BuildRequest<?, ?, ?, ?> dep) {
+    this.assumedUnits.add(dep);
   }
 
   @Override
