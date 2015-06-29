@@ -7,9 +7,10 @@
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-        <modules>
+    <modules>
           <module>pluto</module>
           <module>pluto-eclipse</module>
+		  <module>pluto-shaded</module>
 	</modules>
 
 	<build>

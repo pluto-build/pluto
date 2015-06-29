@@ -1,0 +1,81 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>build.pluto</groupId>
+	<artifactId>pluto-shaded</artifactId>
+	<version>1.3.0-SNAPSHOT</version>
+
+	<parent>
+		<groupId>build.pluto</groupId>
+		<artifactId>maven-config-java</artifactId>
+		<version>1.0.1-SNAPSHOT</version>
+		<relativePath></relativePath>
+	</parent>
+
+	<packaging>jar</packaging>
+
+	<dependencies>
+		<dependency>
+			<groupId>build.pluto</groupId>
+			<artifactId>pluto</artifactId>
+			<version>1.3.0-SNAPSHOT</version>
+		</dependency>
+	</dependencies>
+	
+	<build>
+    <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>2.4</version>
+          <configuration>
+			               <artifactSet>
+			                 <excludes>
+			                   <exclude>*:jline</exclude>
+			                   <exclude>junit:junit</exclude>
+			                   <exclude>*:hamcrest-core</exclude>
+			                   <exclude>*:xml-apis</exclude>
+							   <exclude>*:guava</exclude>
+							   <exclude>*:ecj</exclude>
+			                   <exclude>org.metaborg:*</exclude>
+			                 </excludes>
+			               </artifactSet>
+						   <relocations>
+						                   <relocation>
+						                     <pattern>org.sugarj.common</pattern>
+						                     <shadedPattern>build.pluto.shaded.org.sugarj.common</shadedPattern>
+						               
+						                   </relocation>
+						                   <relocation>
+						                     <pattern>com.cedarsoftware.util</pattern>
+						                     <shadedPattern>build.pluto.shaded.com.cedarsoftware.util</shadedPattern>
+						               
+						                   </relocation>
+						                 </relocations>		  
+          </configuration>
+          <executions>
+            <execution>
+              <phase>package</phase>
+              <goals>
+                <goal>shade</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </build>
+
+	<repositories>
+		<repository>
+			<id>pluto-build</id>
+			<url>https://raw.githubusercontent.com/pluto-build/pluto-build.github.io/master/mvnrepository/</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+</project>
