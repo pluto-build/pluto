@@ -1,6 +1,7 @@
 package build.pluto.builder;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,7 +9,9 @@ import java.util.List;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
+import build.pluto.dependency.IllegalDependencyException;
 import build.pluto.output.Output;
+import build.pluto.stamp.Stamp;
 
 public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out extends Output> extends Builder<ArrayList<In>, Out> {
 
@@ -37,9 +40,18 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
   protected List<BuildUnit<Out>> cyclicResults;
 
   @Override
-  public void require(File p) {
+  public void require(File p, Stamp stamp) {
     for (BuildUnit<Out> result : cyclicResults) {
-      result.requires(p, defaultStamper().stampOf(p));
+      try {
+        result.requires(p, stamp);
+      } catch (IllegalDependencyException e) {
+        if (e.dep.equals(result.getPersistentPath()))
+          try {
+            requireBuild(result.getGeneratedBy());
+          } catch (IOException e1) {
+            throw new RuntimeException(e1);
+          }
+      }
     }
   }
 
