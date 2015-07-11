@@ -40,6 +40,13 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
   protected List<BuildUnit<Out>> cyclicResults;
 
   @Override
+  public void require(File p) {
+    for (BuildUnit<Out> result : cyclicResults) {
+      result.requires(p, defaultStamper().stampOf(p));
+    }
+  }
+
+  @Override
   public void require(File p, Stamp stamp) {
     for (BuildUnit<Out> result : cyclicResults) {
       try {
