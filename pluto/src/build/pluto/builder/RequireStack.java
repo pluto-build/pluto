@@ -1,29 +1,32 @@
 package build.pluto.builder;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.sugarj.common.Log;
 
 import build.pluto.util.AbsoluteComparedFile;
+import build.pluto.util.IReporting.BuildReason;
 
 public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, Boolean> {
 
-  private Set<BuildRequest<?, ?, ?, ?>> knownInconsistentUnits;
+  private Map<BuildRequest<?, ?, ?, ?>, Set<BuildReason>> knownInconsistentUnits;
   private Set<BuildRequest<?, ?, ?, ?>> knownConsistentUnits;
   private Set<BuildRequest<?, ?, ?, ?>> assumedUnits;
   
   public RequireStack() {
     this.knownConsistentUnits = new HashSet<>();
-    this.knownInconsistentUnits = new HashSet<>();
+    this.knownInconsistentUnits = new HashMap<>();
     this.assumedUnits = new HashSet<>();
   }
 
-  public void beginRebuild(BuildRequest<?, ?, ?, ?> dep) {
+  public void beginRebuild(BuildRequest<?, ?, ?, ?> dep, Set<BuildReason> reason) {
     Log.log.log("Rebuild " + dep.createBuilder().description(), Log.DETAIL);
-    this.knownInconsistentUnits.add(dep);
+    this.knownInconsistentUnits.put(dep, reason);
     // TODO: Need to forget the scc where dep is in, because the graph structure
     // may change?
   }
@@ -33,13 +36,13 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
     this.knownInconsistentUnits.remove(dep);
   }
 
-  public boolean isKnownInconsistent(File dep) {
+  public Set<BuildReason> isKnownInconsistent(File dep) {
     AbsoluteComparedFile aDep = AbsoluteComparedFile.absolute(dep);
-    return knownInconsistentUnits.contains(aDep);
+    return knownInconsistentUnits.get(aDep);
   }
 
   public boolean existsInconsistentCyclicRequest(BuildRequest<?, ?, ?, ?> dep) {
-    return this.sccs.getSetMembers(dep).stream().anyMatch(this.knownInconsistentUnits::contains);
+    return this.sccs.getSetMembers(dep).stream().anyMatch(this.knownInconsistentUnits::containsKey);
   }
 
   public boolean areAllOtherCyclicRequestsAssumed(BuildRequest<?, ?, ?, ?> dep) {

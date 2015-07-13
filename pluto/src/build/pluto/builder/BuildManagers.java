@@ -15,6 +15,8 @@ import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit;
 import build.pluto.output.Output;
+import build.pluto.util.IReporting;
+import build.pluto.util.LogReporting;
 
 public class BuildManagers {
 
@@ -44,11 +46,14 @@ public class BuildManagers {
   }
 
   public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
+    return build(buildReq, new LogReporting());
+  }
+  public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq, IReporting report) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
     boolean freshManager = manager == null;
     if (freshManager) {
-      manager = new BuildManager();
+      manager = new BuildManager(report);
       activeManagers.put(current, manager);
     }
 
@@ -64,11 +69,14 @@ public class BuildManagers {
   }
 
   public static <Out extends Output> List<Out> buildAll(Iterable<BuildRequest<?, Out, ?, ?>> buildReqs) {
+    return buildAll(buildReqs);
+  }
+  public static <Out extends Output> List<Out> buildAll(Iterable<BuildRequest<?, Out, ?, ?>> buildReqs, IReporting report) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
     boolean freshManager = manager == null;
     if (freshManager) {
-      manager = new BuildManager();
+      manager = new BuildManager(report);
       activeManagers.put(current, manager);
     }
 
