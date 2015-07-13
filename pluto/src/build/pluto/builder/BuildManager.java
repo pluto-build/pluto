@@ -3,6 +3,7 @@ package build.pluto.builder;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.channels.ClosedByInterruptException;
 import java.util.Set;
 
 import org.sugarj.common.FileCommands;
@@ -34,6 +35,16 @@ public class BuildManager extends BuildUnitProvider {
     this.requireStack = new RequireStack();
   }
 
+  private <Out extends Output> void checkInterrupt(File dep, BuildUnit<Out> depResult, BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
+    if (Thread.interrupted()) {
+      if (depResult == null)
+        depResult = BuildUnit.create(dep, buildReq);
+      Log.log.logErr("Build was interrupted", Log.CORE);
+      depResult.setState(BuildUnit.State.FAILURE);
+      throw RequiredBuilderFailed.init(new BuildRequirement<Out>(depResult, buildReq), new InterruptedException("Build was interrupted"));
+    }
+  }
+  
   // @formatter:off
   protected static 
     <In extends Serializable,
@@ -95,9 +106,14 @@ public class BuildManager extends BuildUnitProvider {
 
     } catch (RequiredBuilderFailed e) {
       if (taskDescription != null)
-        Log.log.logErr("Required builder failed " + e.getMessage(), Log.CORE);
+        Log.log.logErr(e.getMessage(), Log.CORE);
       throw e.enqueueBuilder(depResult, builder);
 
+    } catch (ClosedByInterruptException e) {
+      if (!Thread.currentThread().isInterrupted())
+        Thread.interrupted();
+      // triggers regular interrupt handler below
+      
     } catch (Throwable e) {
       Log.log.logErr(e.getClass() + ": " + e.getMessage(), Log.CORE);
       throw RequiredBuilderFailed.init(new BuildRequirement<Out>(depResult, buildReq), e);
@@ -109,16 +125,18 @@ public class BuildManager extends BuildUnitProvider {
       if (taskDescription != null)
         Log.log.endTask(depResult.getState() == BuildUnit.State.SUCCESS);
 
-      analysis.check(depResult, inputHash);
-      assertConsistency(depResult);
-
       this.executingStack.pop(buildReq);
       this.requireStack.finishRebuild(buildReq);
+
+      analysis.check(depResult, inputHash);
+      checkInterrupt(dep, depResult, buildReq); // interrupt before consistency assertion: files may be in inconsistent state due to interruption (ClosedByInterruptException) 
+      assertConsistency(depResult);
     }
 
     if (depResult.getState() == BuildUnit.State.FAILURE)
       throw new RequiredBuilderFailed(new BuildRequirement<Out>(depResult, buildReq), new IllegalStateException("Builder failed for unknown reason, please confer log."));
 
+    
     return new BuildRequirement<Out>(depResult, buildReq);
   }
 
@@ -240,6 +258,8 @@ public class BuildManager extends BuildUnitProvider {
     File dep = builder.persistentPath();
     BuildUnit<Out> depResult = BuildUnit.read(dep);
 
+    checkInterrupt(dep, depResult, buildReq);
+    
     // Dont execute require because it is cyclic, requireStack keeps track of
     // this
 
@@ -274,6 +294,7 @@ public class BuildManager extends BuildUnitProvider {
       boolean expiredOutput = noUnit || noOut ? false : ((build.pluto.output.Out<?>) depResult.getBuildResult()).expired();
       boolean localInconsistent = knownInconsistent || noUnit || changedInput || inconsistentNoRequirements || (needBuildResult && expiredOutput);
       Log.log.log("Locally consistent " + !localInconsistent + ":" + (knownInconsistent ? "knownInconsistent, " : "") + (noUnit ? "noUnit, " : "") + (changedInput ? "changedInput, " : "") + (inconsistentNoRequirements ? "inconsistentNoReqs (" + localInconsistencyReason + "), " : ""), Log.DETAIL);
+      
       if (localInconsistent) {
         // Local inconsistency should execute the builder regardless whether it
         // has been required to detect the cycle

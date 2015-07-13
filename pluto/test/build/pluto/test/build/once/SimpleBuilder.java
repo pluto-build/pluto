@@ -81,6 +81,9 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 		if (!allLines.isEmpty() && allLines.get(0).equals("#fail"))
 		  throw new RuntimeException("#fail detected in source file");
 		
+		if (!allLines.isEmpty() && allLines.get(0).equals("#interrupt"))
+      Thread.currentThread().interrupt();
+		
 		List<String> contentLines = new ArrayList<String>();
 
 		for (String line : allLines) {
