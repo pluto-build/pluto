@@ -9,6 +9,7 @@ import java.util.List;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
+import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.IllegalDependencyException;
 import build.pluto.output.Output;
 import build.pluto.stamp.Stamp;
@@ -90,6 +91,21 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
     } else {
       throw new AssertionError("Should not occur");
     }
+  }
+
+  protected 
+//@formatter:off
+  <In_ extends Serializable,
+   Out_ extends Output, 
+   B_ extends Builder<In_, Out_>, 
+   F_ extends BuilderFactory<In_, Out_, B_>>
+//@formatter:on
+  Out_ requireBuild(BuildRequest<In_, Out_, B_, F_> req) throws IOException {
+    BuildRequirement<Out_> e = manager.require(req, true);
+    for (BuildUnit<Out> result : cyclicResults) {
+      result.requires(e);
+    }
+    return e.getUnit().getBuildResult();
   }
 
   @Override
