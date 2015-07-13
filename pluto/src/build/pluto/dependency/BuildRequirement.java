@@ -84,7 +84,7 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
   }
   
   @Override
-  public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException{
+  public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException {
     boolean wasFailed = hasFailed || unit != null && unit.hasFailed();
     BuildUnit<Out> newUnit = manager.require(this.req, false).getUnit();
     hasFailed = newUnit.hasFailed();
