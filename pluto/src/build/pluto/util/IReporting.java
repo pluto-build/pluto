@@ -49,7 +49,6 @@ public interface IReporting {
   public void inconsistentRequirement(Requirement req);
   
   public void messageFromBuilder(String message, boolean isError, Builder<?, ?> from);
-  public void exceptionFromBuilder(Throwable t, Builder<?, ?> from);
   
   /**
    * @param message

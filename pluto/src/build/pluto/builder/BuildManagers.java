@@ -17,17 +17,22 @@ import build.pluto.BuildUnit;
 import build.pluto.output.Output;
 import build.pluto.util.IReporting;
 import build.pluto.util.LogReporting;
+import build.pluto.util.TraceReport;
 
 public class BuildManagers {
 
   private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
 
+  private static IReporting defaultReport() {
+    return new TraceReport(new LogReporting());
+  }
+  
   public static <Out extends Output> BuildUnit<Out> readResult(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
     return BuildUnit.read(buildReq.createBuilder().persistentPath());
   }
 
   public static void clean(boolean dryRun, BuildRequest<?, ?, ?, ?> req) throws IOException {
-    clean(dryRun, req, new LogReporting());
+    clean(dryRun, req, defaultReport());
   }
   public static void clean(boolean dryRun, BuildRequest<?, ?, ?, ?> req, IReporting report) throws IOException {
     BuildUnit<?> unit = readResult(req);
@@ -49,7 +54,7 @@ public class BuildManagers {
   }
 
   public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
-    return build(buildReq, new LogReporting());
+    return build(buildReq, defaultReport());
   }
   public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq, IReporting report) {
     Pair<BuildManager, Boolean> manager = getBuildManagerForCurrentThread(report);

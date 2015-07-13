@@ -1,6 +1,5 @@
 package build.pluto.util;
 
-import java.util.BitSet;
 import java.util.Set;
 
 import org.sugarj.common.Log;
@@ -19,23 +18,15 @@ public class LogReporting implements IReporting {
 
   private Log log = Log.log;
   
-  int index = 0;
-  private BitSet stack = new BitSet();
-  
   @Override
   public <O extends Output> void startedBuilder(BuildRequest<?, O, ?, ?> req, Builder<?, ?> b, BuildUnit<O> oldUnit, Set<BuildReason> reasons) {
     String desc = b.description();
-    stack.set(index, desc != null);
-    index++;
-    if (desc != null)
-      log.beginTask(desc, Log.CORE);
+    log.beginTask(desc, Log.CORE);
   }
 
   @Override
   public <O extends Output> void finishedBuilder(BuildRequest<?, O, ?, ?> req, BuildUnit<O> unit) {
-    index--;
-    if (stack.get(index))
-      log.endTask(unit.getState() == BuildUnit.State.SUCCESS);
+    log.endTask(unit.getState() == BuildUnit.State.SUCCESS);
   }
 
   @Override
@@ -55,11 +46,6 @@ public class LogReporting implements IReporting {
       log.logErr(message, Log.CORE);
     else
       log.log(message, Log.CORE);
-  }
-
-  @Override
-  public void exceptionFromBuilder(Throwable t, Builder<?, ?> from) {
-    log.logErr(t.getClass() + (t == null ? "" : (": " + t.getMessage())), Log.CORE);
   }
 
   @Override

@@ -267,11 +267,9 @@ public class BuildManager extends BuildUnitProvider {
     boolean alreadyRequired = requireStack.push(buildReq);
     boolean executed = false;
     try {
-
-      boolean assumptionIncomplete = requireStack.existsInconsistentCyclicRequest(buildReq);
-      report.messageFromSystem("Assumptions inconsistent " + assumptionIncomplete, false, 10);
-      
       if (alreadyRequired) {
+        boolean assumptionIncomplete = requireStack.existsInconsistentCyclicRequest(buildReq);
+        report.messageFromSystem("Assumptions inconsistent " + assumptionIncomplete, false, 10);
         if (!assumptionIncomplete) {
           return yield(buildReq, builder, depResult);
         } else {
@@ -325,6 +323,7 @@ public class BuildManager extends BuildUnitProvider {
         requireStack.markAssumed(buildReq);
       }
 
+      report.skippedBuilder(buildReq, depResult);
     } catch (RequiredBuilderFailed e) {
       if (executed || e.getLastAddedBuilder().getUnit().getPersistentPath().equals(depResult.getPersistentPath()))
         throw e;

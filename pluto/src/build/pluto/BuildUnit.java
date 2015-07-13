@@ -21,6 +21,7 @@ import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamp;
+import build.pluto.util.TraceData;
 
 /**
  * Dependency management for modules.
@@ -52,6 +53,8 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	private transient Set<File> requiredFiles;
 	
 	protected BuildRequest<?, Out, ?, ?> generatedBy;
+	
+	protected TraceData trace;
 	
 	// **************************
 	// Methods for initialization
@@ -220,6 +223,14 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	public void setBuildResult(Out out) {
     this.buildResult = out;
   }
+	
+	public TraceData getTrace() {
+    return trace;
+  }
+	
+	public void setTrace(TraceData trace) {
+    this.trace = trace;
+  }
 
 	// ********************************************
 	// Methods for checking compilation consistency
@@ -387,6 +398,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	  generatedFiles = (Set<FileRequirement>) in.readObject();
 	  generatedBy = (BuildRequest<?, Out, ?, ?>) in.readObject();
 	  buildResult = (Out) in.readObject();
+	  trace = (TraceData) in.readObject();
 	}
 	
 	public void write() throws IOException {
@@ -400,6 +412,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 		out.writeObject(generatedFiles = Collections.unmodifiableSet(generatedFiles));
 		out.writeObject(generatedBy);
 		out.writeObject(buildResult);
+		out.writeObject(trace);
 	}
 	
 	@Override
