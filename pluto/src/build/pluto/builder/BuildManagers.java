@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.Log;
+import org.sugarj.common.util.Pair;
 
 import build.pluto.BuildUnit;
 import build.pluto.output.Output;
@@ -27,19 +27,22 @@ public class BuildManagers {
   }
 
   public static void clean(boolean dryRun, BuildRequest<?, ?, ?, ?> req) throws IOException {
+    clean(dryRun, req, new LogReporting());
+  }
+  public static void clean(boolean dryRun, BuildRequest<?, ?, ?, ?> req, IReporting report) throws IOException {
     BuildUnit<?> unit = readResult(req);
     if (unit == null)
       return;
     Set<BuildUnit<?>> allUnits = unit.getTransitiveModuleDependencies();
     for (BuildUnit<?> next : allUnits) {
       for (File p : next.getGeneratedFiles())
-        deleteFile(p.toPath(), dryRun);
-      deleteFile(next.getPersistentPath().toPath(), dryRun);
+        deleteFile(p.toPath(), dryRun, report);
+      deleteFile(next.getPersistentPath().toPath(), dryRun, report);
     }
   }
 
-  private static void deleteFile(Path p, boolean dryRun) throws IOException {
-    Log.log.log("Delete " + p + (dryRun ? " (dry run)" : ""), Log.CORE);
+  private static void deleteFile(Path p, boolean dryRun, IReporting report) throws IOException {
+    report.messageFromSystem("Delete " + p + (dryRun ? " (dry run)" : ""), false, 1);
     if (!dryRun)
       if (!Files.isDirectory(p) || Files.list(p).findAny().isPresent())
         FileCommands.delete(p);
@@ -49,22 +52,15 @@ public class BuildManagers {
     return build(buildReq, new LogReporting());
   }
   public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq, IReporting report) {
-    Thread current = Thread.currentThread();
-    BuildManager manager = activeManagers.get(current);
-    boolean freshManager = manager == null;
-    if (freshManager) {
-      manager = new BuildManager(report);
-      activeManagers.put(current, manager);
-    }
-
+    Pair<BuildManager, Boolean> manager = getBuildManagerForCurrentThread(report);
     try {
-      return freshManager ? manager.requireInitially(buildReq).getBuildResult() : manager.require(buildReq, true).getUnit().getBuildResult();
+      return manager.b ? manager.a.requireInitially(buildReq).getBuildResult() : manager.a.require(buildReq, true).getUnit().getBuildResult();
     } catch (IOException e) {
       e.printStackTrace();
       return null;
     } finally {
-      if (freshManager)
-        activeManagers.remove(current);
+      if (manager.b)
+        activeManagers.remove(Thread.currentThread());
     }
   }
 
@@ -72,6 +68,26 @@ public class BuildManagers {
     return buildAll(buildReqs);
   }
   public static <Out extends Output> List<Out> buildAll(Iterable<BuildRequest<?, Out, ?, ?>> buildReqs, IReporting report) {
+    Pair<BuildManager, Boolean> manager = getBuildManagerForCurrentThread(report);
+
+    try {
+      List<Out> out = new ArrayList<>();
+      for (BuildRequest<?, Out, ?, ?> buildReq : buildReqs)
+        if (buildReq != null)
+          try {
+            out.add(manager.b ? manager.a.requireInitially(buildReq).getBuildResult() : manager.a.require(buildReq, true).getUnit().getBuildResult());
+          } catch (IOException e) {
+            e.printStackTrace();
+            out.add(null);
+          }
+      return out;
+    } finally {
+      if (manager.b)
+        activeManagers.remove(Thread.currentThread());
+    }
+  }
+
+  private static Pair<BuildManager, Boolean> getBuildManagerForCurrentThread(IReporting report) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
     boolean freshManager = manager == null;
@@ -79,22 +95,8 @@ public class BuildManagers {
       manager = new BuildManager(report);
       activeManagers.put(current, manager);
     }
-
-    try {
-      List<Out> out = new ArrayList<>();
-      for (BuildRequest<?, Out, ?, ?> buildReq : buildReqs)
-        if (buildReq != null)
-          try {
-            out.add(freshManager ? manager.requireInitially(buildReq).getBuildResult() : manager.require(buildReq, true).getUnit().getBuildResult());
-          } catch (IOException e) {
-            e.printStackTrace();
-            out.add(null);
-          }
-      return out;
-    } finally {
-      if (freshManager)
-        activeManagers.remove(current);
-    }
+    return new Pair<>(manager, freshManager);
   }
+
 
 }

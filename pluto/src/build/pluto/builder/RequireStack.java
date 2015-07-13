@@ -7,25 +7,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.sugarj.common.Log;
-
 import build.pluto.util.AbsoluteComparedFile;
+import build.pluto.util.IReporting;
 import build.pluto.util.IReporting.BuildReason;
 
 public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, Boolean> {
 
-  private Map<BuildRequest<?, ?, ?, ?>, Set<BuildReason>> knownInconsistentUnits;
-  private Set<BuildRequest<?, ?, ?, ?>> knownConsistentUnits;
-  private Set<BuildRequest<?, ?, ?, ?>> assumedUnits;
+  private final IReporting report;
+  private final Map<BuildRequest<?, ?, ?, ?>, Set<BuildReason>> knownInconsistentUnits;
+  private final Set<BuildRequest<?, ?, ?, ?>> knownConsistentUnits;
+  private final Set<BuildRequest<?, ?, ?, ?>> assumedUnits;
   
-  public RequireStack() {
+  public RequireStack(IReporting report) {
+    this.report = report;
     this.knownConsistentUnits = new HashSet<>();
     this.knownInconsistentUnits = new HashMap<>();
     this.assumedUnits = new HashSet<>();
   }
 
   public void beginRebuild(BuildRequest<?, ?, ?, ?> dep, Set<BuildReason> reason) {
-    Log.log.log("Rebuild " + dep.createBuilder().description(), Log.DETAIL);
     this.knownInconsistentUnits.put(dep, reason);
     // TODO: Need to forget the scc where dep is in, because the graph structure
     // may change?
@@ -60,14 +60,14 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
   
   @Override
   protected Boolean push(BuildRequest<?, ?, ?, ?> dep) {
-    Log.log.beginTask("Require " + dep.createBuilder().description(), Log.DETAIL);
+    report.buildRequirement(dep);
     return super.push(dep);
   }
 
   @Override
   public void pop(BuildRequest<?, ?, ?, ?> dep) {
+    report.finishedBuildRequirement(dep);
     super.pop(dep);
-    Log.log.endTask();
   }
 
   public void markConsistent(BuildRequest<?, ?, ?, ?> dep) {
@@ -84,7 +84,7 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
 
   @Override
   protected Boolean cycleResult(BuildRequest<?, ?, ?, ?> call, List<BuildRequest<?, ?, ?, ?>> scc) {
-    Log.log.log("Already required " + call.createBuilder().description(), Log.DETAIL);
+    report.messageFromSystem("Already required " + call, false, 7);
     this.callStack.add(call);
     return true;
   }

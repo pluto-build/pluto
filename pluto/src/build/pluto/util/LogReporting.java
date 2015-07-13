@@ -6,8 +6,11 @@ import java.util.Set;
 import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit;
+import build.pluto.builder.BuildCycle;
+import build.pluto.builder.BuildCycleException;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
+import build.pluto.builder.CycleSupport;
 import build.pluto.builder.RequiredBuilderFailed;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
@@ -20,7 +23,7 @@ public class LogReporting implements IReporting {
   private BitSet stack = new BitSet();
   
   @Override
-  public void startedBuilder(Builder<?, ?> b, BuildUnit<?> oldUnit, Set<BuildReason> reasons) {
+  public <O extends Output> void startedBuilder(BuildRequest<?, O, ?, ?> req, Builder<?, ?> b, BuildUnit<O> oldUnit, Set<BuildReason> reasons) {
     String desc = b.description();
     stack.set(index, desc != null);
     index++;
@@ -60,8 +63,11 @@ public class LogReporting implements IReporting {
   }
 
   @Override
-  public void messageFromSystem(String message, boolean isError) {
-    log.log(message, Log.CORE);
+  public void messageFromSystem(String message, boolean isError, int verbosity) {
+    if (verbosity <= 3)
+      log.log(message, Log.CORE);
+    else
+      log.log(message, Log.DETAIL);
   }
 
   @Override
@@ -84,4 +90,31 @@ public class LogReporting implements IReporting {
     log.endTask(e.getMessage());
   }
 
+  @Override
+  public void startBuildCycle(BuildCycle cycle, CycleSupport cycleSupport) {
+    log.beginTask("Build cycle with: " + cycleSupport.cycleDescription(), Log.CORE);
+  }
+
+  @Override
+  public void finishedBuildCycle(BuildCycle cycle, CycleSupport cycleSupport, Set<BuildUnit<?>> units) {
+    log.endTask();
+  }
+  
+  @Override
+  public void cancelledBuildCycleException(BuildCycle cycle, CycleSupport cycleSupport, Throwable t) {
+    if (cycleSupport == null && t instanceof BuildCycleException)
+      log.endTask("Could not find cycle support for cycle: " + cycle.getCycleComponents());
+    else
+      log.endTask("Cycle building failed: " + t.getMessage());
+  }
+
+  @Override
+  public <O extends Output> void buildRequirement(BuildRequest<?, O, ?, ?> req) {
+    // nothing
+  }
+
+  @Override
+  public <O extends Output> void finishedBuildRequirement(BuildRequest<?, O, ?, ?> req) {
+    // nothing
+  }
 }

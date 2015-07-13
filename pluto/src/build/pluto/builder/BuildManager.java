@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.InconsistenyReason;
@@ -27,18 +26,16 @@ public class BuildManager extends BuildUnitProvider {
 
   public static boolean ASSERT_SERIALIZABLE = false;
   
-  protected final IReporting report;
-  
   private ExecutingStack executingStack;
   private transient RequireStack requireStack;
   private transient DynamicAnalysis analysis;
 
   protected BuildManager(IReporting report) {
-    this.report = report;
+    super(report);
     this.executingStack = new ExecutingStack();
     // this.consistencyManager = new ConsistencyManager();
-    this.analysis = new DynamicAnalysis();
-    this.requireStack = new RequireStack();
+    this.analysis = new DynamicAnalysis(report);
+    this.requireStack = new RequireStack(report);
   }
 
   private <Out extends Output> void checkInterrupt(File dep, BuildUnit<Out> depResult, BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
@@ -83,7 +80,7 @@ public class BuildManager extends BuildUnitProvider {
 
     BuildUnit<Out> depResult = BuildUnit.read(dep);
     analysis.reset(depResult);
-    report.startedBuilder(builder, depResult, reasons);
+    report.startedBuilder(buildReq, builder, depResult, reasons);
     
     depResult = BuildUnit.create(dep, buildReq);
 
@@ -110,6 +107,7 @@ public class BuildManager extends BuildUnitProvider {
         throw this.tryCompileCycle(e);
       }
     } catch (BuildCycleException e) {
+      report.canceledBuilderException(buildReq, depResult, e);
       stopBuilderInCycle(builder, buildReq, depResult, inputHash, e);
 
     } catch (RequiredBuilderFailed e) {
@@ -155,15 +153,16 @@ public class BuildManager extends BuildUnitProvider {
       return e;
     }
 
-    Log.log.log("Detected a dependency cycle with root " + e.getCycleCause().createBuilder().persistentPath(), Log.CORE);
+    report.messageFromSystem("Detected a dependency cycle with root " + e.getCycleCause().createBuilder().persistentPath(), false, 0);
 
     e.setCycleState(CycleState.NOT_RESOLVED);
     BuildCycle cycle = e.getCycle();
     CycleSupport cycleSupport = cycle.findCycleSupport().orElseThrow(() -> e);
 
-    Log.log.beginTask("Compile cycle with: " + cycleSupport.cycleDescription(), Log.CORE);
+    report.startBuildCycle(cycle, cycleSupport);
+    Set<BuildUnit<?>> resultUnits = null;
     try {
-      Set<BuildUnit<?>> resultUnits = cycleSupport.buildCycle(this);
+      resultUnits = cycleSupport.buildCycle(this);
       for (BuildUnit<?> resultUnit : resultUnits) {
         resultUnit.write();
         this.requireStack.markConsistent(resultUnit.getGeneratedBy());
@@ -177,10 +176,10 @@ public class BuildManager extends BuildUnitProvider {
       e.setCycleState(cyclicEx.getCycleState());
     } catch (Throwable t) {
       e.setCycleState(CycleState.RESOLVED);
-      Log.log.endTask("Cyclic compilation failed: " + t.getMessage());
+      report.cancelledBuildCycleException(cycle, cycleSupport, t);
       return t;
     }
-    Log.log.endTask();
+    report.finishedBuildCycle(cycle, cycleSupport, resultUnits);
     return e;
   }
 
@@ -210,19 +209,17 @@ public class BuildManager extends BuildUnitProvider {
     } else {
       depResult.setState(State.FAILURE);
     }
-    Log.log.log("Stopped because of cycle", Log.CORE);
+    
     if (e.isFirstInvokedOn(buildReq)) {
       if (e.getCycleState() != CycleState.RESOLVED) {
-        Log.log.log("Unable to find builder which can compile the cycle", Log.CORE);
         // Cycle cannot be handled
+        report.cancelledBuildCycleException(e.getCycle(), null, e);
         throw new RequiredBuilderFailed(new BuildRequirement<Out>(depResult, buildReq), e);
       } else {
 
-        if (this.executingStack.getNumContains(e.getCycleCause()) == 1) {
-          Log.log.log("but cycle has been compiled", Log.CORE);
-
-        } else {
-          Log.log.log("too much entries left", Log.CORE);
+        if (this.executingStack.getNumContains(e.getCycleCause()) != 1) {
+          report.messageFromSystem("Too many entries of cycle cause left in execution stac", true, 0);
+          report.cancelledBuildCycleException(e.getCycle(), null, e);
           throw e;
         }
       }
@@ -241,15 +238,9 @@ public class BuildManager extends BuildUnitProvider {
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
   BuildUnit<Out> requireInitially(BuildRequest<In, Out, B, F> buildReq) throws IOException {
-    Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
-    boolean successful = false;
-    try {
-      BuildRequirement<Out> result = require(buildReq, true);
-      successful = !result.getUnit().hasFailed();
-      return result.getUnit();
-    } finally {
-      Log.log.endTask(successful);
-    }
+    report.messageFromSystem("Incrementally rebuild inconsistent units", false, 0);
+    BuildRequirement<Out> result = require(buildReq, true);
+    return result.getUnit();
   }
 
   @Override
@@ -278,12 +269,13 @@ public class BuildManager extends BuildUnitProvider {
     try {
 
       boolean assumptionIncomplete = requireStack.existsInconsistentCyclicRequest(buildReq);
-      Log.log.log("Assumptions inconsistent " + assumptionIncomplete, Log.DETAIL);
+      report.messageFromSystem("Assumptions inconsistent " + assumptionIncomplete, false, 10);
+      
       if (alreadyRequired) {
         if (!assumptionIncomplete) {
           return yield(buildReq, builder, depResult);
         } else {
-          Log.log.log("Deptected Require cycle for " + dep, Log.DETAIL);
+          report.messageFromSystem("Deptected Require cycle for " + dep, false, 7);
           BuildCycle cycle = requireStack.createCycleFor(buildReq);
           cycle = new BuildCycle(executingStack.topMostEntry(cycle.getCycleComponents()), cycle.getCycleComponents());
           throw new BuildCycleException("Require build cycle on " + dep, cycle.getInitial(), cycle);
@@ -339,22 +331,23 @@ public class BuildManager extends BuildUnitProvider {
 
       String desc = builder.description();
       if (desc != null)
-        Log.log.log("Failing builder was required by \"" + desc + "\".", Log.CORE);
+        report.messageFromSystem("Failing builder was required by \"" + desc + "\".", true, 0);
       throw e.enqueueBuilder(depResult, builder, false);
+      
     } catch (BuildCycleException e) {
-      Log.log.log("Build Cycle at " + dep + " init " + e.getCycleCause() + " rest " + e.getCycle().getCycleComponents(), Log.DETAIL);
+      report.messageFromSystem("Build Cycle at " + dep + " init " + e.getCycleCause() + " rest " + e.getCycle().getCycleComponents(), false, 7);
       BuildCycle extendedCycle = requireStack.createCycleFor(buildReq);
       extendedCycle = new BuildCycle(e.getCycleCause(), extendedCycle.getCycleComponents());
+
       if (e.getCycleState() == CycleState.UNHANDLED && e.getCycle().getCycleComponents().contains(extendedCycle.getInitial())) {
-        Log.log.log("Extend cycle to init " + extendedCycle.getInitial() + " rest " + extendedCycle.getCycleComponents(), Log.DETAIL);
-        if (!extendedCycle.getCycleComponents().containsAll(e.getCycle().getCycleComponents())) {
-          Log.log.log("Assert", Log.DETAIL);
+        report.messageFromSystem("Extend cycle to init " + extendedCycle.getInitial() + " rest " + extendedCycle.getCycleComponents(), false, 7);
+        if (!extendedCycle.getCycleComponents().containsAll(e.getCycle().getCycleComponents()))
           throw new AssertionError("Cycle " + e.getCycle().getCycleComponents() + " -  extended cycle " + extendedCycle.getCycleComponents());
-        }
         throw new BuildCycleException(e.getMessage(), e.getCycleCause(), extendedCycle);
       } else {
         throw e;
       }
+      
     } finally {
       requireStack.pop(buildReq);
     }
@@ -398,7 +391,7 @@ public class BuildManager extends BuildUnitProvider {
   BuildRequirement<Out> yield(BuildRequest<In, Out, B, F> req, B builder, BuildUnit<Out> unit) {
     if (unit.hasFailed()) {
       RequiredBuilderFailed e = new RequiredBuilderFailed(new BuildRequirement<Out>(unit, req), "no rebuild of failing builder");
-      Log.log.logErr(e.getMessage(), Log.CORE);
+      report.messageFromBuilder(e.getMessage(), true, builder);
       throw e;
     }
     return new BuildRequirement<>(unit, req);

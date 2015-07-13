@@ -41,5 +41,5 @@ public interface CycleSupport {
    * @throws Throwable
    */
   public Set<BuildUnit<?>> buildCycle(BuildUnitProvider manager) throws Throwable;
-
+  
 }
