@@ -5,7 +5,6 @@ import java.io.IOException;
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuildUnitProvider;
-import build.pluto.builder.IMetaBuildingEnabled;
 import build.pluto.output.Output;
 
 public class MetaBuildRequirement<Out extends Output> extends BuildRequirement<Out> {
