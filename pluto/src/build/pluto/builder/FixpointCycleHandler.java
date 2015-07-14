@@ -9,7 +9,7 @@ import build.pluto.BuildUnit;
 import build.pluto.util.IReporting;
 
 /**
- * The {@link FixpointCycleSupport} resolved cycles by fixpoint compiling: the
+ * The {@link FixpointCycleHandler} resolved cycles by fixpoint compiling: the
  * requests in the cycle are compiled again and again until a consistent state
  * is reached. The involved builders need to be designed to support this
  * strategy of resolving a cycle, otherwise no fixpoint may be detected and
@@ -18,10 +18,10 @@ import build.pluto.util.IReporting;
  * @author moritzlichter
  *
  */
-public class FixpointCycleSupport extends CycleHandler {
+public class FixpointCycleHandler extends CycleHandler {
 
   public static final CycleHandlerFactory of(BuilderFactory<?, ?, ?>... builders) {
-    return (BuildCycle cycle) -> new FixpointCycleSupport(cycle, builders);
+    return (BuildCycle cycle) -> new FixpointCycleHandler(cycle, builders);
   }
 
   /**
@@ -30,7 +30,7 @@ public class FixpointCycleSupport extends CycleHandler {
   private final List<BuilderFactory<?, ?, ?>> supportedBuilders;
   
   /**
-   * Creates a new {@link FixpointCycleSupport} which is able to handle build
+   * Creates a new {@link FixpointCycleHandler} which is able to handle build
    * requests to builders created by the given factories. If the cycle contains
    * any builder which is not from the given factories, the support rejects to
    * compile the cycle.
@@ -38,7 +38,7 @@ public class FixpointCycleSupport extends CycleHandler {
    * @param supportedBuilders
    *          all supported builder factories
    */
-  public FixpointCycleSupport(BuildCycle cycle, BuilderFactory<?, ?, ?>... supportedBuilders) {
+  public FixpointCycleHandler(BuildCycle cycle, BuilderFactory<?, ?, ?>... supportedBuilders) {
     super(cycle);
     this.supportedBuilders = Arrays.asList(supportedBuilders);
   }

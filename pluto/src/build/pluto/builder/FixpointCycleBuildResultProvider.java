@@ -20,7 +20,7 @@ import build.pluto.util.IReporting.BuildReason;
 
 /**
  * The {@link FixpointCycleBuildResultProvider} handles require calls for units
- * for the {@link FixpointCycleSupport}. During a iteration of compiling the
+ * for the {@link FixpointCycleHandler}. During a iteration of compiling the
  * cycle a build request is compiled at most once. If it is required cyclicy the
  * already existing unit is used. To resolve cycles the output of the previous
  * iteration is used.

@@ -11,7 +11,7 @@ import build.pluto.BuildUnit.State;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.output.Output;
 
-public class BuildAtOnceCycleSupport
+public class BuildAtOnceCycleHandler
 <
   In extends Serializable,
   Out extends Output,
@@ -23,7 +23,7 @@ extends CycleHandler {
 
   private final F builderFactory;
 
-  protected BuildAtOnceCycleSupport(BuildCycle cycle, F builderFactory) {
+  protected BuildAtOnceCycleHandler(BuildCycle cycle, F builderFactory) {
     super(cycle);
     this.builderFactory = builderFactory;
   }
