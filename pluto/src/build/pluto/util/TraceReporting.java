@@ -5,6 +5,7 @@ import java.util.Set;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildCycle;
+import build.pluto.builder.BuildCycleException;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.CycleSupport;
@@ -130,6 +131,11 @@ public class TraceReporting implements IReporting {
   @Override
   public <O extends Output> void canceledBuilderException(BuildRequest<?, O, ?, ?> req, BuildUnit<O> unit, Throwable t) {
     report.canceledBuilderException(req, unit, t);
+  }
+  
+  @Override
+  public <O extends Output> void canceledBuilderCycle(BuildRequest<?, O, ?, ?> req, BuildUnit<O> unit, BuildCycleException t) {
+    report.canceledBuilderCycle(req, unit, t);
   }
 
   @Override

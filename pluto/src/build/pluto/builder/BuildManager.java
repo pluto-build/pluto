@@ -38,12 +38,14 @@ public class BuildManager extends BuildUnitProvider {
     this.requireStack = new RequireStack(report);
   }
 
-  private <Out extends Output> void checkInterrupt(File dep, BuildUnit<Out> depResult, BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
+  private <Out extends Output> void checkInterrupt(boolean duringRequire, File dep, BuildUnit<Out> depResult, BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
     if (Thread.interrupted()) {
       if (depResult == null)
         depResult = BuildUnit.create(dep, buildReq);
-      depResult.requireOther(Requirement.FALSE);
-      depResult.setState(BuildUnit.State.FAILURE);
+      if (!duringRequire) {
+        depResult.requireOther(Requirement.FALSE);
+        depResult.setState(BuildUnit.State.FAILURE);
+      }
       report.canceledBuilderInterrupt(buildReq, depResult);
       throw RequiredBuilderFailed.init(new BuildRequirement<Out>(depResult, buildReq), new InterruptedException("Build was interrupted"));
     }
@@ -108,12 +110,12 @@ public class BuildManager extends BuildUnitProvider {
         throw this.tryCompileCycle(e);
       }
     } catch (BuildCycleException e) {
-      report.canceledBuilderException(buildReq, depResult, e);
+      report.canceledBuilderCycle(buildReq, depResult, e);
       stopBuilderInCycle(builder, buildReq, depResult, inputHash, e);
 
     } catch (RequiredBuilderFailed e) {
       report.canceledBuilderRequiredBuilderFailed(buildReq, depResult, e);
-      throw e.enqueueBuilder(depResult, builder);
+      throw e.enqueueBuilder(depResult, buildReq);
 
     } catch (ClosedByInterruptException e) {
       if (!Thread.currentThread().isInterrupted())
@@ -133,7 +135,7 @@ public class BuildManager extends BuildUnitProvider {
 
       try {
         analysis.check(depResult, inputHash);
-        checkInterrupt(dep, depResult, buildReq); // interrupt before consistency assertion because an interrupted build is never consistent. 
+        checkInterrupt(false, dep, depResult, buildReq); // interrupt before consistency assertion because an interrupted build is never consistent. 
         assertConsistency(depResult);
       } finally {
         depResult.write();
@@ -261,7 +263,7 @@ public class BuildManager extends BuildUnitProvider {
     File dep = builder.persistentPath();
     BuildUnit<Out> depResult = BuildUnit.read(dep);
 
-    checkInterrupt(dep, depResult, buildReq);
+    checkInterrupt(true, dep, depResult, buildReq);
     
     // Dont execute require because it is cyclic, requireStack keeps track of
     // this
@@ -335,7 +337,7 @@ public class BuildManager extends BuildUnitProvider {
       String desc = builder.description();
       if (desc != null)
         report.messageFromSystem("Failing builder was required by \"" + desc + "\".", true, 0);
-      throw e.enqueueBuilder(depResult, builder, false);
+      throw e.enqueueBuilder(depResult, buildReq, false);
       
     } catch (BuildCycleException e) {
       report.messageFromSystem("Build Cycle at " + dep + " init " + e.getCycleCause() + " rest " + e.getCycle().getCycleComponents(), false, 7);

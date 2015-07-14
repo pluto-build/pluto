@@ -224,12 +224,12 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
         markUnitCompletedInCurrentIteration(cycleUnit);
         return new BuildRequirement<Out>(cycleUnit, buildReq);
       } catch (BuildCycleException e) {
-        report.canceledBuilderException(buildReq, cycleUnit, e);
+        report.canceledBuilderCycle(buildReq, cycleUnit, e);
         throw this.tryCompileCycle(e);
       }
     } catch (BuildCycleException e) {
       // Build CycleException are delegated to parent unit provider
-      report.canceledBuilderException(buildReq, cycleUnit, e);
+      report.canceledBuilderCycle(buildReq, cycleUnit, e);
       throw e;
     } catch (Throwable e) {
       // Build exception

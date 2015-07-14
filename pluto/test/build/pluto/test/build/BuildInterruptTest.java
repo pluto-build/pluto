@@ -2,6 +2,7 @@ package build.pluto.test.build;
 
 import static build.pluto.test.build.Validators.requiredFilesOf;
 import static build.pluto.test.build.Validators.validateThat;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -13,6 +14,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import build.pluto.BuildUnit;
+import build.pluto.builder.BuildManagers;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.RequiredBuilderFailed;
 import build.pluto.test.build.once.SimpleBuilder;
@@ -71,6 +74,10 @@ public class BuildInterruptTest extends SimpleBuildTest {
     
     // no dep2File
     validateThat(requiredFilesOf(manager).containsSameElements(mainFile, dep1File, dep0File));
+    
+    BuildRequest<?,?,?,?> req = requirementForInput(new TestBuilderInput(testBasePath.toFile(), mainFile));
+    BuildUnit<?> unit = BuildManagers.readResult(req);
+    assertFalse(unit.isConsistent());
   }
   
   @Test
@@ -86,6 +93,10 @@ public class BuildInterruptTest extends SimpleBuildTest {
     
     // no dep2File
     validateThat(requiredFilesOf(manager).containsSameElements(mainFile, dep1File, dep0File));
+
+    BuildRequest<?,?,?,?> req = requirementForInput(new TestBuilderInput(testBasePath.toFile(), mainFile));
+    BuildUnit<?> unit = BuildManagers.readResult(req);
+    assertFalse(unit.isConsistent());
   }
 
   @Test

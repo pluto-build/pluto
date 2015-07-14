@@ -13,13 +13,18 @@ public interface Requirement extends Serializable {
     public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException {
       return false;
     }
-    
+
     @Override
     public boolean isConsistent() {
       return false;
     }
+
+    public String toString() {
+      return "FALSE";
+    };
   };
-  
+
   public boolean isConsistent();
+
   public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException;
 }

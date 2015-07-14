@@ -69,6 +69,14 @@ public class LogReporting implements IReporting {
   @Override
   public <O extends Output> void canceledBuilderException(BuildRequest<?, O, ?, ?> req, BuildUnit<O> unit, Throwable t) {
     log.endTask(t.getClass() + (t == null ? "" : (": " + t.getMessage())));
+    if (t instanceof BuildCycleException)
+      new RuntimeException("Unexpected build cycle ex").printStackTrace();
+    else
+      t.printStackTrace();
+  }
+  
+  public <O extends Output> void canceledBuilderCycle(BuildRequest<?, O, ?, ?> req, BuildUnit<O> unit, BuildCycleException t) {
+    log.endTask("Cycle detected. Stopping running builders before building cycle.");
   }
 
   @Override
