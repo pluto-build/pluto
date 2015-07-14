@@ -144,6 +144,12 @@ public abstract class PersistableEntity implements Serializable {
     }
   }
   
+  final public static void cleanCache() {
+    synchronized (PersistableEntity.class) {
+      inMemory.clear();
+    }
+  }
+
   final protected static <E extends PersistableEntity> E readFromMemoryCache(Class<E> clazz, File p) {
     PersistableEntity e;
     synchronized (PersistableEntity.class) {

@@ -1,6 +1,7 @@
 package build.pluto.builder;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import build.pluto.util.UniteCollections;
@@ -48,4 +49,13 @@ public abstract class CycleDetectionStack<C, P> {
     assert poppedEntry.equals(required) : "Got the wrong build stack entry from the stack";
   }
   
+  protected C topMostEntry(Collection<C> reqs) {
+    for (C r : this.callStack) {
+      if (reqs.contains(r)) {
+        return r;
+      }
+    }
+    return null;
+  }
+
 }

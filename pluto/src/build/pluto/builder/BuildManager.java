@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
@@ -154,26 +155,34 @@ public class BuildManager extends BuildUnitProvider {
     CycleSupport cycleSupport = cycle.findCycleSupport().orElseThrow(() -> e);
 
     Log.log.beginTask("Compile cycle with: " + cycleSupport.cycleDescription(), Log.CORE);
+    cycle.getCycleComponents().forEach(requireStack::push);
     try {
       Set<BuildUnit<?>> resultUnits = cycleSupport.buildCycle(this);
       for (BuildUnit<?> resultUnit : resultUnits) {
         resultUnit.write();
         this.requireStack.markConsistent(resultUnit.getGeneratedBy());
       }
+
       e.setCycleState(CycleState.RESOLVED);
+      return e;
     } catch (BuildCycleException cyclicEx) {
-      // Now cycle in cycle detected, use result from it
+      // New cycle in cycle detected, use result from it
       // But keep throw away the new exception but use
       // the existing ones to kill all builders of this
       // cycle
       e.setCycleState(cyclicEx.getCycleState());
+      throw cyclicEx;
     } catch (Throwable t) {
       e.setCycleState(CycleState.RESOLVED);
       Log.log.endTask("Cyclic compilation failed: " + t.getMessage());
       return t;
+    } finally {
+      for (int i = cycle.getCycleComponents().size() - 1; i >= 0; i--) {
+        requireStack.pop(cycle.getCycleComponents().get(i));
+      }
+      Log.log.endTask();
     }
-    Log.log.endTask();
-    return e;
+
   }
 
   // @formatter:off
@@ -255,6 +264,9 @@ public class BuildManager extends BuildUnitProvider {
   BuildRequirement<Out> require(final BuildRequest<In, Out, B, F> buildReq, boolean needBuildResult) throws IOException {
 
     B builder = buildReq.createBuilder();
+
+    Log.log.beginTask("Require " + builder.description(), Log.DETAIL);
+
     File dep = builder.persistentPath();
     BuildUnit<Out> depResult = BuildUnit.read(dep);
 
@@ -278,13 +290,18 @@ public class BuildManager extends BuildUnitProvider {
         } else {
           Log.log.log("Deptected Require cycle for " + dep, Log.DETAIL);
           BuildCycle cycle = requireStack.createCycleFor(buildReq);
-          cycle = new BuildCycle(executingStack.topMostEntry(cycle.getCycleComponents()), cycle.getCycleComponents());
-          throw new BuildCycleException("Require build cycle on " + dep, cycle.getInitial(), cycle);
+          BuildRequest<?, ?, ?, ?> cycleCause = executingStack.topMostEntry(cycle.getCycleComponents());
+
+          cycle = new BuildCycle(cycleCause, cycle.getCycleComponents());
+          BuildCycleException ex = new BuildCycleException("Require build cycle " + cycle.getCycleComponents().size() + " on " + dep, cycleCause, cycle);
+          throw ex;
         }
       }
 
-      if (requireStack.isConsistent(buildReq))
+      if (requireStack.isConsistent(buildReq)) {
+        Log.log.log("Already consistent!", Log.DETAIL);
         return yield(buildReq, builder, depResult);
+      }
 
       boolean noUnit = depResult == null;
       boolean changedInput = noUnit ? false : !depResult.getGeneratedBy().deepEquals(buildReq);
@@ -356,6 +373,7 @@ public class BuildManager extends BuildUnitProvider {
       }
     } finally {
       requireStack.pop(buildReq);
+      Log.log.endTask();
     }
 
     return yield(buildReq, builder, depResult);

@@ -57,14 +57,12 @@ public class RequireStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, 
   
   @Override
   protected Boolean push(BuildRequest<?, ?, ?, ?> dep) {
-    Log.log.beginTask("Require " + dep.createBuilder().description(), Log.DETAIL);
     return super.push(dep);
   }
 
   @Override
   public void pop(BuildRequest<?, ?, ?, ?> dep) {
     super.pop(dep);
-    Log.log.endTask();
   }
 
   public void markConsistent(BuildRequest<?, ?, ?, ?> dep) {
