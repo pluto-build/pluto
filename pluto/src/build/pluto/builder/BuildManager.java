@@ -301,7 +301,7 @@ public class BuildManager extends BuildUnitProvider {
       }
 
       for (Requirement req : depResult.getRequirements()) {
-        if (!req.isConsistentInBuild(this)) {
+        if (!req.tryMakeConsistent(this)) {
           executed = true;
           // Could get consistent because it was part of a cycle which is
           // compiled now

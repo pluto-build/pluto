@@ -177,7 +177,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
     // Consistency check of requirements
     for (Requirement req : cycleUnit.getRequirements()) {
-      if (!req.isConsistentInBuild(this)) {
+      if (!req.tryMakeConsistent(this)) {
         report.messageFromSystem("Require " + buildReq.createBuilder().description() + " needs build because requirement is not consistent: " + req, false, 7);
         return executeInCycle(buildReq);
       }

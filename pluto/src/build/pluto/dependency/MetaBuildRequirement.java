@@ -17,7 +17,7 @@ public class MetaBuildRequirement<Out extends Output> extends BuildRequirement<O
   }
 
   @Override
-  public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException {
+  public boolean tryMakeConsistent(BuildUnitProvider manager) throws IOException {
     // try to set metaBuilding
     IMetaBuildingEnabled meta = (IMetaBuildingEnabled) this.getRequest().input;
     if (meta != null) {

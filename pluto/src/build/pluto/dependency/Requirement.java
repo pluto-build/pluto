@@ -10,7 +10,7 @@ public interface Requirement extends Serializable {
     private static final long serialVersionUID = 6550975579546020627L;
 
     @Override
-    public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException {
+    public boolean tryMakeConsistent(BuildUnitProvider manager) throws IOException {
       return false;
     }
 
@@ -24,7 +24,16 @@ public interface Requirement extends Serializable {
     };
   };
 
+  /**
+   * @return true if this requirement is consistent.
+   */
   public boolean isConsistent();
 
-  public boolean isConsistentInBuild(BuildUnitProvider manager) throws IOException;
+  /**
+   * Try to make this requirement consistent, using the given build manager if needed.
+   * 
+   * @param manager The current build manager.
+   * @return true if this requirement is or was made consistent.
+   */
+  public boolean tryMakeConsistent(BuildUnitProvider manager) throws IOException;
 }
