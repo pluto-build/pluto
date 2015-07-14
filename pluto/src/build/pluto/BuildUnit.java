@@ -111,6 +111,11 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	  requirements.add(new MetaBuildRequirement<Out_>(mod, mod.getGeneratedBy()));
     requiredUnits.add(mod);
 	}
+	
+	public <Out_ extends Output> void requireOther(Requirement req) {
+    Objects.requireNonNull(req);
+    requirements.add(req);
+  }
 
 	// *********************************
 	// Methods for querying dependencies

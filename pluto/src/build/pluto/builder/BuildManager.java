@@ -42,6 +42,7 @@ public class BuildManager extends BuildUnitProvider {
     if (Thread.interrupted()) {
       if (depResult == null)
         depResult = BuildUnit.create(dep, buildReq);
+      depResult.requireOther(Requirement.FALSE);
       depResult.setState(BuildUnit.State.FAILURE);
       report.canceledBuilderInterrupt(buildReq, depResult);
       throw RequiredBuilderFailed.init(new BuildRequirement<Out>(depResult, buildReq), new InterruptedException("Build was interrupted"));
@@ -126,14 +127,17 @@ public class BuildManager extends BuildUnitProvider {
     } finally {
       if (!depResult.isFinished())
         depResult.setState(BuildUnit.State.FAILURE);
-      depResult.write();
 
       this.executingStack.pop(buildReq);
       this.requireStack.finishRebuild(buildReq);
 
-      analysis.check(depResult, inputHash);
-      checkInterrupt(dep, depResult, buildReq); // interrupt before consistency assertion: files may be in inconsistent state due to interruption (ClosedByInterruptException) 
-      assertConsistency(depResult);
+      try {
+        analysis.check(depResult, inputHash);
+        checkInterrupt(dep, depResult, buildReq); // interrupt before consistency assertion because an interrupted build is never consistent. 
+        assertConsistency(depResult);
+      } finally {
+        depResult.write();
+      }
       
       if (regularFinish && depResult.getState() == BuildUnit.State.SUCCESS)
         report.finishedBuilder(buildReq, depResult);
