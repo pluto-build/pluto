@@ -21,6 +21,7 @@ import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamp;
+import build.pluto.util.TraceData;
 
 /**
  * Dependency management for modules.
@@ -52,6 +53,8 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	private transient Set<File> requiredFiles;
 	
 	protected BuildRequest<?, Out, ?, ?> generatedBy;
+	
+	protected TraceData trace;
 	
 	// **************************
 	// Methods for initialization
@@ -108,6 +111,11 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	  requirements.add(new MetaBuildRequirement<Out_>(mod, mod.getGeneratedBy()));
     requiredUnits.add(mod);
 	}
+	
+	public <Out_ extends Output> void requireOther(Requirement req) {
+    Objects.requireNonNull(req);
+    requirements.add(req);
+  }
 
 	// *********************************
 	// Methods for querying dependencies
@@ -220,6 +228,14 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	public void setBuildResult(Out out) {
     this.buildResult = out;
   }
+	
+	public TraceData getTrace() {
+    return trace;
+  }
+	
+	public void setTrace(TraceData trace) {
+    this.trace = trace;
+  }
 
 	// ********************************************
 	// Methods for checking compilation consistency
@@ -250,7 +266,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	}
 
 	public static enum InconsistenyReason implements Comparable<InconsistenyReason>{
-    NO_REASON, DEPENDENCIES_INCONSISTENT, FILES_NOT_CONSISTENT, PERSISTENT_VERSION_CHANGED, NOT_FINISHED,
+    NO_REASON, DEPENDENCIES_INCONSISTENT, FILES_INCONSISTENT, OTHER_REQUIREMENT_INCONSISTENT, PERSISTENT_VERSION_CHANGED, NOT_FINISHED,
 	  
 	}
 
@@ -263,7 +279,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 
     for (FileRequirement freq : generatedFiles)
       if (!freq.isConsistent())
-        return InconsistenyReason.FILES_NOT_CONSISTENT;
+        return InconsistenyReason.FILES_INCONSISTENT;
 
     return InconsistenyReason.NO_REASON;
   }
@@ -279,15 +295,17 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 		
 		for (FileRequirement freq : generatedFiles)
       if (!freq.isConsistent()) {
-        return InconsistenyReason.FILES_NOT_CONSISTENT;
+        return InconsistenyReason.FILES_INCONSISTENT;
       }
 
 		for (Requirement req : requirements)
-		  if (req instanceof FileRequirement && !((FileRequirement) req).isConsistent()) {
-		    return InconsistenyReason.FILES_NOT_CONSISTENT;
-		  }else if (req instanceof BuildRequirement && !((BuildRequirement<?>) req).isConsistent()) {
-		    return InconsistenyReason.DEPENDENCIES_INCONSISTENT;
-		  }
+		  if (!req.isConsistent())
+  		  if (req instanceof FileRequirement)
+  		    return InconsistenyReason.FILES_INCONSISTENT;
+  		  else if (req instanceof BuildRequirement)
+  		    return InconsistenyReason.DEPENDENCIES_INCONSISTENT;
+  		  else
+  		    return InconsistenyReason.OTHER_REQUIREMENT_INCONSISTENT;
 		
 		return InconsistenyReason.NO_REASON;
 	}
@@ -387,6 +405,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	  generatedFiles = (Set<FileRequirement>) in.readObject();
 	  generatedBy = (BuildRequest<?, Out, ?, ?>) in.readObject();
 	  buildResult = (Out) in.readObject();
+	  trace = (TraceData) in.readObject();
 	}
 	
 	public void write() throws IOException {
@@ -400,6 +419,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 		out.writeObject(generatedFiles = Collections.unmodifiableSet(generatedFiles));
 		out.writeObject(generatedBy);
 		out.writeObject(buildResult);
+		out.writeObject(trace);
 	}
 	
 	@Override

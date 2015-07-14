@@ -6,8 +6,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.sugarj.common.Log;
-
 public class BuildCycle {
 
   private BuildRequest<?, ?, ?, ?> initial;
@@ -30,9 +28,9 @@ public class BuildCycle {
   protected Optional<CycleSupport> findCycleSupport() {
     Set<CycleSupportFactory> matchingSupports = this.cycle.stream().map((BuildRequest<?, ?, ?, ?> req) -> req.createBuilder().getCycleSupport()).filter((CycleSupportFactory c) -> c != null && c.createCycleSupport(this).canBuildCycle()).collect(Collectors.toSet());
 
-    if (matchingSupports.size() > 1) {
-      Log.log.log("Found " + matchingSupports.size() + " matching cycle supports for cycle.", Log.CORE);
-    }
+//    if (matchingSupports.size() > 1) {
+//      Log.log.log("Found " + matchingSupports.size() + " matching cycle supports for cycle.", Log.CORE);
+//    }
 
     return matchingSupports.stream().findAny().map((CycleSupportFactory f) -> f.createCycleSupport(this));
   }

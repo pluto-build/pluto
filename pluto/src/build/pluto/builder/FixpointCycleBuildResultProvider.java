@@ -3,12 +3,11 @@ package build.pluto.builder;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.InconsistenyReason;
@@ -17,6 +16,7 @@ import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.CyclicBuildRequirement;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
+import build.pluto.util.IReporting.BuildReason;
 
 /**
  * The {@link FixpointCycleBuildResultProvider} handles require calls for units
@@ -58,7 +58,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
    *          the cycle to compile
    */
   public FixpointCycleBuildResultProvider(BuildUnitProvider parentManager, BuildCycle cycle) {
-    super();
+    super(parentManager.report);
     this.parentManager = parentManager;
     this.cycle = cycle;
     this.requiredUnitsInIteration = new HashSet<>();
@@ -160,14 +160,14 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
     // Local inconsistency check
     boolean noUnit = cycleUnit == null;
     if (noUnit) {
-      Log.log.log("Require " + buildReq.createBuilder().description() + " needs build because no unit is found", Log.DETAIL);
+      report.messageFromSystem("Require " + buildReq.createBuilder().description() + " needs build because no unit is found", false, 7);
       return executeInCycle(buildReq);
     }
 
     InconsistenyReason inconsistent = cycleUnit.isConsistentNonrequirementsReason();
     final boolean localInconsistent = inconsistent != InconsistenyReason.NO_REASON;
     if (localInconsistent) {
-      Log.log.log("Require " + buildReq.createBuilder().description() + " need build because locally inconsistent: " + inconsistent, Log.DETAIL);
+      report.messageFromSystem("Require " + buildReq.createBuilder().description() + " need build because locally inconsistent: " + inconsistent, false, 7);
       return executeInCycle(buildReq);
     }
 
@@ -177,8 +177,8 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
 
     // Consistency check of requirements
     for (Requirement req : cycleUnit.getRequirements()) {
-      if (!req.isConsistentInBuild(this)) {
-        Log.log.log("Require " + buildReq.createBuilder().description() + " needs build because requirement is not consistent: " + req, Log.DETAIL);
+      if (!req.tryMakeConsistent(this)) {
+        report.messageFromSystem("Require " + buildReq.createBuilder().description() + " needs build because requirement is not consistent: " + req, false, 7);
         return executeInCycle(buildReq);
       }
     }
@@ -207,7 +207,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
         // Initialize the output to the old one, so units, which require this
         // units cylicly can work with the old result
         cycleUnit.setBuildResult(getOutputInPreviousIteration(buildReq));
-        Log.log.beginTask(buildReq.createBuilder().description(), Log.CORE);
+        report.startedBuilder(buildReq, builder, cycleUnit, Collections.singleton(BuildReason.FixPointNotReachedYet));
 
         markUnitRequiredInCurrentInteration(buildReq, cycleUnit);
 
@@ -216,23 +216,26 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
         // Trigger the build
         Out result = builder.triggerBuild(cycleUnit, this);
         cycleUnit.setBuildResult(result);
-        cycleUnit.setState(BuildUnit.State.finished(true));
-
+        
+        if (!cycleUnit.isFinished())
+          cycleUnit.setState(BuildUnit.State.SUCCESS);
+        report.finishedBuilder(buildReq, cycleUnit);
+        
         markUnitCompletedInCurrentIteration(cycleUnit);
         return new BuildRequirement<Out>(cycleUnit, buildReq);
       } catch (BuildCycleException e) {
-        Log.log.log("Stopped because of cycle", Log.CORE);
+        report.canceledBuilderCycle(buildReq, cycleUnit, e);
         throw this.tryCompileCycle(e);
       }
     } catch (BuildCycleException e) {
       // Build CycleException are delegated to parent unit provider
+      report.canceledBuilderCycle(buildReq, cycleUnit, e);
       throw e;
     } catch (Throwable e) {
       // Build exception
       cycleUnit.setState(State.FAILURE);
+      report.canceledBuilderException(buildReq, cycleUnit, e);
       throw new RequiredBuilderFailed(new BuildRequirement<>(cycleUnit, buildReq), e);
-    } finally {
-      Log.log.endTask(cycleUnit.getState() == BuildUnit.State.SUCCESS);
     }
   }
 

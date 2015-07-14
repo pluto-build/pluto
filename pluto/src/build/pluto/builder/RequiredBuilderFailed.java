@@ -5,6 +5,7 @@ import java.util.List;
 
 import build.pluto.BuildUnit;
 import build.pluto.dependency.BuildRequirement;
+import build.pluto.output.Output;
 
 public class RequiredBuilderFailed extends RuntimeException {
   private static final long serialVersionUID = 3080806736856580512L;
@@ -41,16 +42,16 @@ public class RequiredBuilderFailed extends RuntimeException {
     return "Required builder failed. Error occurred in build step \"" + p.getRequest().createBuilder().description() + "\": " + (getCause() == null ? super.getMessage() : getCause().getMessage());
   }
 
-  protected RequiredBuilderFailed enqueueBuilder(BuildUnit<?> depResult, Builder<?,?> builder) {
-    return enqueueBuilder(depResult, builder, true);
+  protected <Out extends Output> RequiredBuilderFailed enqueueBuilder(BuildUnit<Out> depResult, BuildRequest<?, Out, ?, ?> buildReq) {
+    return enqueueBuilder(depResult, buildReq, true);
   }
-  protected RequiredBuilderFailed enqueueBuilder(BuildUnit<?> depResult, Builder<?,?> builder, boolean addDependency) {
+  protected <Out extends Output> RequiredBuilderFailed enqueueBuilder(BuildUnit<Out> depResult, BuildRequest<?, Out, ?, ?> buildReq, boolean addDependency) {
     BuildRequirement<?> required = getLastAddedBuilder();
     if (addDependency)
       depResult.requires(required);
     depResult.setState(BuildUnit.State.FAILURE);
   
-    addBuilder(required);
+    addBuilder(new BuildRequirement<>(depResult, buildReq));
     return this;
   }
   

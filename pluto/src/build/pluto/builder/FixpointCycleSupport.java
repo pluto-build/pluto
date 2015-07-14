@@ -5,9 +5,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import org.sugarj.common.Log;
-
 import build.pluto.BuildUnit;
+import build.pluto.util.IReporting;
 
 /**
  * The {@link FixpointCycleSupport} resolved cycles by fixpoint compiling: the
@@ -33,7 +32,7 @@ public class FixpointCycleSupport implements CycleSupport {
    * The cycle to compile
    */
   private final BuildCycle cycle;
-
+  
   /**
    * Creates a new {@link FixpointCycleSupport} which is able to handle build
    * requests to builders created by the given factories. If the cycle contains
@@ -63,6 +62,7 @@ public class FixpointCycleSupport implements CycleSupport {
 
   @Override
   public Set<BuildUnit<?>> buildCycle(BuildUnitProvider manager) throws Throwable {
+    IReporting report = manager.report;
     FixpointCycleBuildResultProvider cycleManager = new FixpointCycleBuildResultProvider(manager, cycle);
 
     int numInterations = 1;
@@ -74,7 +74,7 @@ public class FixpointCycleSupport implements CycleSupport {
     // the complete cycle is consistent, so during an iteration no builder
     // executed
     while (!cycleConsistent) {
-      Log.log.beginTask("Fixpoint interation " + numInterations, Log.CORE);
+      report.messageFromSystem("Fixpoint interation " + numInterations, false, 0);
       cycleManager.startNextIteration();
       try {
         // CycleComponents are in order if which they were required
@@ -86,11 +86,9 @@ public class FixpointCycleSupport implements CycleSupport {
       } catch (RequiredBuilderFailed e) {
         throw e;
       }
-      Log.log.endTask();
       numInterations++;
     }
-    Log.log.log("Fixpoint detected.", Log.CORE);
+    report.messageFromSystem("Fixpoint detected", false, 0);
     return cycleManager.getAllUnitsInCycle();
   }
-
 }

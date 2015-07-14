@@ -5,9 +5,16 @@ import java.io.Serializable;
 
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.output.Output;
+import build.pluto.util.IReporting;
 
 public abstract class BuildUnitProvider {
 
+  protected final IReporting report;
+  
+  public BuildUnitProvider(IReporting report) {
+    this.report = report;
+  }
+  
   public abstract
   //@formatter:off
   <In extends Serializable,

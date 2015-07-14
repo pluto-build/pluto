@@ -5,10 +5,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.TreeSet;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.Log;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.InconsistenyReason;
@@ -18,6 +17,8 @@ import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
+import build.pluto.util.IReporting;
+import build.pluto.util.IReporting.BuildReason;
 
 import com.cedarsoftware.util.DeepEquals;
 
@@ -29,19 +30,22 @@ public class BuildManager extends BuildUnitProvider {
   private transient RequireStack requireStack;
   private transient DynamicAnalysis analysis;
 
-  protected BuildManager() {
+  protected BuildManager(IReporting report) {
+    super(report);
     this.executingStack = new ExecutingStack();
-    // this.consistencyManager = new ConsistencyManager();
-    this.analysis = new DynamicAnalysis();
     this.requireStack = new RequireStack();
+    this.analysis = new DynamicAnalysis(report);
   }
 
-  private <Out extends Output> void checkInterrupt(File dep, BuildUnit<Out> depResult, BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
+  private <Out extends Output> void checkInterrupt(boolean duringRequire, File dep, BuildUnit<Out> depResult, BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
     if (Thread.interrupted()) {
       if (depResult == null)
         depResult = BuildUnit.create(dep, buildReq);
-      Log.log.logErr("Build was interrupted", Log.CORE);
-      depResult.setState(BuildUnit.State.FAILURE);
+      if (!duringRequire) {
+        depResult.requireOther(Requirement.FALSE);
+        depResult.setState(BuildUnit.State.FAILURE);
+      }
+      report.canceledBuilderInterrupt(buildReq, depResult);
       throw RequiredBuilderFailed.init(new BuildRequirement<Out>(depResult, buildReq), new InterruptedException("Build was interrupted"));
     }
   }
@@ -72,12 +76,15 @@ public class BuildManager extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   // @formatter:on
-  BuildRequirement<Out> executeBuilder(Builder<In, Out> builder, File dep, BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildRequirement<Out> executeBuilder(Builder<In, Out> builder, File dep, BuildRequest<In, Out, B, F> buildReq, Set<BuildReason> reasons) throws IOException {
 
-    this.requireStack.beginRebuild(buildReq);
+    this.requireStack.beginRebuild(buildReq, reasons);
 
-    analysis.reset(BuildUnit.read(dep));
-    BuildUnit<Out> depResult = BuildUnit.create(dep, buildReq);
+    BuildUnit<Out> depResult = BuildUnit.read(dep);
+    analysis.reset(depResult);
+    report.startedBuilder(buildReq, builder, depResult, reasons);
+    
+    depResult = BuildUnit.create(dep, buildReq);
 
     setUpMetaDependency(builder, depResult);
 
@@ -86,11 +93,9 @@ public class BuildManager extends BuildUnitProvider {
 
     int inputHash = DeepEquals.deepHashCode(builder.getInput());
 
-    String taskDescription = builder.description();
-    if (taskDescription != null)
-      Log.log.beginTask(taskDescription, Log.CORE);
 
     depResult.setState(BuildUnit.State.IN_PROGESS);
+    boolean regularFinish = false;
 
     try {
       try {
@@ -99,16 +104,17 @@ public class BuildManager extends BuildUnitProvider {
         depResult.setBuildResult(out);
         if (!depResult.isFinished())
           depResult.setState(BuildUnit.State.SUCCESS);
+        regularFinish = true;
       } catch (BuildCycleException e) {
         throw this.tryCompileCycle(e);
       }
     } catch (BuildCycleException e) {
+      report.canceledBuilderCycle(buildReq, depResult, e);
       stopBuilderInCycle(builder, buildReq, depResult, inputHash, e);
 
     } catch (RequiredBuilderFailed e) {
-      if (taskDescription != null)
-        Log.log.logErr(e.getMessage(), Log.CORE);
-      throw e.enqueueBuilder(depResult, builder);
+      report.canceledBuilderRequiredBuilderFailed(buildReq, depResult, e);
+      throw e.enqueueBuilder(depResult, buildReq);
 
     } catch (ClosedByInterruptException e) {
       if (!Thread.currentThread().isInterrupted())
@@ -116,27 +122,31 @@ public class BuildManager extends BuildUnitProvider {
       // triggers regular interrupt handler below
       
     } catch (Throwable e) {
-      Log.log.logErr(e.getClass() + ": " + e.getMessage(), Log.CORE);
+      report.canceledBuilderException(buildReq, depResult, e);
       throw RequiredBuilderFailed.init(new BuildRequirement<Out>(depResult, buildReq), e);
 
     } finally {
       if (!depResult.isFinished())
         depResult.setState(BuildUnit.State.FAILURE);
-      depResult.write();
-      if (taskDescription != null)
-        Log.log.endTask(depResult.getState() == BuildUnit.State.SUCCESS);
 
       this.executingStack.pop(buildReq);
       this.requireStack.finishRebuild(buildReq);
 
-      analysis.check(depResult, inputHash);
-      checkInterrupt(dep, depResult, buildReq); // interrupt before consistency assertion: files may be in inconsistent state due to interruption (ClosedByInterruptException) 
-      assertConsistency(depResult);
+      try {
+        analysis.check(depResult, inputHash);
+        checkInterrupt(false, dep, depResult, buildReq); // interrupt before consistency assertion because an interrupted build is never consistent. 
+        assertConsistency(depResult);
+      } finally {
+        depResult.write();
+      }
+      
+      if (regularFinish && depResult.getState() == BuildUnit.State.SUCCESS)
+        report.finishedBuilder(buildReq, depResult);
+      else if (regularFinish && depResult.getState() == BuildUnit.State.FAILURE) {
+        report.canceledBuilderFailure(buildReq, depResult);
+        throw new RequiredBuilderFailed(new BuildRequirement<Out>(depResult, buildReq), new Error("Builder failed"));
+      }
     }
-
-    if (depResult.getState() == BuildUnit.State.FAILURE)
-      throw new RequiredBuilderFailed(new BuildRequirement<Out>(depResult, buildReq), new IllegalStateException("Builder failed for unknown reason, please confer log."));
-
     
     return new BuildRequirement<Out>(depResult, buildReq);
   }
@@ -148,16 +158,17 @@ public class BuildManager extends BuildUnitProvider {
       return e;
     }
 
-    Log.log.log("Detected a dependency cycle with root " + e.getCycleCause().createBuilder().persistentPath(), Log.CORE);
+    report.messageFromSystem("Detected a dependency cycle with root " + e.getCycleCause().createBuilder().persistentPath(), false, 0);
 
     e.setCycleState(CycleState.NOT_RESOLVED);
     BuildCycle cycle = e.getCycle();
     CycleSupport cycleSupport = cycle.findCycleSupport().orElseThrow(() -> e);
 
-    Log.log.beginTask("Compile cycle with: " + cycleSupport.cycleDescription(), Log.CORE);
+    report.startBuildCycle(cycle, cycleSupport);
     cycle.getCycleComponents().forEach(requireStack::push);
+    Set<BuildUnit<?>> resultUnits = null;
     try {
-      Set<BuildUnit<?>> resultUnits = cycleSupport.buildCycle(this);
+      resultUnits = cycleSupport.buildCycle(this);
       for (BuildUnit<?> resultUnit : resultUnits) {
         resultUnit.write();
         this.requireStack.markConsistent(resultUnit.getGeneratedBy());
@@ -174,15 +185,14 @@ public class BuildManager extends BuildUnitProvider {
       throw cyclicEx;
     } catch (Throwable t) {
       e.setCycleState(CycleState.RESOLVED);
-      Log.log.endTask("Cyclic compilation failed: " + t.getMessage());
+      report.cancelledBuildCycleException(cycle, cycleSupport, t);
       return t;
     } finally {
       for (int i = cycle.getCycleComponents().size() - 1; i >= 0; i--) {
         requireStack.pop(cycle.getCycleComponents().get(i));
       }
-      Log.log.endTask();
+      report.finishedBuildCycle(cycle, cycleSupport, resultUnits);
     }
-
   }
 
   // @formatter:off
@@ -211,19 +221,17 @@ public class BuildManager extends BuildUnitProvider {
     } else {
       depResult.setState(State.FAILURE);
     }
-    Log.log.log("Stopped because of cycle", Log.CORE);
+    
     if (e.isFirstInvokedOn(buildReq)) {
       if (e.getCycleState() != CycleState.RESOLVED) {
-        Log.log.log("Unable to find builder which can compile the cycle", Log.CORE);
         // Cycle cannot be handled
+        report.cancelledBuildCycleException(e.getCycle(), null, e);
         throw new RequiredBuilderFailed(new BuildRequirement<Out>(depResult, buildReq), e);
       } else {
 
-        if (this.executingStack.getNumContains(e.getCycleCause()) == 1) {
-          Log.log.log("but cycle has been compiled", Log.CORE);
-
-        } else {
-          Log.log.log("too much entries left", Log.CORE);
+        if (this.executingStack.getNumContains(e.getCycleCause()) != 1) {
+          report.messageFromSystem("Too many entries of cycle cause left in execution stac", true, 0);
+          report.cancelledBuildCycleException(e.getCycle(), null, e);
           throw e;
         }
       }
@@ -242,15 +250,9 @@ public class BuildManager extends BuildUnitProvider {
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
   BuildUnit<Out> requireInitially(BuildRequest<In, Out, B, F> buildReq) throws IOException {
-    Log.log.beginTask("Incrementally rebuild inconsistent units", Log.CORE);
-    boolean successful = false;
-    try {
-      BuildRequirement<Out> result = require(buildReq, true);
-      successful = !result.getUnit().hasFailed();
-      return result.getUnit();
-    } finally {
-      Log.log.endTask(successful);
-    }
+    report.messageFromSystem("Incrementally rebuild inconsistent units", false, 0);
+    BuildRequirement<Out> result = require(buildReq, true);
+    return result.getUnit();
   }
 
   @Override
@@ -265,12 +267,12 @@ public class BuildManager extends BuildUnitProvider {
 
     B builder = buildReq.createBuilder();
 
-    Log.log.beginTask("Require " + builder.description(), Log.DETAIL);
+    report.buildRequirement(buildReq);
 
     File dep = builder.persistentPath();
     BuildUnit<Out> depResult = BuildUnit.read(dep);
 
-    checkInterrupt(dep, depResult, buildReq);
+    checkInterrupt(true, dep, depResult, buildReq);
     
     // Dont execute require because it is cyclic, requireStack keeps track of
     // this
@@ -280,15 +282,14 @@ public class BuildManager extends BuildUnitProvider {
     boolean alreadyRequired = requireStack.push(buildReq);
     boolean executed = false;
     try {
-      boolean knownInconsistent = requireStack.isKnownInconsistent(dep);
-
-      boolean assumptionIncomplete = requireStack.existsInconsistentCyclicRequest(buildReq);
-      Log.log.log("Assumptions inconsistent " + assumptionIncomplete, Log.DETAIL);
       if (alreadyRequired) {
+        report.messageFromSystem("Already required " + buildReq, false, 7);
+        boolean assumptionIncomplete = requireStack.existsInconsistentCyclicRequest(buildReq);
+        report.messageFromSystem("Assumptions inconsistent " + assumptionIncomplete, false, 10);
         if (!assumptionIncomplete) {
           return yield(buildReq, builder, depResult);
         } else {
-          Log.log.log("Deptected Require cycle for " + dep, Log.DETAIL);
+          report.messageFromSystem("Deptected Require cycle for " + dep, false, 7);
           BuildCycle cycle = requireStack.createCycleFor(buildReq);
           BuildRequest<?, ?, ?, ?> cycleCause = executingStack.topMostEntry(cycle.getCycleComponents());
 
@@ -299,38 +300,32 @@ public class BuildManager extends BuildUnitProvider {
       }
 
       if (requireStack.isConsistent(buildReq)) {
-        Log.log.log("Already consistent!", Log.DETAIL);
+        report.messageFromSystem("Already consistent!", false, 7);
         return yield(buildReq, builder, depResult);
       }
 
-      boolean noUnit = depResult == null;
-      boolean changedInput = noUnit ? false : !depResult.getGeneratedBy().deepEquals(buildReq);
-      InconsistenyReason localInconsistencyReason = noUnit ? null : depResult.isConsistentNonrequirementsReason();
-      boolean inconsistentNoRequirements = noUnit ? false : localInconsistencyReason != InconsistenyReason.NO_REASON;
-      boolean noOut = noUnit || !(depResult.getBuildResult() instanceof build.pluto.output.Out<?>);
-      boolean expiredOutput = noUnit || noOut ? false : ((build.pluto.output.Out<?>) depResult.getBuildResult()).expired();
-      boolean localInconsistent = knownInconsistent || noUnit || changedInput || inconsistentNoRequirements || (needBuildResult && expiredOutput);
-      Log.log.log("Locally consistent " + !localInconsistent + ":" + (knownInconsistent ? "knownInconsistent, " : "") + (noUnit ? "noUnit, " : "") + (changedInput ? "changedInput, " : "") + (inconsistentNoRequirements ? "inconsistentNoReqs (" + localInconsistencyReason + "), " : ""), Log.DETAIL);
+      Set<BuildReason> reasons = computeLocalBuildReasons(buildReq, needBuildResult, dep, depResult);
       
-      if (localInconsistent) {
+      if (!reasons.isEmpty()) {
         // Local inconsistency should execute the builder regardless whether it
         // has been required to detect the cycle
         // TODO should inconsistent file requirements trigger the same, they
         // should i think
         executed = true;
-        Log.log.log("Rebuild because locally inconsistent", Log.DETAIL);
-        return executeBuilder(builder, dep, buildReq);
+        return executeBuilder(builder, dep, buildReq, reasons);
       }
 
       for (Requirement req : depResult.getRequirements()) {
-        if (!req.isConsistentInBuild(this)) {
+        if (!req.tryMakeConsistent(this)) {
           executed = true;
           // Could get consistent because it was part of a cycle which is
           // compiled now
           if (requireStack.isConsistent(buildReq))
             return yield(buildReq, builder, depResult);
-          Log.log.log("Rebuild because " + req + " not consistent", Log.DETAIL);
-          return executeBuilder(builder, dep, buildReq);
+          
+          report.inconsistentRequirement(req);
+          reasons.add(BuildReason.InconsistentRequirement);
+          return executeBuilder(builder, dep, buildReq, reasons);
         }
       }
 
@@ -349,34 +344,62 @@ public class BuildManager extends BuildUnitProvider {
         requireStack.markAssumed(buildReq);
       }
 
+      report.skippedBuilder(buildReq, depResult);
     } catch (RequiredBuilderFailed e) {
       if (executed || e.getLastAddedBuilder().getUnit().getPersistentPath().equals(depResult.getPersistentPath()))
         throw e;
 
       String desc = builder.description();
       if (desc != null)
-        Log.log.log("Failing builder was required by \"" + desc + "\".", Log.CORE);
-      throw e.enqueueBuilder(depResult, builder, false);
+        report.messageFromSystem("Failing builder was required by \"" + desc + "\".", true, 0);
+      throw e.enqueueBuilder(depResult, buildReq, false);
+      
     } catch (BuildCycleException e) {
-      Log.log.log("Build Cycle at " + dep + " init " + e.getCycleCause() + " rest " + e.getCycle().getCycleComponents(), Log.DETAIL);
+      report.messageFromSystem("Build Cycle at " + dep + " init " + e.getCycleCause() + " rest " + e.getCycle().getCycleComponents(), false, 7);
       BuildCycle extendedCycle = requireStack.createCycleFor(buildReq);
       extendedCycle = new BuildCycle(e.getCycleCause(), extendedCycle.getCycleComponents());
+
       if (e.getCycleState() == CycleState.UNHANDLED && e.getCycle().getCycleComponents().contains(extendedCycle.getInitial())) {
-        Log.log.log("Extend cycle to init " + extendedCycle.getInitial() + " rest " + extendedCycle.getCycleComponents(), Log.DETAIL);
-        if (!extendedCycle.getCycleComponents().containsAll(e.getCycle().getCycleComponents())) {
-          Log.log.log("Assert", Log.DETAIL);
+        report.messageFromSystem("Extend cycle to init " + extendedCycle.getInitial() + " rest " + extendedCycle.getCycleComponents(), false, 7);
+        if (!extendedCycle.getCycleComponents().containsAll(e.getCycle().getCycleComponents()))
           throw new AssertionError("Cycle " + e.getCycle().getCycleComponents() + " -  extended cycle " + extendedCycle.getCycleComponents());
-        }
         throw new BuildCycleException(e.getMessage(), e.getCycleCause(), extendedCycle);
       } else {
         throw e;
       }
+      
     } finally {
       requireStack.pop(buildReq);
-      Log.log.endTask();
+      report.finishedBuildRequirement(buildReq);
     }
 
     return yield(buildReq, builder, depResult);
+  }
+
+  private <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> Set<BuildReason> computeLocalBuildReasons(final BuildRequest<In, Out, B, F> buildReq, boolean needBuildResult, File dep, BuildUnit<Out> depResult) {
+    Set<BuildReason> reasons = new TreeSet<IReporting.BuildReason>();
+    
+    Set<BuildReason> knownInconsistent = requireStack.isKnownInconsistent(dep);
+    if (knownInconsistent != null)
+      reasons.addAll(knownInconsistent);
+    
+    if (depResult == null)
+      reasons.add(BuildReason.NoBuildSummary);
+    else {
+      if (!depResult.getGeneratedBy().deepEquals(buildReq))
+        reasons.add(BuildReason.ChangedBuilderInput);
+      
+      InconsistenyReason localInconsistencyReason = depResult.isConsistentNonrequirementsReason();
+      if (localInconsistencyReason != InconsistenyReason.NO_REASON)
+        reasons.add(BuildReason.from(localInconsistencyReason));
+      
+      boolean noOut = !(depResult.getBuildResult() instanceof build.pluto.output.Out<?>);
+      boolean expiredOutput = noOut ? false : ((build.pluto.output.Out<?>) depResult.getBuildResult()).expired();
+      if (needBuildResult && expiredOutput)
+        reasons.add(BuildReason.ExpiredOutput);
+    }
+    
+    return reasons;
   }
 
   //@formatter:off
@@ -389,7 +412,7 @@ public class BuildManager extends BuildUnitProvider {
   BuildRequirement<Out> yield(BuildRequest<In, Out, B, F> req, B builder, BuildUnit<Out> unit) {
     if (unit.hasFailed()) {
       RequiredBuilderFailed e = new RequiredBuilderFailed(new BuildRequirement<Out>(unit, req), "no rebuild of failing builder");
-      Log.log.logErr(e.getMessage(), Log.CORE);
+      report.messageFromBuilder(e.getMessage(), true, builder);
       throw e;
     }
     return new BuildRequirement<>(unit, req);

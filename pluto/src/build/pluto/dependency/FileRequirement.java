@@ -22,7 +22,7 @@ public class FileRequirement implements Requirement {
   }
   
   @Override
-  public boolean isConsistentInBuild(BuildUnitProvider manager) {
+  public boolean tryMakeConsistent(BuildUnitProvider manager) {
     return isConsistent();
   }
   

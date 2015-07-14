@@ -20,6 +20,7 @@ import build.pluto.dependency.IllegalDependencyException;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
 import build.pluto.util.AbsoluteComparedFile;
+import build.pluto.util.IReporting;
 import build.pluto.xattr.Xattr;
 
 import com.cedarsoftware.util.DeepEquals;
@@ -28,10 +29,12 @@ import com.cedarsoftware.util.Traverser;
 public class DynamicAnalysis {
   public final static Xattr XATTR = Xattr.getDefault();
   
+  private final IReporting report;
   private Map<File, BuildUnit<?>> generatedFiles;
   private Map<Output, BuildUnit<?>> generatedOutput;
 
-  public DynamicAnalysis() {
+  public DynamicAnalysis(IReporting report) {
+    this.report = report;
     this.generatedFiles = new HashMap<>();
     this.generatedOutput = new HashMap<>();
   }
@@ -94,7 +97,7 @@ public class DynamicAnalysis {
           try {
             dep = XATTR.getGenBy(file);
           } catch (IOException e) {
-            Log.log.log("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, Log.IMPORT);
+            report.messageFromSystem("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, true, 0);
           }
           if (dep != null) {
 
