@@ -8,7 +8,7 @@ import build.pluto.builder.BuildCycle;
 import build.pluto.builder.BuildCycleException;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
-import build.pluto.builder.CycleSupport;
+import build.pluto.builder.CycleHandler;
 import build.pluto.builder.RequiredBuilderFailed;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
@@ -149,17 +149,17 @@ public class TraceReporting implements IReporting {
   }
 
   @Override
-  public void startBuildCycle(BuildCycle cycle, CycleSupport cycleSupport) {
+  public void startBuildCycle(BuildCycle cycle, CycleHandler cycleSupport) {
     report.startBuildCycle(cycle, cycleSupport);
   }
 
   @Override
-  public void finishedBuildCycle(BuildCycle cycle, CycleSupport cycleSupport, Set<BuildUnit<?>> units) {
+  public void finishedBuildCycle(BuildCycle cycle, CycleHandler cycleSupport, Set<BuildUnit<?>> units) {
     report.finishedBuildCycle(cycle, cycleSupport, units);
   }
 
   @Override
-  public void cancelledBuildCycleException(BuildCycle cycle, CycleSupport cycleSupport, Throwable t) {
+  public void cancelledBuildCycleException(BuildCycle cycle, CycleHandler cycleSupport, Throwable t) {
     report.cancelledBuildCycleException(cycle, cycleSupport, t);
   }
 

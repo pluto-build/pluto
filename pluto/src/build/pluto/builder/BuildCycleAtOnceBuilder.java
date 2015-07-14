@@ -32,7 +32,7 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
   }
 
   @Override
-  protected CycleSupportFactory getCycleSupport() {
+  protected CycleHandlerFactory getCycleSupport() {
     return (BuildCycle cycle) -> new BuildAtOnceCycleSupport<>(cycle, this.factory);
   }
 

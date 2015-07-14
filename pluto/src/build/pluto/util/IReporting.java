@@ -8,7 +8,7 @@ import build.pluto.builder.BuildCycle;
 import build.pluto.builder.BuildCycleException;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
-import build.pluto.builder.CycleSupport;
+import build.pluto.builder.CycleHandler;
 import build.pluto.builder.RequiredBuilderFailed;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
@@ -44,9 +44,9 @@ public interface IReporting {
   public <O extends Output> void canceledBuilderInterrupt(BuildRequest<?, O, ?, ?> req, BuildUnit<O> unit);
   public <O extends Output> void canceledBuilderRequiredBuilderFailed(BuildRequest<?, O, ?, ?> req, BuildUnit<O> unit, RequiredBuilderFailed e);
 
-  public void startBuildCycle(BuildCycle cycle, CycleSupport cycleSupport);
-  public void finishedBuildCycle(BuildCycle cycle, CycleSupport cycleSupport, Set<BuildUnit<?>> units);
-  public void cancelledBuildCycleException(BuildCycle cycle, CycleSupport cycleSupport, Throwable t);
+  public void startBuildCycle(BuildCycle cycle, CycleHandler cycleSupport);
+  public void finishedBuildCycle(BuildCycle cycle, CycleHandler cycleSupport, Set<BuildUnit<?>> units);
+  public void cancelledBuildCycleException(BuildCycle cycle, CycleHandler cycleSupport, Throwable t);
   
   public void inconsistentRequirement(Requirement req);
   

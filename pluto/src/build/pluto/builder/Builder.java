@@ -94,14 +94,14 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   }
 
   /**
-   * Returns the {@link CycleSupportFactory} this builder provides if it is
+   * Returns the {@link CycleHandlerFactory} this builder provides if it is
    * involved in a cycle. By default the builder does not support a cycle and
    * this method returns null.
    * 
-   * @return the {@link CycleSupportFactory} which can be used to resolve cycles
+   * @return the {@link CycleHandlerFactory} which can be used to resolve cycles
    *         that include this builder
    */
-  protected CycleSupportFactory getCycleSupport() {
+  protected CycleHandlerFactory getCycleSupport() {
     return null;
   }
 

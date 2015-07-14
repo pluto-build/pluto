@@ -19,25 +19,23 @@ public class BuildAtOnceCycleSupport
   F extends BuilderFactory<ArrayList<In>, Out, B>
 >
 //@formatter:on
-implements CycleSupport {
+extends CycleHandler {
 
-  protected final BuildCycle cycle;
   private final F builderFactory;
 
   protected BuildAtOnceCycleSupport(BuildCycle cycle, F builderFactory) {
-    super();
-    this.cycle = cycle;
+    super(cycle);
     this.builderFactory = builderFactory;
   }
 
   @Override
-  public boolean canBuildCycle() {
+  public boolean canBuildCycle(BuildCycle cycle) {
     return cycle.getCycleComponents().stream().allMatch((BuildRequest<?, ?, ?, ?> req) -> req.factory == builderFactory && (req.input instanceof ArrayList<?>));
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public Set<BuildUnit<?>> buildCycle(BuildUnitProvider manager) throws Throwable {
+  public Set<BuildUnit<?>> buildCycle(BuildCycle cycle, BuildUnitProvider manager) throws Throwable {
     ArrayList<BuildUnit<Out>> cyclicResults = new ArrayList<>();
     ArrayList<In> inputs = new ArrayList<>();
     ArrayList<BuildRequest<?, Out, ?, ?>> requests = new ArrayList<>();
@@ -78,7 +76,7 @@ implements CycleSupport {
 
   @SuppressWarnings("unchecked")
   @Override
-  public String cycleDescription() {
+  public String cycleDescription(BuildCycle cycle) {
     ArrayList<In> inputs = new ArrayList<>(cycle.getCycleComponents().size());
     for (BuildRequest<?, ?, ?, ?> request : cycle.getCycleComponents()) {
       // Cast is safe, otherwise cycle handler rejected to compile the cycle

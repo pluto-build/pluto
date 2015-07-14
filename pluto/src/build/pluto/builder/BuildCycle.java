@@ -25,13 +25,13 @@ public class BuildCycle {
     return initial;
   }
 
-  protected Optional<CycleSupport> findCycleSupport() {
-    Set<CycleSupportFactory> matchingSupports = this.cycle.stream().map((BuildRequest<?, ?, ?, ?> req) -> req.createBuilder().getCycleSupport()).filter((CycleSupportFactory c) -> c != null && c.createCycleSupport(this).canBuildCycle()).collect(Collectors.toSet());
+  protected Optional<CycleHandler> findCycleSupport() {
+    Set<CycleHandlerFactory> matchingSupports = this.cycle.stream().map((BuildRequest<?, ?, ?, ?> req) -> req.createBuilder().getCycleSupport()).filter((CycleHandlerFactory c) -> c != null && c.createCycleSupport(this).canBuildCycle()).collect(Collectors.toSet());
 
 //    if (matchingSupports.size() > 1) {
 //      Log.log.log("Found " + matchingSupports.size() + " matching cycle supports for cycle.", Log.CORE);
 //    }
 
-    return matchingSupports.stream().findAny().map((CycleSupportFactory f) -> f.createCycleSupport(this));
+    return matchingSupports.stream().findAny().map((CycleHandlerFactory f) -> f.createCycleSupport(this));
   }
 }

@@ -162,7 +162,7 @@ public class BuildManager extends BuildUnitProvider {
 
     e.setCycleState(CycleState.NOT_RESOLVED);
     BuildCycle cycle = e.getCycle();
-    CycleSupport cycleSupport = cycle.findCycleSupport().orElseThrow(() -> e);
+    CycleHandler cycleSupport = cycle.findCycleSupport().orElseThrow(() -> e);
 
     report.startBuildCycle(cycle, cycleSupport);
     cycle.getCycleComponents().forEach(requireStack::push);

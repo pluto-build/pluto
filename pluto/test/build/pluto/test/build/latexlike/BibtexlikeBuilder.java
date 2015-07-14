@@ -15,7 +15,7 @@ import org.sugarj.common.FileCommands;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
-import build.pluto.builder.CycleSupportFactory;
+import build.pluto.builder.CycleHandlerFactory;
 import build.pluto.output.IgnoreOutputStamper;
 import build.pluto.output.OutputPersisted;
 import build.pluto.stamp.FileContentStamper;
@@ -41,7 +41,7 @@ public class BibtexlikeBuilder extends Builder<File, OutputPersisted<File>> {
   }
 
   @Override
-  protected CycleSupportFactory getCycleSupport() {
+  protected CycleHandlerFactory getCycleSupport() {
     return BibtexLatexCycleSupport.factory;
   }
 

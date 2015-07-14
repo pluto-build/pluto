@@ -18,9 +18,9 @@ import build.pluto.util.IReporting;
  * @author moritzlichter
  *
  */
-public class FixpointCycleSupport implements CycleSupport {
+public class FixpointCycleSupport extends CycleHandler {
 
-  public static final CycleSupportFactory of(BuilderFactory<?, ?, ?>... builders) {
+  public static final CycleHandlerFactory of(BuilderFactory<?, ?, ?>... builders) {
     return (BuildCycle cycle) -> new FixpointCycleSupport(cycle, builders);
   }
 
@@ -28,10 +28,6 @@ public class FixpointCycleSupport implements CycleSupport {
    * All BuilderFactories which are supported
    */
   private final List<BuilderFactory<?, ?, ?>> supportedBuilders;
-  /**
-   * The cycle to compile
-   */
-  private final BuildCycle cycle;
   
   /**
    * Creates a new {@link FixpointCycleSupport} which is able to handle build
@@ -43,25 +39,25 @@ public class FixpointCycleSupport implements CycleSupport {
    *          all supported builder factories
    */
   public FixpointCycleSupport(BuildCycle cycle, BuilderFactory<?, ?, ?>... supportedBuilders) {
-    this.cycle = cycle;
+    super(cycle);
     this.supportedBuilders = Arrays.asList(supportedBuilders);
   }
 
   @Override
-  public String cycleDescription() {
+  public String cycleDescription(BuildCycle cycle) {
     String descriptions = cycle.getCycleComponents().stream().map((BuildRequest<?, ?, ?, ?> r) -> r.createBuilder()).map(Builder::description).reduce((String desc1, String desc2) -> desc1 + "; " + desc2).get();
     return "Fixpoint {" + descriptions + "}";
   }
 
   @Override
-  public boolean canBuildCycle() {
+  public boolean canBuildCycle(BuildCycle cycle) {
     // Each builder in the cycle must be supported
     Predicate<BuildRequest<?, ?, ?, ?>> buildRequestSupported = (BuildRequest<?, ?, ?, ?> r) -> supportedBuilders.contains(r.factory);
     return cycle.getCycleComponents().stream().allMatch(buildRequestSupported);
   }
 
   @Override
-  public Set<BuildUnit<?>> buildCycle(BuildUnitProvider manager) throws Throwable {
+  public Set<BuildUnit<?>> buildCycle(BuildCycle cycle, BuildUnitProvider manager) throws Throwable {
     IReporting report = manager.report;
     FixpointCycleBuildResultProvider cycleManager = new FixpointCycleBuildResultProvider(manager, cycle);
 
