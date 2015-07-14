@@ -29,11 +29,10 @@ public class TraceReporting implements IReporting {
   
   private final IReporting report;
   
-  private LinkedList<FrameData> durationStack = new LinkedList<>();
+  private LinkedList<FrameData> stack = new LinkedList<>();
   
   public TraceReporting(IReporting report) {
     this.report = report;
-    durationStack.add(new FrameData(null, -1)); // root frame
   }
   
   @Override
@@ -51,12 +50,12 @@ public class TraceReporting implements IReporting {
     long endTime = System.currentTimeMillis();
     report.startedBuilder(req, b, oldUnit, reasons);
     
-    FrameData frame = durationStack.peek();
-    if (frame.lastStart > 0)
+    FrameData frame = stack.peek();
+    if (frame != null)
       frame.localDuration += endTime - frame.lastStart;
-
+    
     TraceData oldData = oldUnit == null ? null : oldUnit.getTrace();
-    durationStack.push(new FrameData(oldData, endTime));
+    stack.push(new FrameData(oldData, endTime));
   }
 
   @Override
@@ -64,14 +63,15 @@ public class TraceReporting implements IReporting {
     report.finishedBuilder(req, unit);
     long endTime = System.currentTimeMillis();
     
-    FrameData frame = durationStack.pop();
+    FrameData frame = stack.pop();
     int localDuration = frame.localDuration + (int) (endTime - frame.lastStart);
     int totalDuration = (int) (endTime - frame.initialStart);
     
     TraceData data = makeTraceData(frame, localDuration, totalDuration);
     unit.setTrace(data);
     
-    durationStack.peek().lastStart = endTime;
+    if (!stack.isEmpty())
+      stack.peek().lastStart = endTime;
   }
 
   private double updateAvg(double oldAvg, double n, double xn) {
