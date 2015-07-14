@@ -17,14 +17,14 @@ import build.pluto.BuildUnit;
 import build.pluto.output.Output;
 import build.pluto.util.IReporting;
 import build.pluto.util.LogReporting;
-import build.pluto.util.TraceReport;
+import build.pluto.util.TraceReporting;
 
 public class BuildManagers {
 
   private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
 
   private static IReporting defaultReport() {
-    return new TraceReport(new LogReporting());
+    return new TraceReporting(new LogReporting());
   }
   
   public static <Out extends Output> BuildUnit<Out> readResult(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {

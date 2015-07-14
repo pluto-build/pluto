@@ -12,13 +12,15 @@ import build.pluto.builder.RequiredBuilderFailed;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
 
-public class TraceReport implements IReporting {
+public class TraceReporting implements IReporting {
 
   private static class FrameData {
+    public final TraceData oldData;
     public int localDuration;
-    public long initialStart;
+    public final long initialStart;
     public long lastStart;
-    public FrameData(long initialStart) {
+    public FrameData(TraceData oldData, long initialStart) {
+      this.oldData = oldData;
       this.localDuration = 0;
       this.initialStart = initialStart;
       this.lastStart = initialStart;
@@ -29,9 +31,9 @@ public class TraceReport implements IReporting {
   
   private LinkedList<FrameData> durationStack = new LinkedList<>();
   
-  public TraceReport(IReporting report) {
+  public TraceReporting(IReporting report) {
     this.report = report;
-    durationStack.add(new FrameData(-1)); // root frame
+    durationStack.add(new FrameData(null, -1)); // root frame
   }
   
   @Override
@@ -53,7 +55,8 @@ public class TraceReport implements IReporting {
     if (frame.lastStart > 0)
       frame.localDuration += endTime - frame.lastStart;
 
-    durationStack.push(new FrameData(endTime));
+    TraceData oldData = oldUnit == null ? null : oldUnit.getTrace();
+    durationStack.push(new FrameData(oldData, endTime));
   }
 
   @Override
@@ -64,9 +67,54 @@ public class TraceReport implements IReporting {
     FrameData frame = durationStack.pop();
     int localDuration = frame.localDuration + (int) (endTime - frame.lastStart);
     int totalDuration = (int) (endTime - frame.initialStart);
-    unit.setTrace(new TraceData(localDuration, totalDuration));
+    
+    TraceData data = makeTraceData(frame, localDuration, totalDuration);
+    unit.setTrace(data);
     
     durationStack.peek().lastStart = endTime;
+  }
+
+  private double updateAvg(double oldAvg, double n, double xn) {
+    double norm = n <= 1 ? 0 : (n-1)/n;
+    return norm*oldAvg + xn / n;
+  }
+  
+  private double updateVar(double oldVar, double oldAvg, double n, double xn) {
+    if (n <= 1)
+      return 0;
+    double diff = xn - oldAvg;
+    return (n-2)*oldVar/(n-1) + diff * diff / n;
+  }
+  
+  private TraceData makeTraceData(FrameData frame, int localDuration, int totalDuration) {
+    int oldBuilds;
+    int oldLocal;
+    int oldTotal;
+    double oldLocalVar;
+    double oldTotalVar;
+    if (frame.oldData == null) {
+      oldBuilds = 0;
+      oldLocal = 0;
+      oldTotal = 0;
+      oldLocalVar = 0;
+      oldTotalVar = 0;
+    }
+    else {
+      TraceData data = frame.oldData;
+      oldBuilds = data.builds;
+      oldLocal = data.localDuration;
+      oldLocalVar = data.localDurationVariance;
+      oldTotal = data.totalDuration;
+      oldTotalVar = data.totalDurationVariance;
+    }
+    
+    int builds = oldBuilds + 1;
+    int localAvg = (int) updateAvg(oldLocal, builds, localDuration);
+    int totalAvg = (int) updateAvg(oldTotal, builds, totalDuration);
+    double localVar = updateVar(oldLocalVar, oldLocal, builds, localDuration);
+    double totalVar = updateVar(oldTotalVar, oldTotal, builds, totalDuration);
+    
+    return new TraceData(builds, localAvg, localVar, totalAvg, totalVar);
   }
 
   @Override
