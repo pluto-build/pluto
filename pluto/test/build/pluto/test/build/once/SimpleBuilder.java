@@ -89,6 +89,7 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 		for (String line : allLines) {
 			if (line.startsWith("Dep:")) {
 				String depFile = line.substring(4);
+        report("Found dependency to " + depFile);
 				TestBuilderInput depInput = new TestBuilderInput(
 						input.basePath, new File(input.getBasePath(),
 								depFile));

@@ -297,4 +297,12 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     result.setState(state);
   }
 
+  protected final void report(String message) {
+    manager.report.messageFromBuilder(message, false, this);
+  }
+
+  protected final void reportError(String message) {
+    manager.report.messageFromBuilder(message, true, this);
+  }
+
 }
