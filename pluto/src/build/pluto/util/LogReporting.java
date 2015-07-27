@@ -104,11 +104,11 @@ public class LogReporting implements IReporting {
 
   @Override
   public <O extends Output> void buildRequirement(BuildRequest<?, O, ?, ?> req) {
-    // nothing
+    log.beginTask("Require " + req.createBuilder().description(), Log.DETAIL);
   }
 
   @Override
   public <O extends Output> void finishedBuildRequirement(BuildRequest<?, O, ?, ?> req) {
-    // nothing
+    log.endTask();
   }
 }
