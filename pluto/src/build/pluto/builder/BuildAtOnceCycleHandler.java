@@ -64,11 +64,15 @@ extends CycleHandler {
       unit.setBuildResult(outputs.get(i));
       unit.setState(State.finished(true));
     }
-    for (BuildUnit<Out> out1 : cyclicResults) {
-      for (BuildUnit<Out> out2 : cyclicResults) {
-        if (out1 != out2)
-          out1.requires(new BuildRequirement<>(out2, out2.getGeneratedBy()));
-      }
+    /*
+     * for (BuildUnit<Out> out1 : cyclicResults) { for (BuildUnit<Out> out2 :
+     * cyclicResults) { if (out1 != out2) out1.requires(new
+     * BuildRequirement<>(out2, out2.getGeneratedBy())); } }
+     */
+    for (int i = 0; i < cyclicResults.size(); i++) {
+      BuildUnit<Out> unit1 = cyclicResults.get(i);
+      BuildUnit<Out> unit2 = cyclicResults.get((i + 1 == cyclicResults.size()) ? 0 : i);
+      unit1.requires(new BuildRequirement<>(unit2, unit2.getGeneratedBy()));
     }
 
     return new HashSet<>(cyclicResults);
