@@ -36,7 +36,7 @@ public class LogReporting implements IReporting {
   
   @Override
   public void inconsistentRequirement(Requirement req) {
-    // nothing
+    log.log("Requirement is inconsistent: " + req, Log.DETAIL);
   }
 
 

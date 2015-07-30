@@ -383,20 +383,27 @@ public class BuildManager extends BuildUnitProvider {
     if (knownInconsistent != null)
       reasons.addAll(knownInconsistent);
     
-    if (depResult == null)
+    if (depResult == null) {
+      report.messageFromSystem("No result unit found", false, 10);
       reasons.add(BuildReason.NoBuildSummary);
-    else {
-      if (!depResult.getGeneratedBy().deepEquals(buildReq))
+    } else {
+      if (!depResult.getGeneratedBy().deepEquals(buildReq)) {
+        report.messageFromSystem("Builder Input changed", false, 10);
         reasons.add(BuildReason.ChangedBuilderInput);
+      }
       
       InconsistenyReason localInconsistencyReason = depResult.isConsistentNonrequirementsReason();
-      if (localInconsistencyReason != InconsistenyReason.NO_REASON)
+      if (localInconsistencyReason != InconsistenyReason.NO_REASON) {
+        report.messageFromSystem("Local inconsistent " + localInconsistencyReason, false, 10);
         reasons.add(BuildReason.from(localInconsistencyReason));
+      }
       
       boolean noOut = !(depResult.getBuildResult() instanceof build.pluto.output.Out<?>);
       boolean expiredOutput = noOut ? false : ((build.pluto.output.Out<?>) depResult.getBuildResult()).expired();
-      if (needBuildResult && expiredOutput)
+      if (needBuildResult && expiredOutput) {
+        report.messageFromSystem("Expired output", false, 10);
         reasons.add(BuildReason.ExpiredOutput);
+      }
     }
     
     return reasons;
