@@ -37,22 +37,9 @@
 			                   <exclude>*:hamcrest-core</exclude>
 			                   <exclude>*:xml-apis</exclude>
 							   <exclude>*:guava</exclude>
-							   <exclude>*:ecj</exclude>
-			                   <exclude>org.metaborg:*</exclude>
 			                 </excludes>
 			               </artifactSet>
-						   <relocations>
-						                   <relocation>
-						                     <pattern>org.sugarj.common</pattern>
-						                     <shadedPattern>build.pluto.shaded.org.sugarj.common</shadedPattern>
-						               
-						                   </relocation>
-						                   <relocation>
-						                     <pattern>com.cedarsoftware.util</pattern>
-						                     <shadedPattern>build.pluto.shaded.com.cedarsoftware.util</shadedPattern>
-						               
-						                   </relocation>
-						                 </relocations>		  
+						            
           </configuration>
           <executions>
             <execution>
@@ -62,7 +49,8 @@
               </goals>
             </execution>
           </executions>
-        </plugin>
+	  </plugin>
+		 
       </plugins>
     </build>
 
