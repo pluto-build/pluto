@@ -8,6 +8,7 @@ import java.util.Collection;
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
 import build.pluto.dependency.BuildRequirement;
+import build.pluto.dependency.Requirement;
 import build.pluto.dependency.IllegalDependencyException;
 import build.pluto.output.None;
 import build.pluto.output.Output;
@@ -227,6 +228,10 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
       for (BuildRequest<?, ?, ?, ?> req : reqs) {
         requireBuild(req);
       }
+  }
+
+  public void requireOther(Requirement req) {
+      result.requireOther(req);
   }
 
   /**
