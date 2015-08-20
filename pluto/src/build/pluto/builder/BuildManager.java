@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.channels.ClosedByInterruptException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -29,6 +31,8 @@ public class BuildManager extends BuildUnitProvider {
   private ExecutingStack executingStack;
   private transient RequireStack requireStack;
   private transient DynamicAnalysis analysis;
+
+  private static Map<Thread, Long> requireInitiallyTimestamps = new HashMap<>();
 
   protected BuildManager(IReporting report) {
     super(report);
@@ -250,9 +254,16 @@ public class BuildManager extends BuildUnitProvider {
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
   BuildUnit<Out> requireInitially(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+    Thread currentThread = Thread.currentThread();
+    long currentTime = System.currentTimeMillis();
+    requireInitiallyTimestamps.put(currentThread, currentTime);
     report.messageFromSystem("Incrementally rebuild inconsistent units", false, 0);
     BuildRequirement<Out> result = require(buildReq, true);
     return result.getUnit();
+  }
+
+  public static long getStartingTimeOfBuildManager(Thread thread) {
+    return requireInitiallyTimestamps.getOrDefault(thread, 0L);
   }
 
   @Override
