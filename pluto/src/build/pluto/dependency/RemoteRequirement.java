@@ -42,7 +42,7 @@ public abstract class RemoteRequirement implements Requirement {
         return true;
     }
 
-    private long getStartingTimestamp() {
+    protected long getStartingTimestamp() {
         Thread currentThread = Thread.currentThread();
         return BuildManager.getStartingTimeOfBuildManager(currentThread);
     }
@@ -51,21 +51,20 @@ public abstract class RemoteRequirement implements Requirement {
      * Checks if the local state is consistent with the remote state.
      * @return true if local state is consistent with remote state.
      */
-    public abstract boolean isConsistentWithRemote();
+    protected abstract boolean isConsistentWithRemote();
 
     /**
      * Checks if a consistencycheck needs to be made.
      * @param currentTime the time to check if the consistency needs to be checked.
      * @return true if a consistencycheck needs to be made.
      */
-    public boolean needsConsistencyCheck(long currentTime) {
+    private boolean needsConsistencyCheck(long currentTime) {
         if (!FileCommands.exists(persistentPath)) {
             writePersistentPath(currentTime);
             return true;
         }
         long lastConsistencyCheck = readPersistentPath();
         if (lastConsistencyCheck + consistencyCheckInterval < currentTime) {
-            writePersistentPath(currentTime);
             return true;
         }
         return false;
