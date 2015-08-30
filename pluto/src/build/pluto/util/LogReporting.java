@@ -17,6 +17,7 @@ import build.pluto.output.Output;
 public class LogReporting implements IReporting {
 
   private Log log = Log.log;
+  public static boolean NO_STACK_TRACES = false;
   
   @Override
   public <O extends Output> void startedBuilder(BuildRequest<?, O, ?, ?> req, Builder<?, ?> b, BuildUnit<O> oldUnit, Set<BuildReason> reasons) {
@@ -71,7 +72,7 @@ public class LogReporting implements IReporting {
     log.endTask(t.getClass() + (t == null ? "" : (": " + t.getMessage())));
     if (t instanceof BuildCycleException)
       new RuntimeException("Unexpected build cycle ex").printStackTrace();
-    else
+    else if (!NO_STACK_TRACES)
       t.printStackTrace();
   }
   
