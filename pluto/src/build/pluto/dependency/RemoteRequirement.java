@@ -1,18 +1,16 @@
 package build.pluto.dependency;
 
-import build.pluto.builder.BuildManager;
-import build.pluto.builder.BuildUnitProvider;
-
-import build.pluto.dependency.FileRequirement;
-import build.pluto.dependency.Requirement;
-
 import java.io.File;
 import java.io.IOException;
 
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 
+import build.pluto.builder.BuildManager;
+
 public abstract class RemoteRequirement implements Requirement {
+
+    private static final long serialVersionUID = -637138545509445926L;
 
     private long consistencyCheckInterval;
 
