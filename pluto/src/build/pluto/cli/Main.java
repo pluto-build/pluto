@@ -3,7 +3,11 @@ package build.pluto.cli;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -73,6 +77,8 @@ public class Main {
       }
         
       Serializable input = inputParser.parseCommandLine(line);
+      if (requiresListOfInputs(factory)) 
+        input = new ArrayList<Serializable>(Collections.singletonList(input));
       BuildRequest<?, ?, ?, ?> req = new BuildRequest<Serializable, Output, Builder<Serializable, Output>, BuilderFactory<Serializable, Output, Builder<Serializable, Output>>>(factory, input);
       
       if (line.hasOption(cleanOption.getLongOpt()) || line.hasOption(dryCleanOption.getLongOpt())) {
@@ -93,6 +99,17 @@ public class Main {
       showUsage(command, options);
       System.exit(1);
     }
+  }
+
+  private static boolean requiresListOfInputs(BuilderFactory<Serializable, Output, Builder<Serializable, Output>> factory) {
+    try {
+      for (Method m : factory.getClass().getMethods())
+          if ("makeBuilder".equals(m.getName()) && m.getParameterCount() == 1)
+            return List.class.isAssignableFrom(m.getParameters()[0].getType());
+    } catch (SecurityException e) {
+      throw new RuntimeException(e);
+    }
+    return false;
   }
 
   @SuppressWarnings("unchecked")
