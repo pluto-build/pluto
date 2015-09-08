@@ -46,13 +46,10 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 
 	protected List<Requirement> requirements;
 	protected Set<FileRequirement> generatedFiles;
-
-	protected Out buildResult;
-
 	private transient Set<BuildUnit<?>> requiredUnits;
-	private transient Set<File> requiredFiles;
-	
+
 	protected BuildRequest<?, Out, ?, ?> generatedBy;
+	protected Out buildResult;
 	
 	protected TraceData trace;
 	
@@ -80,7 +77,6 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	  generatedFiles = new HashSet<>();
 	  
 	  requiredUnits = new HashSet<>();
-		requiredFiles = new HashSet<>();
 
 		state = State.INITIALIZED;
 		generatedBy = null;
@@ -93,7 +89,6 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 
 	public void requires(File file, Stamp stampOfFile) {
 		requirements.add(new FileRequirement(file, stampOfFile));
-		requiredFiles.add(file);
 	}
 	
 	public void generates(File file, Stamp stampOfFile) {
@@ -149,10 +144,6 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
     });
 	}
 
-	public Set<File> getSourceArtifacts() {
-		return requiredFiles;
-	}
-
   public Set<BuildUnit<?>> getModuleDependencies() {
 	  if (requiredUnits == null) {
 	    requiredUnits = new HashSet<>();
@@ -192,16 +183,6 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
     return transitiveUnits;
   }
   
-	public Set<File> getExternalFileDependencies() {
-	  if (requiredFiles == null) {
-      requiredFiles = new HashSet<>();
-      for (Requirement req : requirements)
-        if (req instanceof FileRequirement)
-          requiredFiles.add(((FileRequirement) req).file);
-    }
-	  return requiredFiles;
-	}
-
 	public Set<File> getGeneratedFiles() {
 	  Set<File> set = new HashSet<>();
 	  for (FileRequirement freq : generatedFiles)
