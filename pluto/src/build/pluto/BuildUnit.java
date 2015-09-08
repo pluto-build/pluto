@@ -28,7 +28,7 @@ import build.pluto.util.TraceData;
  * 
  * @author Sebastian Erdweg
  */
-public final class BuildUnit<Out extends Output> extends PersistableEntity {
+public final class BuildUnit<Out extends Output> extends PersistableEntity implements Cloneable {
 
   public static final long serialVersionUID = -2821414386853890682L;
 
@@ -406,5 +406,16 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity {
 	@Override
 	public String toString() {
 	  return "BuildUnit(" + generatedBy.factory + ": " + persistentPath + ")";
+	}
+	
+	@Override
+	public BuildUnit<Out> clone() {
+	  BuildUnit<Out> unit = new BuildUnit<>();
+	  unit.state = state;
+	  unit.requirements = new ArrayList<>(requirements);
+	  unit.generatedFiles = new HashSet<>(generatedFiles);
+	  unit.generatedBy = generatedBy;
+	  unit.buildResult = buildResult;
+	  return unit;
 	}
 }

@@ -85,6 +85,8 @@ public class BuildManager extends BuildUnitProvider {
     this.requireStack.beginRebuild(buildReq, reasons);
 
     BuildUnit<Out> depResult = BuildUnit.read(dep);
+    BuildUnit<Out> previousDepResult = depResult == null ? null : depResult.clone();
+    
     analysis.reset(depResult);
     report.startedBuilder(buildReq, builder, depResult, reasons);
     
@@ -104,7 +106,7 @@ public class BuildManager extends BuildUnitProvider {
     try {
       try {
         // call the actual builder
-        Out out = builder.triggerBuild(depResult, this);
+        Out out = builder.triggerBuild(depResult, this, previousDepResult);
         depResult.setBuildResult(out);
         if (!depResult.isFinished())
           depResult.setState(BuildUnit.State.SUCCESS);

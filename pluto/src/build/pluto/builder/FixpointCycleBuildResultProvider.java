@@ -214,7 +214,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
         BuildManager.setUpMetaDependency(builder, cycleUnit);
 
         // Trigger the build
-        Out result = builder.triggerBuild(cycleUnit, this);
+        Out result = builder.triggerBuild(cycleUnit, this, null);
         cycleUnit.setBuildResult(result);
         
         if (!cycleUnit.isFinished())
