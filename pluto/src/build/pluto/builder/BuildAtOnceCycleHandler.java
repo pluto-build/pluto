@@ -59,7 +59,7 @@ extends CycleHandler {
 
     List<Out> outputs = newBuilder.buildAll(inputs);
     if (outputs.size() != inputs.size()) {
-      throw new AssertionError("buildAll needs to return one output for one input");
+      throw new AssertionError("buildAll needs to return one output for one input, but was " + outputs);
     }
 
     for (int i = 0; i < outputs.size(); i++) {

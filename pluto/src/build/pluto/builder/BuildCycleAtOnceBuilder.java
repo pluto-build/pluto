@@ -118,7 +118,7 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
     this.cyclicResults = Collections.singletonList(super.result);
     List<Out> result = this.buildAll(input);
     if (result.size() != 1) {
-      throw new AssertionError("buildAll needs to return one output for one input");
+      throw new AssertionError("buildAll needs to return one output for one input, but is " + result);
     }
     return result.get(0);
   }
