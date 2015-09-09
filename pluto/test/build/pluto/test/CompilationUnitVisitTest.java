@@ -3,13 +3,13 @@ package build.pluto.test;
 import static build.pluto.test.CompilationUnitTestUtils.makeEdgeFrom;
 import static build.pluto.test.CompilationUnitTestUtils.makeNode;
 import static build.pluto.test.CompilationUnitTestUtils.set;
+import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
 import build.pluto.BuildUnit;
 import build.pluto.test.CompilationUnitTestUtils.NodeOutput;
 

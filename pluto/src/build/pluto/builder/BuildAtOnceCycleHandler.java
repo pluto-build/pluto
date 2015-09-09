@@ -30,7 +30,10 @@ extends CycleHandler {
 
   @Override
   public boolean canBuildCycle(BuildCycle cycle) {
-    return cycle.getCycleComponents().stream().allMatch((BuildRequest<?, ?, ?, ?> req) -> req.factory == builderFactory && (req.input instanceof ArrayList<?>));
+    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents())
+      if (req.factory != builderFactory || !(req.input instanceof ArrayList<?>))
+        return false;
+    return true;
   }
 
   @SuppressWarnings("unchecked")
@@ -75,7 +78,7 @@ extends CycleHandler {
       unit1.requires(new BuildRequirement<>(unit2, unit2.getGeneratedBy()));
     }
 
-    return new HashSet<>(cyclicResults);
+    return new HashSet<BuildUnit<?>>(cyclicResults);
   }
 
   @SuppressWarnings("unchecked")

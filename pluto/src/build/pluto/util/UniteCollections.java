@@ -5,11 +5,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 public class UniteCollections<T, C extends Collection<T>> {
 
-  private final Supplier<C> collectionBuilder;
+  public static interface Supplier<C> {
+    public C get();
+  }
+  
+  private Supplier<C> collectionBuilder;
 
   public UniteCollections(Supplier<C> collectionBuilder) {
     Objects.requireNonNull(collectionBuilder);

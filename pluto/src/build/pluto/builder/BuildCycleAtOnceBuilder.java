@@ -33,7 +33,12 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
 
   @Override
   protected CycleHandlerFactory getCycleSupport() {
-    return (BuildCycle cycle) -> new BuildAtOnceCycleHandler<>(cycle, this.factory);
+    return new CycleHandlerFactory() {
+      @Override
+      public CycleHandler createCycleSupport(BuildCycle cycle) {
+        return new BuildAtOnceCycleHandler<>(cycle, factory);
+      }
+    };
   }
 
   protected abstract File singletonPersistencePath(In input);

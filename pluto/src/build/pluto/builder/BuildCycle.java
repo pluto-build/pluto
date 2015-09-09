@@ -1,10 +1,9 @@
 package build.pluto.builder;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class BuildCycle {
 
@@ -25,13 +24,30 @@ public class BuildCycle {
     return initial;
   }
 
-  protected Optional<CycleHandler> findCycleSupport() {
-    Set<CycleHandlerFactory> matchingSupports = this.cycle.stream().map((BuildRequest<?, ?, ?, ?> req) -> req.createBuilder().getCycleSupport()).filter((CycleHandlerFactory c) -> c != null && c.createCycleSupport(this).canBuildCycle()).collect(Collectors.toSet());
-
+  protected CycleHandler findCycleSupport() {
+    Set<CycleHandlerFactory> matchingSupports = new HashSet<>();
+    for (BuildRequest<?, ?, ?, ?> req : this.cycle) {
+      CycleHandlerFactory c = req.createBuilder().getCycleSupport();
+      if (c != null && c.createCycleSupport(this).canBuildCycle())
+        matchingSupports.add(c);
+    }
+      
 //    if (matchingSupports.size() > 1) {
 //      Log.log.log("Found " + matchingSupports.size() + " matching cycle supports for cycle.", Log.CORE);
 //    }
 
-    return matchingSupports.stream().findAny().map((CycleHandlerFactory f) -> f.createCycleSupport(this));
+    if (matchingSupports.isEmpty())
+      return null;
+    return matchingSupports.iterator().next().createCycleSupport(this);
+  }
+  
+  public String description() {
+    StringBuilder builder = new StringBuilder();
+    for (BuildRequest<?, ?, ?, ?> r : getCycleComponents())
+      builder.append(r.createBuilder().description() + ", ");
+    String descriptions = builder.toString();
+    if (!descriptions.isEmpty())
+      descriptions.substring(0,  descriptions.length() - 2);
+    return descriptions;
   }
 }

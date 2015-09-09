@@ -17,6 +17,7 @@ import build.pluto.builder.BuildManagers;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.BuilderFactoryFactory;
 import build.pluto.builder.RequiredBuilderFailed;
 import build.pluto.stamp.FileHashStamper;
 import build.pluto.stamp.Stamper;
@@ -33,7 +34,7 @@ public class BuildManagerCycleDetectionTest {
 		FileCommands.createDir(baseDir.toPath());
 	}
 
-  public static final BuilderFactory<AbsoluteComparedFile, EmptyBuildOutput, TestBuilder> testFactory = BuilderFactory.of(TestBuilder.class, AbsoluteComparedFile.class);
+  public static final BuilderFactory<AbsoluteComparedFile, EmptyBuildOutput, TestBuilder> testFactory = BuilderFactoryFactory.of(TestBuilder.class, AbsoluteComparedFile.class);
 
   public static class TestBuilder extends Builder<AbsoluteComparedFile, EmptyBuildOutput> {
 

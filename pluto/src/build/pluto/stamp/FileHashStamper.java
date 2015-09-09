@@ -2,13 +2,12 @@ package build.pluto.stamp;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.sugarj.common.FileCommands;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 /**
  * @author Sebastian Erdweg

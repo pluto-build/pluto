@@ -2,8 +2,6 @@ package build.pluto.builder;
 
 import java.util.List;
 
-import org.sugarj.common.Log;
-
 public class ExecutingStack extends CycleDetectionStack<BuildRequest<?, ?, ?, ?>, Void> {
 
   protected Void cycleResult(BuildRequest<?, ?, ?, ?> cause, List<BuildRequest<?, ?, ?, ?>> scc) {

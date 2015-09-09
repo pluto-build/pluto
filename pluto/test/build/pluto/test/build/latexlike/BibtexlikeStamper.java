@@ -28,7 +28,7 @@ public class BibtexlikeStamper implements Stamper {
       ObjectInputStream outStream = new ObjectInputStream(new FileInputStream(outFile));
       List<Character> replacements = (List<Character>) outStream.readObject();
       outStream.close();
-      return new ValueStamp<>(this, new HashSet<>(replacements));
+      return new ValueStamp<Set<Character>>(this, new HashSet<>(replacements));
     } catch (IOException e) {
       return new ValueStamp<>(this, null);
     } catch (ClassNotFoundException e) {

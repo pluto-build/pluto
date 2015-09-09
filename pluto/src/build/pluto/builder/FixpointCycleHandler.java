@@ -3,7 +3,6 @@ package build.pluto.builder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
 
 import build.pluto.BuildUnit;
 import build.pluto.util.IReporting;
@@ -20,8 +19,14 @@ import build.pluto.util.IReporting;
  */
 public class FixpointCycleHandler extends CycleHandler {
 
-  public static final CycleHandlerFactory of(BuilderFactory<?, ?, ?>... builders) {
-    return (BuildCycle cycle) -> new FixpointCycleHandler(cycle, builders);
+  public static final CycleHandlerFactory of(final BuilderFactory<?, ?, ?>... builders) {
+    return new CycleHandlerFactory() {
+      
+      @Override
+      public CycleHandler createCycleSupport(BuildCycle cycle) {
+        return new FixpointCycleHandler(cycle, builders);
+      }
+    };
   }
 
   /**
@@ -45,15 +50,17 @@ public class FixpointCycleHandler extends CycleHandler {
 
   @Override
   public String cycleDescription(BuildCycle cycle) {
-    String descriptions = cycle.getCycleComponents().stream().map((BuildRequest<?, ?, ?, ?> r) -> r.createBuilder()).map(Builder::description).reduce((String desc1, String desc2) -> desc1 + "; " + desc2).get();
-    return "Fixpoint {" + descriptions + "}";
+    return "Fixpoint {" + cycle.description() + "}";
   }
 
   @Override
   public boolean canBuildCycle(BuildCycle cycle) {
     // Each builder in the cycle must be supported
-    Predicate<BuildRequest<?, ?, ?, ?>> buildRequestSupported = (BuildRequest<?, ?, ?, ?> r) -> supportedBuilders.contains(r.factory);
-    return cycle.getCycleComponents().stream().allMatch(buildRequestSupported);
+    for (BuildRequest<?, ?, ?, ?> r : cycle.getCycleComponents())
+      if (!supportedBuilders.contains(r.factory))
+        return false;
+    
+    return true;
   }
 
   @Override

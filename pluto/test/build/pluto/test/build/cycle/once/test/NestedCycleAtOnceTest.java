@@ -11,9 +11,9 @@ import java.util.ArrayList;
 
 import org.junit.Test;
 
+import build.pluto.builder.BuildCycleAtOnceBuilder;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuilderFactory;
-import build.pluto.builder.BuildCycleAtOnceBuilder;
 import build.pluto.output.None;
 import build.pluto.test.build.DefaultNamedScopedPath;
 import build.pluto.test.build.SimpleBuildTest;

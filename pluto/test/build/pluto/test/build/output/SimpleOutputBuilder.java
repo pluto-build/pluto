@@ -2,7 +2,6 @@ package build.pluto.test.build.output;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +39,7 @@ public abstract class SimpleOutputBuilder extends Builder<TestBuilderInput, Outp
 	@Override
   protected Output build(TestBuilderInput input) throws IOException {
 		require(input.getInputPath());
-		List<String> allLines = Files.readAllLines(input.getInputPath().toPath());
+		List<String> allLines = FileCommands.readFileLines(input.getInputPath());
 
 		if (!allLines.isEmpty() && allLines.get(0).equals("#fail"))
 		  throw new RuntimeException("#fail detected in source file");
@@ -61,7 +60,7 @@ public abstract class SimpleOutputBuilder extends Builder<TestBuilderInput, Outp
 
 		// Write the content to a generated file
 		File generatedFile = FileCommands.addExtension(input.getInputPath().toPath(), "gen").toFile();
-		Files.write(generatedFile.toPath(), contentLines);
+		FileCommands.writeLinesFile(generatedFile, contentLines);
 		provide(generatedFile);
 		setState(BuildUnit.State.finished(true));
 		return output(input);

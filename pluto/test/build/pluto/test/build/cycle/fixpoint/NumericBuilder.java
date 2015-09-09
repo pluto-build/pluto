@@ -2,7 +2,6 @@ package build.pluto.test.build.cycle.fixpoint;
 
 import java.io.File;
 import java.util.List;
-import java.util.function.BiFunction;
 
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;

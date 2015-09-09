@@ -14,8 +14,6 @@ import build.pluto.test.build.cycle.once.test.NestedCycleAtOnceTest;
 import build.pluto.test.build.latexlike.LatexlikeTest;
 import build.pluto.test.build.output.OutputPersistedTest;
 import build.pluto.test.build.output.OutputTransientTest;
-import build.pluto.test.cli.InputParserCollectionTest;
-import build.pluto.test.cli.InputParserPrimitiveTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({
@@ -28,8 +26,6 @@ import build.pluto.test.cli.InputParserPrimitiveTest;
   FixpointCycleTestSuite.class,
   NestedCycleAtOnceTest.class,
  LatexlikeTest.class,
-  InputParserPrimitiveTest.class, 
-  InputParserCollectionTest.class,
   OutputPersistedTest.class,
   OutputTransientTest.class})
 public class PlutoTestSuite {

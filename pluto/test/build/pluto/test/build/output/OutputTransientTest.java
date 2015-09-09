@@ -22,6 +22,7 @@ import org.junit.Test;
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.BuilderFactoryFactory;
 import build.pluto.output.None;
 import build.pluto.output.Out;
 import build.pluto.output.Output;
@@ -34,7 +35,8 @@ public class OutputTransientTest extends SimpleBuildTest {
 
   
   public static class OutputTransientBuilder extends SimpleOutputBuilder {
-    public static BuilderFactory<TestBuilderInput, Output, SimpleOutputBuilder> factory = BuilderFactory.of(OutputTransientBuilder.class, TestBuilderInput.class);
+    public static BuilderFactory<TestBuilderInput, Output, SimpleOutputBuilder> factory = 
+        BuilderFactoryFactory.<TestBuilderInput, Output, SimpleOutputBuilder>of(OutputTransientBuilder.class, TestBuilderInput.class);
 
     public OutputTransientBuilder(TestBuilderInput input) {
       super(input);

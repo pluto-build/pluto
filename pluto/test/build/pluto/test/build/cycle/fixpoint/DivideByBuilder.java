@@ -1,13 +1,12 @@
 package build.pluto.test.build.cycle.fixpoint;
 
-import java.util.function.BiFunction;
-
 import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.BuilderFactoryFactory;
 import build.pluto.output.OutputPersisted;
 
 public class DivideByBuilder extends NumericBuilder {
 
-  public static final BuilderFactory<FileInput, OutputPersisted<Integer>, DivideByBuilder> factory = BuilderFactory.of(DivideByBuilder.class, FileInput.class);
+  public static final BuilderFactory<FileInput, OutputPersisted<Integer>, DivideByBuilder> factory = BuilderFactoryFactory.of(DivideByBuilder.class, FileInput.class);
 
   public DivideByBuilder(FileInput input) {
     super(input);
@@ -20,12 +19,22 @@ public class DivideByBuilder extends NumericBuilder {
 
   @Override
   protected BiFunction<Integer, Integer, Integer> getOperator() {
-    return (Integer a, Integer b) -> a / b;
+    return new BiFunction<Integer, Integer, Integer>() {
+      @Override
+      public Integer apply(Integer a, Integer b) {
+        return a / b;
+      }
+    };
   }
 
   @Override
   protected BiFunction<Integer, Integer, String> getPrintOperator() {
-    return (Integer a, Integer b) -> a + " / " + b;
+    return new BiFunction<Integer, Integer, String>() {
+      @Override
+      public String apply(Integer a, Integer b) {
+        return a + " / " + b;
+      }
+    };
   }
 
 }

@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +14,7 @@ import org.sugarj.common.FileCommands;
 
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.BuilderFactoryFactory;
 import build.pluto.builder.CycleHandlerFactory;
 import build.pluto.output.OutputPersisted;
 import build.pluto.stamp.FileContentStamper;
@@ -23,7 +23,7 @@ import build.pluto.test.build.latexlike.LatexlikeLog.CompilationParticipant;
 
 public class LatexlikeBuilder extends Builder<File, OutputPersisted<File>> {
 
-  public static final BuilderFactory<File, OutputPersisted<File>, LatexlikeBuilder> factory = BuilderFactory.of(LatexlikeBuilder.class, File.class);
+  public static final BuilderFactory<File, OutputPersisted<File>, LatexlikeBuilder> factory = BuilderFactoryFactory.of(LatexlikeBuilder.class, File.class);
 
   public LatexlikeBuilder(File input) {
     super(input);
@@ -95,7 +95,7 @@ public class LatexlikeBuilder extends Builder<File, OutputPersisted<File>> {
 
     String pdf = text.replaceAll(" ", "\n");
     File pdfFile = FileCommands.replaceExtension(input, "pdflike");
-    Files.write(pdfFile.toPath(), Collections.singleton(pdf));
+    FileCommands.writeToFile(pdfFile, pdf);
     provide(pdfFile);
 
     return OutputPersisted.of(pdfFile);

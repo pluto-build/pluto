@@ -6,7 +6,6 @@ import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.function.Predicate;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -37,14 +36,14 @@ public abstract class ScopedBuildTest {
     FileCommands.delete(testBasePath);
     FileCommands.createDir(testBasePath);
 
-    Files.list(basePath).filter(((Predicate<Path>) Files::isDirectory).negate()).forEach((Path path) -> {
-      try {
-        Files.copy(path, testBasePath.resolve(path.getFileName()));
-      } catch (Exception e) {
-        e.printStackTrace();
-        throw new RuntimeException(e);
-      }
-    });
+    for (File file : basePath.toFile().listFiles())
+      if (!file.isDirectory())
+        try {
+          Files.copy(file.toPath(), testBasePath.resolve(file.getName()));
+        } catch (Exception e) {
+          e.printStackTrace();
+          throw new RuntimeException(e);
+        }
 
     injectScopedPaths();
 

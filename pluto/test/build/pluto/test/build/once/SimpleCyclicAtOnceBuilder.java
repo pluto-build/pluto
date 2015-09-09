@@ -1,7 +1,6 @@
 package build.pluto.test.build.once;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -10,8 +9,8 @@ import java.util.Set;
 import org.sugarj.common.FileCommands;
 
 import build.pluto.BuildUnit;
-import build.pluto.builder.BuilderFactory;
 import build.pluto.builder.BuildCycleAtOnceBuilder;
+import build.pluto.builder.BuilderFactory;
 import build.pluto.output.None;
 import build.pluto.stamp.FileContentStamper;
 import build.pluto.stamp.Stamper;
@@ -67,8 +66,7 @@ public class SimpleCyclicAtOnceBuilder extends
 		List<String> contentLines = new ArrayList<>();
 
     for (TestBuilderInput input : inputs) {
-			List<String> allLines = Files.readAllLines(input
-					.getInputPath().toPath());
+			List<String> allLines = FileCommands.readFileLines(input.getInputPath());
 
 			for (String line : allLines) {
 				if (line.startsWith("Dep:")) {
@@ -91,7 +89,7 @@ public class SimpleCyclicAtOnceBuilder extends
 			// Write the content to a generated file
 			File generatedFile = FileCommands.addExtension(
 					input.getInputPath().toPath(), "gen").toFile();
-			Files.write(generatedFile.toPath(), contentLines);
+			FileCommands.writeLinesFile(generatedFile, contentLines);
       provide(input, generatedFile);
 			outputs.add(None.val);
 		}

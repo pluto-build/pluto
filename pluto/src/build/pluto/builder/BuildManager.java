@@ -168,10 +168,14 @@ public class BuildManager extends BuildUnitProvider {
 
     e.setCycleState(CycleState.NOT_RESOLVED);
     BuildCycle cycle = e.getCycle();
-    CycleHandler cycleSupport = cycle.findCycleSupport().orElseThrow(() -> e);
+    CycleHandler cycleSupport = cycle.findCycleSupport();
+    if (cycleSupport == null)
+      throw e;
 
     report.startBuildCycle(cycle, cycleSupport);
-    cycle.getCycleComponents().forEach(requireStack::push);
+    for (BuildRequest<?, ?, ?, ?> req : cycle.getCycleComponents())
+      requireStack.push(req);
+
     Set<BuildUnit<?>> resultUnits = null;
     try {
       resultUnits = cycleSupport.buildCycle(this);
@@ -265,7 +269,8 @@ public class BuildManager extends BuildUnitProvider {
   }
 
   public static long getStartingTimeOfBuildManager(Thread thread) {
-    return requireInitiallyTimestamps.getOrDefault(thread, 0L);
+    Long l = requireInitiallyTimestamps.get(thread);
+    return l == null ? 0l : l;
   }
 
   @Override

@@ -49,7 +49,7 @@ public class BuildManagers {
   private static void deleteFile(Path p, boolean dryRun, IReporting report) throws IOException {
     report.messageFromSystem("Delete " + p + (dryRun ? " (dry run)" : ""), false, 1);
     if (!dryRun)
-      if (!Files.isDirectory(p) || Files.list(p).findAny().isPresent())
+      if (!Files.isDirectory(p) || p.toFile().list().length != 0)
         FileCommands.delete(p);
   }
 

@@ -30,7 +30,8 @@ public class BuildCycleException extends RuntimeException {
     super(message);
     Objects.requireNonNull(cycle);
     Objects.requireNonNull(cycleCause);
-    assert cycle.getCycleComponents().contains(cycleCause) : "Cause " + cycleCause.createBuilder().description() + " not in cycle {" + cycle.getCycleComponents().stream().map((BuildRequest<?, ?, ?, ?> r) -> r.createBuilder()).map(Builder::description).reduce((String s1, String s2) -> s2 + " , " + s2).get() + "}";
+    assert cycle.getCycleComponents().contains(cycleCause) : 
+      "Cause " + cycleCause.createBuilder().description() + " not in cycle {" + cycle.description() + "}";
     this.cycleCause = cycleCause;
     this.cycle = cycle;
   }

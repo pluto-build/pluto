@@ -13,6 +13,7 @@ import org.sugarj.common.FileCommands;
 import build.pluto.BuildUnit;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.BuilderFactoryFactory;
 import build.pluto.output.None;
 import build.pluto.stamp.FileHashStamper;
 import build.pluto.stamp.Stamper;
@@ -20,7 +21,7 @@ import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 
 public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 
-  public static BuilderFactory<TestBuilderInput, None, SimpleBuilder> factory = BuilderFactory.of(SimpleBuilder.class, TestBuilderInput.class);
+  public static BuilderFactory<TestBuilderInput, None, SimpleBuilder> factory = BuilderFactoryFactory.of(SimpleBuilder.class, TestBuilderInput.class);
 	
 
 	public static class TestBuilderInput implements Serializable {
@@ -76,7 +77,7 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 	@Override
   protected None build(TestBuilderInput input) throws IOException {
 		require(input.inputPath);
-		List<String> allLines = Files.readAllLines(input.inputPath.toPath());
+		List<String> allLines = FileCommands.readFileLines(input.inputPath);
 
 		if (!allLines.isEmpty() && allLines.get(0).equals("#fail"))
 		  throw new RuntimeException("#fail detected in source file");
@@ -102,7 +103,7 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 
 		// Write the content to a generated file
 		File generatedFile = FileCommands.addExtension(input.inputPath.toPath(), "gen").toFile();
-		Files.write(generatedFile.toPath(), contentLines);
+		FileCommands.writeLinesFile(generatedFile, contentLines);
 		provide(generatedFile);
 		setState(BuildUnit.State.finished(true));
 		return None.val;

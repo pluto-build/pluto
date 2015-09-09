@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +14,7 @@ import org.sugarj.common.FileCommands;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.BuilderFactoryFactory;
 import build.pluto.builder.CycleHandlerFactory;
 import build.pluto.output.IgnoreOutputStamper;
 import build.pluto.output.OutputPersisted;
@@ -24,7 +24,7 @@ import build.pluto.test.build.latexlike.LatexlikeLog.CompilationParticipant;
 
 public class BibtexlikeBuilder extends Builder<File, OutputPersisted<File>> {
 
-  public static final BuilderFactory<File, OutputPersisted<File>, BibtexlikeBuilder> factory = BuilderFactory.of(BibtexlikeBuilder.class, File.class);
+  public static final BuilderFactory<File, OutputPersisted<File>, BibtexlikeBuilder> factory = BuilderFactoryFactory.of(BibtexlikeBuilder.class, File.class);
 
   public BibtexlikeBuilder(File input) {
     super(input);
@@ -72,7 +72,7 @@ public class BibtexlikeBuilder extends Builder<File, OutputPersisted<File>> {
     outStream.close();
 
     Map<Character, String> bib = new HashMap<>();
-    for (String entry : Files.readAllLines(bibFile.toPath())) {
+    for (String entry : FileCommands.readFileLines(bibFile)) {
       if (entry.length() != 0) {
         Character key = entry.charAt(0);
         String value = entry.substring(2, entry.length());
@@ -83,7 +83,10 @@ public class BibtexlikeBuilder extends Builder<File, OutputPersisted<File>> {
     Map<String, String> replaceTexts = new HashMap<>();
 
     for (Character toReplace : replacements) {
-      replaceTexts.put(Character.toString('X') + toReplace, bib.getOrDefault(toReplace, ""));
+      String replace = bib.get(toReplace);
+      if (replace == null)
+        replace = "";
+      replaceTexts.put(Character.toString('X') + toReplace, replace);
     }
 
     File replaceFile = FileCommands.replaceExtension(input, "rep");

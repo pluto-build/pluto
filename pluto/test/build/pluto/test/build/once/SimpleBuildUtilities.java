@@ -5,10 +5,11 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.sugarj.common.FileCommands;
 
 import build.pluto.BuildUnit;
 import build.pluto.output.None;
@@ -19,23 +20,23 @@ public class SimpleBuildUtilities {
 	
 	public static void addInputFileContent(File path, String newContent)
 			throws IOException {
-		List<String> lines = Files.readAllLines(path.toPath());
+		List<String> lines = FileCommands.readFileLines(path);
 		lines.add(newContent);
-		Files.write(path.toPath(), lines);
+		FileCommands.writeLinesFile(path, lines);
 	}
 	
 	public static void addInputFileDep(File path, File dep)
 			throws IOException {
-		List<String> lines = Files.readAllLines(path.toPath());
+    List<String> lines = FileCommands.readFileLines(path);
 		lines.add("Dep:"+dep.getName());
-		Files.write(path.toPath(), lines);
+    FileCommands.writeLinesFile(path, lines);
 	}
 	
 	public static void removeInputFileDep(File path, File dep)
 			throws IOException {
-		List<String> lines = Files.readAllLines(path.toPath());
+    List<String> lines = FileCommands.readFileLines(path);
 		lines.remove("Dep:"+dep.getName());
-		Files.write(path.toPath(), lines);
+    FileCommands.writeLinesFile(path, lines);
 	}
 
 	public static BuildUnit<None> unitForFile(File path, Path testBasePath)

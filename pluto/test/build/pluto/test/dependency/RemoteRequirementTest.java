@@ -1,18 +1,16 @@
 package build.pluto.test.dependency;
 
-import build.pluto.dependency.RemoteRequirement;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
 
 import org.junit.After;
 import org.junit.Test;
-
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.Log;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import build.pluto.dependency.RemoteRequirement;
 
 public class RemoteRequirementTest {
 

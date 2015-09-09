@@ -5,12 +5,17 @@ import java.util.Collection;
 import java.util.List;
 
 import build.pluto.util.UniteCollections;
+import build.pluto.util.UniteCollections.Supplier;
 
 public abstract class CycleDetectionStack<C, P> {
 
  protected List<C> callStack = new ArrayList<>();
   
-  protected UniteCollections<C, List<C>> sccs = new UniteCollections<>(ArrayList::new);
+  protected UniteCollections<C, List<C>> sccs = new UniteCollections<>(new Supplier<List<C>>() {
+    public ArrayList<C> get() {
+      return new ArrayList<>();
+    }
+  });
   
   protected P push(C unit) {
     // Check whether unit is already on the stack
@@ -20,7 +25,9 @@ public abstract class CycleDetectionStack<C, P> {
       // Then unite the sccs of all units from the top of the stack until
       // the already existing occurence of unit
       UniteCollections<C, List<C>>.Key scc = sccs.getOrCreate(unit);
-      scc = callStack.stream().skip(index).reduce(scc, sccs::uniteOrAdd, sccs::unite);
+      for (int i = index+1; i < callStack.size(); i++) {
+        scc = sccs.uniteOrAdd(scc, callStack.get(i));
+      }
       // Subclasses decide what to return
       return cycleResult(unit, sccs.getSetMembers(scc));
     } else {

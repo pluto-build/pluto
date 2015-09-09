@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import build.pluto.BuildUnit;
@@ -72,7 +73,8 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
   protected void startNextIteration() {
     // Remember old outputs
     outputsPreviousIteration.clear();
-    units.forEach((BuildRequest<?, ?, ?, ?> req, BuildUnit<?> unit) -> outputsPreviousIteration.put(req, unit.getBuildResult()));
+    for (Entry<BuildRequest<?, ?, ?, ?>, BuildUnit<?>> e : units.entrySet())
+      outputsPreviousIteration.put(e.getKey(), e.getValue().getBuildResult());
     // Clear remembered units
     requiredUnitsInIteration.clear();
     completedUnitsInIteration.clear();
@@ -138,7 +140,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
       if (isUnitCompletedInCurrentIteration(cycleUnit))
         return new BuildRequirement<>(cycleUnit, buildReq);
       else
-        return new CyclicBuildRequirement<>(cycleUnit, buildReq, getOutputInPreviousIteration(buildReq));
+        return new CyclicBuildRequirement<>(cycleUnit, buildReq, this.<Out>getOutputInPreviousIteration(buildReq));
     } else {
       // If the request is part of the cycle, we need to handle it, otherwise
       // just delegate it to the parent
@@ -206,7 +208,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
       try {
         // Initialize the output to the old one, so units, which require this
         // units cylicly can work with the old result
-        cycleUnit.setBuildResult(getOutputInPreviousIteration(buildReq));
+        cycleUnit.setBuildResult(this.<Out>getOutputInPreviousIteration(buildReq));
         report.startedBuilder(buildReq, builder, cycleUnit, Collections.singleton(BuildReason.FixPointNotReachedYet));
 
         markUnitRequiredInCurrentInteration(buildReq, cycleUnit);

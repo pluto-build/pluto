@@ -8,8 +8,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.sugarj.common.Log;
-
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.ModuleVisitor;
 import build.pluto.dependency.BuildRequirement;
