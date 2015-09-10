@@ -19,9 +19,6 @@ public class FileHashStamper implements Stamper {
   private FileHashStamper() {}
   public static final Stamper instance = new FileHashStamper();
   
-  /**
-   * @see build.pluto.stamp.Stamper#stampOf(org.sugarj.common.path.Path)
-   */
   @Override
   public Stamp stampOf(File p) {
     if (!p.exists())

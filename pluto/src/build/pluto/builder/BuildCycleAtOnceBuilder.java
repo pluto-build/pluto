@@ -90,7 +90,7 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
   }
 
   @Override
-  protected File persistentPath(ArrayList<In> input) {
+  public File persistentPath(ArrayList<In> input) {
     if (input.size() == 1) {
       return this.singletonPersistencePath(input.get(0));
     } else {

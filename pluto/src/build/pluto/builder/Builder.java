@@ -73,7 +73,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    * 
    * @return the file where to persist the build summary
    */
-  protected abstract File persistentPath(In input);
+  public abstract File persistentPath(In input);
 
   final File persistentPath() {
     return this.persistentPath(input);
@@ -314,7 +314,12 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     manager.report.messageFromBuilder(message, true, this);
   }
 
+  protected BuildUnit<Out> getBuildUnit() {
+    return result;
+  }
+  
   protected BuildUnit<Out> getPreviousBuildUnit() {
     return previousResult;
   }
+  
 }

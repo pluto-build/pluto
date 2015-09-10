@@ -24,7 +24,8 @@ public abstract class NumericBuilder extends Builder<FileInput, OutputPersisted<
   protected abstract BiFunction<Integer, Integer, String> getPrintOperator();
 
   @Override
-  protected final File persistentPath(FileInput input) {
+  public
+  final File persistentPath(FileInput input) {
     return FileCommands.addExtension(input.getFile().toPath(), "dep").toFile();
   }
 

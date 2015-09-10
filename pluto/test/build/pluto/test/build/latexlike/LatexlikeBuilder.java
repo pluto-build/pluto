@@ -35,7 +35,7 @@ public class LatexlikeBuilder extends Builder<File, OutputPersisted<File>> {
   }
 
   @Override
-  protected File persistentPath(File input) {
+  public File persistentPath(File input) {
     return FileCommands.addExtension(input, "dep");
   }
 

@@ -65,7 +65,7 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 	}
 
 	@Override
-  protected File persistentPath(TestBuilderInput input) {
+  public File persistentPath(TestBuilderInput input) {
 		return FileCommands.addExtension(input.inputPath.toPath(), "dep").toFile();
 	}
 

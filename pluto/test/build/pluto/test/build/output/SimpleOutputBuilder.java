@@ -27,7 +27,7 @@ public abstract class SimpleOutputBuilder extends Builder<TestBuilderInput, Outp
 	}
 
 	@Override
-  protected File persistentPath(TestBuilderInput input) {
+  public File persistentPath(TestBuilderInput input) {
 		return FileCommands.addExtension(input.getInputPath().toPath(), "dep").toFile();
 	}
 

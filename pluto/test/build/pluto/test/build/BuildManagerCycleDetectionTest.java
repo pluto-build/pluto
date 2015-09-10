@@ -48,7 +48,7 @@ public class BuildManagerCycleDetectionTest {
 		}
 
 		@Override
-    protected File persistentPath(AbsoluteComparedFile input) {
+    public File persistentPath(AbsoluteComparedFile input) {
       return FileCommands.replaceExtension(input.getFile().toPath(), "dep").toFile();
 		}
 

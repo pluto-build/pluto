@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.sugarj.common.Log;
+
 import build.pluto.builder.BuildCycleException;
 import build.pluto.builder.BuildManager;
 import build.pluto.builder.BuildRequest;
@@ -42,6 +44,7 @@ public class TrackingBuildManager extends BuildManager {
 	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildRequirement<Out> 
 	    require(BuildRequest<In, Out, B, F> buildReq, boolean needBuildResult) throws IOException {
 		requiredInputs.add(buildReq.input);
+		Log.log.log("Require " + buildReq, Log.DETAIL);
 		return super.require(buildReq, needBuildResult);
 	}
 
