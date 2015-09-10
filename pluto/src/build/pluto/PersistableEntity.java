@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.sugarj.common.FileCommands;
+import org.sugarj.common.Log;
 
 import build.pluto.stamp.Stamp;
 import build.pluto.stamp.Stamper;
@@ -75,10 +76,14 @@ public abstract class PersistableEntity implements Serializable {
     try {
       entity = clazz.newInstance();
     } catch (InstantiationException e) {
-      e.printStackTrace();
+      if((Log.log.getLoggingLevel() & Log.DETAIL) != 0) {
+        e.printStackTrace(Log.err);
+      }
       return null;
     } catch (IllegalAccessException e) {
-      e.printStackTrace();
+      if((Log.log.getLoggingLevel() & Log.DETAIL) != 0) {
+        e.printStackTrace(Log.err);
+      }
       return null;
     }
 
