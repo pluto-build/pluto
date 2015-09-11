@@ -7,7 +7,7 @@ public class IgnoreOutputStamper implements OutputStamper<Output> {
 
   public static final IgnoreOutputStamper instance = new IgnoreOutputStamper();
 
-  private static final OutputStamp<Output> IGNORE_OUTPUT_STAMP = new IgnoreOutputStamp();
+  public static final OutputStamp<Output> IGNORE_OUTPUT_STAMP = new IgnoreOutputStamp();
 
   private static class IgnoreOutputStamp implements OutputStamp<Output> {
 

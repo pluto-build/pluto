@@ -3,9 +3,14 @@ package build.pluto.test.build;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collection;
+import java.util.Collections;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -27,6 +32,10 @@ public abstract class ScopedBuildTest {
   protected String getTestFolderName() {
     return this.getClass().getSimpleName();
   }
+  
+  protected Collection<String> alsoCopyDirs() {
+    return Collections.emptyList();
+  }
 
   @Before
   public void initializeTestEnvironment() throws IOException {
@@ -36,6 +45,8 @@ public abstract class ScopedBuildTest {
     FileCommands.delete(testBasePath);
     FileCommands.createDir(testBasePath);
 
+    Collection<String> copyDirs = alsoCopyDirs();
+    
     for (File file : basePath.toFile().listFiles())
       if (!file.isDirectory())
         try {
@@ -44,6 +55,30 @@ public abstract class ScopedBuildTest {
           e.printStackTrace();
           throw new RuntimeException(e);
         }
+      else if (copyDirs.contains(file.getName())) {
+        Files.walkFileTree(file.toPath(), new SimpleFileVisitor<Path>() {
+          private Path currentDir = testBasePath;
+          @Override
+          public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+            Files.copy(dir, testBasePath.resolve(dir.toFile().getName()));
+            currentDir = currentDir.resolve(dir.toFile().getName());
+            return FileVisitResult.CONTINUE;
+          }
+          
+          @Override
+          public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+            currentDir = currentDir.getParent();
+            return FileVisitResult.CONTINUE;
+          }
+          
+          @Override
+          public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            System.out.println("COPY " + file + " to " + currentDir);
+            Files.copy(file, currentDir.resolve(file.toFile().getName()));
+            return FileVisitResult.CONTINUE;
+          }
+        });
+      }
 
     injectScopedPaths();
 

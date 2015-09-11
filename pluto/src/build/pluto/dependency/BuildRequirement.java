@@ -37,7 +37,7 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
     }
   }
   
-  protected BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req, OutputStamp<? super Out> stamp) {
+  public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req, OutputStamp<? super Out> stamp) {
     Objects.requireNonNull(unit);
     this.unit = unit;
     this.req = req;

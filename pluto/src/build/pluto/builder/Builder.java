@@ -8,6 +8,7 @@ import java.util.Collection;
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
 import build.pluto.dependency.BuildRequirement;
+import build.pluto.dependency.FileRequirement;
 import build.pluto.dependency.IllegalDependencyException;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.None;
@@ -301,6 +302,11 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   public void provide(File p, Stamper stamper) {
     result.generates(p, stamper.stampOf(p));
   }
+  
+  public void provide(FileRequirement req) {
+    result.generates(req);
+  }
+
 
   public void setState(State state) {
     result.setState(state);

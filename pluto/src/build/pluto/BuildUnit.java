@@ -91,10 +91,6 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity imple
 		requirements.add(new FileRequirement(file, stampOfFile));
 	}
 	
-	public void generates(File file, Stamp stampOfFile) {
-		generatedFiles.add(new FileRequirement(file, stampOfFile));
-	}
-	
 	public <Out_ extends Output> void requires(BuildRequirement<Out_> req) {
 	  Objects.requireNonNull(req);
 	  requirements.add(req);
@@ -111,6 +107,15 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity imple
     Objects.requireNonNull(req);
     requirements.add(req);
   }
+
+  public void generates(File file, Stamp stampOfFile) {
+	  generatedFiles.add(new FileRequirement(file, stampOfFile));
+	}
+	  
+	public void generates(FileRequirement req) {
+	  generatedFiles.add(req);
+	}
+	  
 
 	// *********************************
 	// Methods for querying dependencies
@@ -197,7 +202,15 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity imple
 	public List<Requirement> getRequirements() {
     return requirements;
   }
-	
+
+	 public Set<FileRequirement> getRequiredFiles() {
+	    Set<FileRequirement> set = new HashSet<>();
+	    for (Requirement req : requirements)
+	      if (req instanceof FileRequirement)
+	        set.add((FileRequirement) req);
+	    return set;
+	  }	  
+
 	public BuildRequest<?, Out, ?, ?> getGeneratedBy() {
     return generatedBy;
   }
