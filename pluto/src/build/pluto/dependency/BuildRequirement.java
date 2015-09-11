@@ -26,7 +26,7 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
   private BuildUnit<Out> unit;
   private boolean hasFailed;
   private BuildRequest<?, Out, ?, ?> req;
-  private OutputStamp<? super Out> stamp;
+  private OutputStamp stamp;
 
   public BuildRequirement() { }
 
@@ -37,7 +37,7 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
     }
   }
   
-  public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req, OutputStamp<? super Out> stamp) {
+  public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req, OutputStamp stamp) {
     Objects.requireNonNull(unit);
     this.unit = unit;
     this.req = req;
@@ -66,7 +66,7 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
     return hasFailed;
   }
 
-  protected OutputStamp<? super Out> getStamp() {
+  protected OutputStamp getStamp() {
     return stamp;
   }
 
@@ -119,7 +119,7 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
     File unitPath = (File) in.readObject();
     hasFailed = in.readBoolean();
     req = (BuildRequest<?, Out, ?, ?>) in.readObject();
-    stamp = (OutputStamp<? super Out>) in.readObject();
+    stamp = (OutputStamp) in.readObject();
     unit = BuildUnit.read(unitPath);
   }
 

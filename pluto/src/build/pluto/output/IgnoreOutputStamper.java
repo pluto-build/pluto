@@ -7,9 +7,9 @@ public class IgnoreOutputStamper implements OutputStamper<Output> {
 
   public static final IgnoreOutputStamper instance = new IgnoreOutputStamper();
 
-  public static final OutputStamp<Output> IGNORE_OUTPUT_STAMP = new IgnoreOutputStamp();
+  public static final OutputStamp IGNORE_OUTPUT_STAMP = new IgnoreOutputStamp();
 
-  private static class IgnoreOutputStamp implements OutputStamp<Output> {
+  private static class IgnoreOutputStamp implements OutputStamp {
 
     private static final long serialVersionUID = 8496940185179778842L;
 
@@ -19,13 +19,13 @@ public class IgnoreOutputStamper implements OutputStamper<Output> {
     }
 
     @Override
-    public boolean equals(OutputStamp<?> o) {
+    public boolean equals(OutputStamp o) {
       return o instanceof IgnoreOutputStamp;
     };
   };
 
   @Override
-  public OutputStamp<Output> stampOf(Output p) {
+  public OutputStamp stampOf(Output p) {
     return IGNORE_OUTPUT_STAMP;
   }
 

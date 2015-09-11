@@ -16,11 +16,11 @@ public class OutputEqualStamper implements OutputStamper<Output> {
   private OutputEqualStamper() { }
   
   @Override
-  public OutputStamp<Output> stampOf(Output out) {
+  public OutputStamp stampOf(Output out) {
     return new OutputEqualStamp(out);
   }
   
-  public static class OutputEqualStamp implements OutputStamp<Output> {
+  public static class OutputEqualStamp implements OutputStamp {
 
     private static final long serialVersionUID = -5404621797279839303L;
 
@@ -35,7 +35,7 @@ public class OutputEqualStamper implements OutputStamper<Output> {
     }
     
     @Override
-    public boolean equals(OutputStamp<?> o) {
+    public boolean equals(OutputStamp o) {
       if (o instanceof OutputEqualStamp) {
         Serializable oout = ((OutputEqualStamp) o).out;
         return Objects.equals(out, oout);

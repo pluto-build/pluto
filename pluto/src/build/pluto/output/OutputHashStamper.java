@@ -15,11 +15,11 @@ public class OutputHashStamper implements OutputStamper<Output> {
   private OutputHashStamper() { }
   
   @Override
-  public OutputStamp<Output> stampOf(Output out) {
+  public OutputStamp stampOf(Output out) {
     return new OutputHashStamp(Objects.hashCode(out));
   }
   
-  public static class OutputHashStamp implements OutputStamp<Output> {
+  public static class OutputHashStamp implements OutputStamp {
 
     private static final long serialVersionUID = -5404621797279839303L;
 
@@ -34,7 +34,7 @@ public class OutputHashStamper implements OutputStamper<Output> {
     }
     
     @Override
-    public boolean equals(OutputStamp<?> o) {
+    public boolean equals(OutputStamp o) {
       return o instanceof OutputHashStamp && ((OutputHashStamp) o).hash == hash;
     }
 
