@@ -45,7 +45,7 @@ public abstract class BulkBuilder<In extends Serializable, Out extends Output, S
 		}
 	}
 
-	private Set<Requirement> alreadyRequired = new HashSet<>();
+	private Set<File> alreadyRequired = new HashSet<>();
 	private Map<File, Set<File>> tracedRequired = new HashMap<>();
 	private Map<File, List<FileRequirement>> tracedProvided = new HashMap<>();
 	
@@ -74,10 +74,11 @@ public abstract class BulkBuilder<In extends Serializable, Out extends Output, S
 			tracedRequired.put(source, files);
 		}
 		files.add(file);
-		Stamp stamp = stamper.stampOf(file);
-		FileRequirement freq = new FileRequirement(file, stamp);
-		if (alreadyRequired.add(freq))
+		if (alreadyRequired.add(file)) {
+			Stamp stamp = stamper.stampOf(file);
+		    FileRequirement freq = new FileRequirement(file, stamp);
 			super.requireOther(freq);
+		}
 	}
 	protected void require(File source, Requirement req) {
 		Set<File> files = tracedRequired.get(source);
@@ -87,10 +88,12 @@ public abstract class BulkBuilder<In extends Serializable, Out extends Output, S
 		}
 		
 		if (req instanceof FileRequirement) {
-			files.add(((FileRequirement) req).file);
+			File file = ((FileRequirement) req).file;
+			files.add(file);
+			if (alreadyRequired.add(file))
+			      super.requireOther(req);
 		}
-		if (alreadyRequired.add(req))
-			super.requireOther(req);
+		super.requireOther(req);
 
 	}
 
