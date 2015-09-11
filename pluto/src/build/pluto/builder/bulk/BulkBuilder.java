@@ -1,7 +1,6 @@
 package build.pluto.builder.bulk;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,20 +12,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import build.pluto.BuildUnit;
-import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
-import build.pluto.builder.BuilderFactory;
-import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.FileRequirement;
 import build.pluto.dependency.Requirement;
-import build.pluto.output.IgnoreOutputStamper;
 import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamp;
 import build.pluto.stamp.Stamper;
 
-public abstract class BulkBuilder<In extends Serializable, Out extends Output, SubIn extends Serializable> 
+public abstract class BulkBuilder<In extends Serializable, Out extends Output> 
 	extends Builder<In, BulkBuilder.BulkOutput<Out>> {
 
 	public BulkBuilder(In input) {
@@ -50,18 +44,11 @@ public abstract class BulkBuilder<In extends Serializable, Out extends Output, S
 	private Map<File, List<FileRequirement>> tracedProvided = new HashMap<>();
 	
 	protected abstract Collection<File> requiredFiles(In input);
-	protected abstract Collection<SubIn> splitInput(In input, Set<File> changedFiles);
-	protected abstract BuildRequest<
-		? extends SubIn,
-		? extends Output, 
-		? extends Builder<SubIn, ? extends Output>, 
-		? extends BuilderFactory<? extends SubIn, ? extends Output, ? extends Builder<SubIn, ? extends Output>>> 
-		makeSubRequest(SubIn subInput);
 	/**
 	 * Calls `require(File, File)` to register the required files for each subinput.
 	 * Calls `provide(File, File)` to register the provided files for each subinput.
 	 */
-	protected abstract Out buildBulk(In input, Collection<SubIn> splitInput, Set<File> changedFiles) throws Throwable;
+	protected abstract Out buildBulk(In input, Set<File> changedFiles) throws Throwable;
 	
 
 	protected void require(File source, File file) {
@@ -135,9 +122,7 @@ public abstract class BulkBuilder<In extends Serializable, Out extends Output, S
 				if (e.getValue().contains(changedFile))
 					changedFiles.add(e.getKey());
 
-		Collection<SubIn> splitInput = splitInput(input, changedFiles);
-		
-		Out out = buildBulk(input, splitInput, changedFiles);
+		Out out = buildBulk(input, changedFiles);
 
 		for (File file : requiredFiles)
 			if (!changedFiles.contains(file)) {
@@ -152,9 +137,6 @@ public abstract class BulkBuilder<In extends Serializable, Out extends Output, S
 						provide(file, provide);
 			}
 		
-		for (SubIn subInput : splitInput) 
-			makeShadowBuildUnit(subInput);
-		
 		return new BulkOutput<>(tracedRequired, tracedProvided, out);
 	}
 
@@ -168,21 +150,5 @@ public abstract class BulkBuilder<In extends Serializable, Out extends Output, S
 		if (getPreviousBuildUnit() != null && getPreviousBuildUnit().getBuildResult() != null)
 			return getPreviousBuildUnit().getBuildResult().tracedRequired;
 		return Collections.emptyMap();
-	}
-
-	private void makeShadowBuildUnit(SubIn subInput) throws IOException {
-		BuildRequest<? extends SubIn, ? extends Output, ? extends Builder<SubIn, ? extends Output>, ? extends BuilderFactory<? extends SubIn, ? extends Output, ? extends Builder<SubIn, ? extends Output>>> 
-			req = makeSubRequest(subInput);
-		
-		Builder<SubIn, ? extends Output> builder = req.createBuilder();
-		File path = builder.persistentPath(subInput);
-		
-		BuildUnit<? extends Output> unit = BuildUnit.create(path, req);
-		unit.requires(new BuildRequirement<>(
-				getBuildUnit(), 
-				getBuildUnit().getGeneratedBy(), 
-				IgnoreOutputStamper.IGNORE_OUTPUT_STAMP));
-		unit.setState(BuildUnit.State.SUCCESS);
-		unit.write();
 	}
 }
