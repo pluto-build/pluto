@@ -66,6 +66,7 @@ public abstract class PersistableEntity implements Serializable {
   }
   
   final protected static <E extends PersistableEntity> E create(Class<E> clazz, File p) throws IOException {
+    p = p.getAbsoluteFile();
     E entity = readFromMemoryCache(clazz, p);
     
     if (entity != null) {
