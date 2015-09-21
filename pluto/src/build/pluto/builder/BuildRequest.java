@@ -75,7 +75,7 @@ public class BuildRequest<
 
   @Override
   public String toString() {
-    return "BuildReq(" + factory.getClass().getName() + ")";
+    return "BuildReq(" + factory.toString() + ")";
   }
 
   private boolean assertFactorySerializable(F factory) {
