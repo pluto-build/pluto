@@ -12,7 +12,7 @@ public class FileRequirement implements Requirement {
   public final Stamp stamp;
   
   public FileRequirement(File file, Stamp stamp) {
-    this.file = file;
+    this.file = file.getAbsoluteFile();
     this.stamp = stamp;
   }
   

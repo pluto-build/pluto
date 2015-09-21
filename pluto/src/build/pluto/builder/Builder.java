@@ -77,7 +77,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   public abstract File persistentPath(In input);
 
   final File persistentPath() {
-    return this.persistentPath(input);
+    return this.persistentPath(input).getAbsoluteFile();
   }
 
   /**
