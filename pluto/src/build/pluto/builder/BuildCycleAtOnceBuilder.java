@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -66,6 +67,25 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
           }
       }
     }
+  }
+  
+  /**
+   * Requires that the build result of all given {@link BuildRequest}s is
+   * consistent such that provided files can be required.
+   * 
+   * @param reqs
+   *          all requirements which are needed to be consistent
+   * @throws IOException
+   */
+  @Override
+  protected void requireBuild(Collection<? extends BuildRequest<?, ?, ?, ?>> reqs) throws IOException {
+    if (reqs != null)
+      for (BuildRequest<?, ?, ?, ?> req : reqs) {
+        BuildRequirement<?> e = manager.require(req, false);
+        for (BuildUnit<Out> result : cyclicResults) {
+          result.requires(e);
+        }
+      }
   }
 
   @Override
