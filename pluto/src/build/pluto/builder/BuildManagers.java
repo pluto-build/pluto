@@ -92,7 +92,7 @@ public class BuildManagers {
     }
   }
 
-  private static Pair<BuildManager, Boolean> getBuildManagerForCurrentThread(IReporting report) {
+  private static synchronized Pair<BuildManager, Boolean> getBuildManagerForCurrentThread(IReporting report) {
     Thread current = Thread.currentThread();
     BuildManager manager = activeManagers.get(current);
     boolean freshManager = manager == null;

@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.sugarj.common.Exec;
 import org.sugarj.common.FileCommands;
 
 import build.pluto.BuildUnit;
@@ -260,12 +261,16 @@ public class BuildManager extends BuildUnitProvider {
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
   BuildUnit<Out> requireInitially(BuildRequest<In, Out, B, F> buildReq) throws IOException {
-    Thread currentThread = Thread.currentThread();
-    long currentTime = System.currentTimeMillis();
-    requireInitiallyTimestamps.put(currentThread, currentTime);
-    report.messageFromSystem("Incrementally rebuild inconsistent units", false, 0);
-    BuildRequirement<Out> result = require(buildReq, true);
-    return result.getUnit();
+    try {
+      Thread currentThread = Thread.currentThread();
+      long currentTime = System.currentTimeMillis();
+      requireInitiallyTimestamps.put(currentThread, currentTime);
+      report.messageFromSystem("Incrementally rebuild inconsistent units", false, 0);
+      BuildRequirement<Out> result = require(buildReq, true);
+      return result.getUnit();
+    } finally {
+      Exec.shutdown();
+    }
   }
 
   public static long getStartingTimeOfBuildManager(Thread thread) {
