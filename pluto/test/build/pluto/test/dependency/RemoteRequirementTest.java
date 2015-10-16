@@ -1,7 +1,9 @@
 package build.pluto.test.dependency;
 
-import java.io.IOException;
+import build.pluto.dependency.RemoteRequirement;
+
 import java.io.File;
+import java.io.IOException;
 
 import org.junit.After;
 import org.junit.Test;
@@ -113,6 +115,25 @@ public class RemoteRequirementTest {
 
         assertEquals(false, consistency);
         assertEquals(6000L, contentOfFile);
+    }
+
+    @Test
+    public void checkNeverTestForConsistencyWithRemote() {
+        MockRemoteRequirement req = new MockRemoteRequirement(
+                tsPath,
+                RemoteRequirement.NEVER_CHECK);
+        writeTSOnce(req, 6000L, true);
+
+        boolean consistency = writeTSOnce(req, 13000L, false);
+        assertEquals(true, consistency);
+
+        consistency = writeTSOnce(req, Long.MAX_VALUE, false);
+        assertEquals(true, consistency);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void checkIntervalInvalid() {
+        MockRemoteRequirement req = new MockRemoteRequirement(tsPath, -2L);
     }
 
     private boolean writeTSOnce(
