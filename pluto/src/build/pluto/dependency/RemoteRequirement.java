@@ -12,11 +12,26 @@ public abstract class RemoteRequirement implements Requirement {
 
     private static final long serialVersionUID = -637138545509445926L;
 
+    public static final long NEVER_CHECK = -1L;
+
     private long consistencyCheckInterval;
 
     private File persistentPath;
 
+    /**
+     * @param persistentPath the file in which the timestamp of the last
+     *                       successful consistency check between remote
+     *                       and local resource was made.
+     * @param consistencyCheckInterval the milliseconds how long the consistency
+     *                                 check between remote and local resource
+     *                                 are not made. 0L means it gets checked
+     *                                 everytime and -1L means it does not get
+     *                                 checked ever.
+     */
     public RemoteRequirement(File persistentPath, long consistencyCheckInterval) {
+        if (consistencyCheckInterval < NEVER_CHECK) {
+            throw new IllegalArgumentException("consistencyCheckInterval has to be greater or equal than -1L");
+        }
         this.persistentPath = persistentPath;
         this.consistencyCheckInterval = consistencyCheckInterval;
         long timestamp = getStartingTimestamp();
@@ -60,6 +75,9 @@ public abstract class RemoteRequirement implements Requirement {
         if (!FileCommands.exists(persistentPath)) {
             writePersistentPath(currentTime);
             return true;
+        }
+        if (consistencyCheckInterval == NEVER_CHECK) {
+            return false;
         }
         long lastConsistencyCheck = readPersistentPath();
         if (lastConsistencyCheck + consistencyCheckInterval < currentTime) {
