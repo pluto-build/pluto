@@ -41,6 +41,8 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   private final In input;
 
   transient BuildUnit<Out> result;
+  private transient BuildUnit<Out> previousResult;
+  
   transient BuildUnitProvider manager;
   private transient Stamper defaultStamper;
 
@@ -110,14 +112,16 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     return LastModifiedStamper.instance;
   }
 
-  Out triggerBuild(BuildUnit<Out> result, BuildUnitProvider manager) throws Throwable {
+  Out triggerBuild(BuildUnit<Out> result, BuildUnitProvider manager, BuildUnit<Out> previousResult) throws Throwable {
     this.result = result;
+    this.previousResult = previousResult;
     this.manager = manager;
     this.defaultStamper = defaultStamper();
     try {
       return build(this.input);
     } finally {
       this.result = null;
+      this.previousResult = null;
       this.manager = null;
       this.defaultStamper = null;
     }
@@ -310,4 +314,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     manager.report.messageFromBuilder(message, true, this);
   }
 
+  protected BuildUnit<Out> getPreviousBuildUnit() {
+    return previousResult;
+  }
 }
