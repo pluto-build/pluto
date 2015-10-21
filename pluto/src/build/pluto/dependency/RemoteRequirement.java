@@ -45,6 +45,13 @@ public abstract class RemoteRequirement implements Requirement {
         long timestamp = getStartingTimestamp();
         if(needsConsistencyCheck(timestamp)) {
             Log.log.log("Check if the remote resource is consistent with the local resource", Log.CORE);
+            if (!isRemoteResourceAccessible()) {
+                if (isLocalResourceAvailable()) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
             if(isConsistentWithRemote()){
                 writePersistentPath(timestamp);
                 return true;
@@ -59,6 +66,18 @@ public abstract class RemoteRequirement implements Requirement {
         Thread currentThread = Thread.currentThread();
         return BuildManager.getStartingTimeOfBuildManager(currentThread);
     }
+
+    /**
+     * Checks if the remote resource can be accessed.
+     * @return true if remote resourse can be accessed.
+     */
+    protected abstract boolean isRemoteResourceAccessible();
+
+    /**
+     * Checks if a version of the remote resource is available locally.
+     * @return true if a version of the remote resourse is locally available.
+     */
+    protected abstract boolean isLocalResourceAvailable();
 
     /**
      * Checks if the local state is consistent with the remote state.

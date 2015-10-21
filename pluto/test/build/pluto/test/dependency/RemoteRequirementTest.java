@@ -136,6 +136,32 @@ public class RemoteRequirementTest {
         MockRemoteRequirement req = new MockRemoteRequirement(tsPath, -2L);
     }
 
+    @Test
+    public void checkRemoteNotAccessibleAndLocalVersionAvailable() {
+        MockRemoteRequirement req = new MockRemoteRequirement(tsPath, 5000L);
+        writeTSOnce(req, 6000L, true);
+        req.setIsRemoteAccessible(false);
+        req.setIsLocalAvailable(true);
+        boolean consistency = writeTSOnce(req, 13000L, false);
+        long contentOfFile = readTimestampFromFile(tsPath);
+
+        assertEquals(true, consistency);
+        assertEquals(6000L, contentOfFile);
+    }
+
+    @Test
+    public void checkRemoteNotAccessibleAndLocalVersionNotAvailable() {
+        MockRemoteRequirement req = new MockRemoteRequirement(tsPath, 5000L);
+        writeTSOnce(req, 6000L, true);
+        req.setIsRemoteAccessible(false);
+        req.setIsLocalAvailable(false);
+        boolean consistency = writeTSOnce(req, 13000L, false);
+        long contentOfFile = readTimestampFromFile(tsPath);
+
+        assertEquals(false, consistency);
+        assertEquals(6000L, contentOfFile);
+    }
+
     private boolean writeTSOnce(
             MockRemoteRequirement req,
             long ts,
