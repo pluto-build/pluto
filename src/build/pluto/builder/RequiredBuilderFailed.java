@@ -24,6 +24,30 @@ public class RequiredBuilderFailed extends RuntimeException {
     builders.add(buildReq);
   }
   
+  /**
+   * The cause of a required builder failed exception discards the last added builder
+   * 
+   * @see java.lang.Throwable#getCause()
+   */
+  @Override
+  public synchronized Throwable getCause() {
+    if (builders.size() == 1)
+      return super.getCause();
+    
+    RequiredBuilderFailed e = new RequiredBuilderFailed(builders.get(0), super.getMessage());
+    int to = builders.size() - 1;
+    for (int i = 1; i < to; i++) // omit last builder
+      e.addBuilder(builders.get(i));
+    return e;
+  }
+  
+  /**
+   * @return the original exception that made the innermost build fail.
+   */
+  public Throwable getRootCause() {
+    return super.getCause();
+  }
+  
   private void addBuilder(BuildRequirement<?> buildReq) {
     builders.add(buildReq);
   }
@@ -39,7 +63,7 @@ public class RequiredBuilderFailed extends RuntimeException {
   @Override
   public String getMessage() {
     BuildRequirement<?> p = builders.get(0);
-    return "Required builder failed. Error occurred in build step \"" + p.getRequest().createBuilder().description() + "\": " + (getCause() == null ? super.getMessage() : getCause().getMessage());
+    return "Required builder failed. Error occurred in build step \"" + p.getRequest().createBuilder().description() + "\": " + (super.getCause() == null ? super.getMessage() : super.getCause().getMessage());
   }
 
   protected <Out extends Output> RequiredBuilderFailed enqueueBuilder(BuildUnit<Out> depResult, BuildRequest<?, Out, ?, ?> buildReq) {

@@ -68,8 +68,8 @@ public class BuildInterruptTest extends SimpleBuildTest {
     TrackingBuildManager manager = new TrackingBuildManager();
     try {
       buildMainFile(manager);
-    } catch (Exception e) {
-      assertTrue(e.getCause() instanceof InterruptedException);
+    } catch (RequiredBuilderFailed e) {
+      assertTrue(e.getRootCause() instanceof InterruptedException);
     }
     
     // no dep2File
@@ -88,7 +88,7 @@ public class BuildInterruptTest extends SimpleBuildTest {
     try {
       buildMainFile(manager);
     } catch (RequiredBuilderFailed e) {
-      assertTrue(e.getCause() instanceof InterruptedException);
+      assertTrue(e.getRootCause() instanceof InterruptedException);
     }
     
     // no dep2File

@@ -67,7 +67,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
   }
 
   @Test(timeout = 1000)
-  public void testRebuildRootUnitInconsistent() throws IOException {
+  public void testRebuildRootUnitInconsistent() throws Throwable {
 
     Log.log.setLoggingLevel(Log.DETAIL | Log.CORE);
     BuildManagers.build(mainBuildRequest);
@@ -94,7 +94,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
   }
 
   @Test(timeout = 1000)
-  public void testRebuildCycle1UnitInconsistent() throws IOException {
+  public void testRebuildCycle1UnitInconsistent() throws Throwable {
 
     // Do a first clean build
     BuildManagers.build(mainBuildRequest);

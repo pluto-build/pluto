@@ -260,7 +260,7 @@ public class BuildManager extends BuildUnitProvider {
      B extends Builder<In, Out>,
      F extends BuilderFactory<In, Out, B>>
   //@formatter:on
-  BuildUnit<Out> requireInitially(BuildRequest<In, Out, B, F> buildReq) throws IOException {
+  BuildUnit<Out> requireInitially(BuildRequest<In, Out, B, F> buildReq) throws Throwable {
     try {
       Thread currentThread = Thread.currentThread();
       long currentTime = System.currentTimeMillis();
@@ -268,6 +268,8 @@ public class BuildManager extends BuildUnitProvider {
       report.messageFromSystem("Incrementally rebuild inconsistent units", false, 0);
       BuildRequirement<Out> result = require(buildReq, true);
       return result.getUnit();
+    } catch (RequiredBuilderFailed e) {
+      throw e.getCause();
     } finally {
       Exec.shutdown();
     }

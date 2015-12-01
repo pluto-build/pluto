@@ -53,16 +53,13 @@ public class BuildManagers {
         FileCommands.delete(p);
   }
 
-  public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq) {
+  public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq) throws Throwable {
     return build(buildReq, defaultReport());
   }
-  public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq, IReporting report) {
+  public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq, IReporting report) throws Throwable {
     Pair<BuildManager, Boolean> manager = getBuildManagerForCurrentThread(report);
     try {
       return manager.b ? manager.a.requireInitially(buildReq).getBuildResult() : manager.a.require(buildReq, true).getUnit().getBuildResult();
-    } catch (IOException e) {
-      e.printStackTrace();
-      return null;
     } finally {
       if (manager.b)
         activeManagers.remove(Thread.currentThread());
@@ -72,7 +69,7 @@ public class BuildManagers {
   public static <Out extends Output> List<Out> buildAll(Iterable<BuildRequest<?, Out, ?, ?>> buildReqs) {
     return buildAll(buildReqs);
   }
-  public static <Out extends Output> List<Out> buildAll(Iterable<BuildRequest<?, Out, ?, ?>> buildReqs, IReporting report) {
+  public static <Out extends Output> List<Out> buildAll(Iterable<BuildRequest<?, Out, ?, ?>> buildReqs, IReporting report) throws Throwable {
     Pair<BuildManager, Boolean> manager = getBuildManagerForCurrentThread(report);
 
     try {
