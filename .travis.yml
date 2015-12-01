@@ -1,7 +1,8 @@
 sudo: false
+
 script: |
   # only (attempt to) deploy non-pull request commits
-  if [ "$TRAVIS_PULL_REQUEST" = false ]; then
+  if [[ "$TRAVIS_BRANCH" = "master" && "$TRAVIS_PULL_REQUEST" = true ]]; then
     mvn deploy -U --batch-mode
   else
     # otherwise, just run test suite
