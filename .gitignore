@@ -2,5 +2,5 @@ target/
 META-INF
 
 *.dep
-pluto/testdata/*/*/
-pluto/lib
+testdata/*/*/
+lib
