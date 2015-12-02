@@ -13,6 +13,7 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="src" path="build"/>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
@@ -23,5 +24,11 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/bootstrap/build-git-1.1.0-20151201.220015-1.jar"/>
+	<classpathentry kind="lib" path="lib/bootstrap/build-http-1.1.0-20151202.075910-1.jar"/>
+	<classpathentry kind="lib" path="lib/bootstrap/build-java-1.2.0-20151201.145112-1.jar"/>
+	<classpathentry kind="lib" path="lib/bootstrap/java-util-pluto-bugfix-1.19.4-20150811.214155-1.jar"/>
+	<classpathentry kind="lib" path="lib/bootstrap/build-maven-1.1.0-20151202.095247-1.jar"/>
+	<classpathentry kind="lib" path="lib/bootstrap/pluto-1.6.0-20151202.095801-1.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

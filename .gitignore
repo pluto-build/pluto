@@ -3,4 +3,6 @@ META-INF
 
 *.dep
 testdata/*/*/
-lib
+
+lib/*
+!lib/bootstrap
