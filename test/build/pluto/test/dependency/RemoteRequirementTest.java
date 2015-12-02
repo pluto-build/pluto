@@ -119,7 +119,7 @@ public class RemoteRequirementTest {
     public void checkNeverTestForConsistencyWithRemote() {
         MockRemoteRequirement req = new MockRemoteRequirement(
                 tsPath,
-                RemoteRequirement.CHECK_ALWAYS);
+                RemoteRequirement.CHECK_NEVER);
         writeTSOnce(req, 6000L, true);
 
         boolean consistency = writeTSOnce(req, 13000L, false);
