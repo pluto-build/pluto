@@ -43,23 +43,21 @@ public abstract class RemoteRequirement implements Requirement {
    */
   public boolean isConsistent() {
     long timestamp = getStartingTimestamp();
-    if (needsConsistencyCheck(timestamp)) {
-      Log.log.log("Check if the remote resource is consistent with the local resource", Log.CORE);
-      if (!isRemoteResourceAccessible()) {
-        if (isLocalResourceAvailable()) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-      if (isConsistentWithRemote()) {
-        writePersistentPath(timestamp);
-        return true;
-      } else {
-        return false;
-      }
+    if (!needsConsistencyCheck(timestamp))
+      return true;
+    
+    Log.log.log("Check if the remote resource is consistent with the local resource", Log.CORE);
+    
+    boolean accessible = isRemoteResourceAccessible();
+    if (accessible && isConsistentWithRemote()) {
+      writePersistentPath(timestamp);
+      return true;
     }
-    return true;
+    
+    if (!accessible && isLocalResourceAvailable())
+      return true;
+    
+    return false;
   }
 
   protected long getStartingTimestamp() {
