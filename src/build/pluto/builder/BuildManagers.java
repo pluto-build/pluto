@@ -66,10 +66,10 @@ public class BuildManagers {
     }
   }
 
-  public static <Out extends Output> List<Out> buildAll(Iterable<BuildRequest<?, Out, ?, ?>> buildReqs) {
+  public static <Out extends Output> List<Out> buildAll(Iterable<? extends BuildRequest<?, Out, ?, ?>> buildReqs) {
     return buildAll(buildReqs);
   }
-  public static <Out extends Output> List<Out> buildAll(Iterable<BuildRequest<?, Out, ?, ?>> buildReqs, IReporting report) throws Throwable {
+  public static <Out extends Output> List<Out> buildAll(Iterable<? extends BuildRequest<?, Out, ?, ?>> buildReqs, IReporting report) throws Throwable {
     Pair<BuildManager, Boolean> manager = getBuildManagerForCurrentThread(report);
 
     try {
