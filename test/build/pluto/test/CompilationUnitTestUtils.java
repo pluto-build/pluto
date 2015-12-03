@@ -1,5 +1,6 @@
 package build.pluto.test;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Paths;
@@ -76,9 +77,6 @@ public class CompilationUnitTestUtils {
 
 	private static BuilderFactory<NodeInput, NodeOutput, Builder<NodeInput, NodeOutput>> factory = new BuilderFactory<NodeInput, NodeOutput, Builder<NodeInput, NodeOutput>>() {
 
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = -695869678306450263L;
 
 		@Override
@@ -92,6 +90,11 @@ public class CompilationUnitTestUtils {
 
     private Object readResolve() {
       return factory;
+    }
+
+    @Override
+    public boolean isOverlappingGeneratedFileCompatible(File overlap, Serializable input, BuilderFactory<?, ?, ?> otherFactory, Serializable otherInput) {
+      return false;
     }
 
 	};

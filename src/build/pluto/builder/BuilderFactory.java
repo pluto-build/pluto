@@ -1,5 +1,6 @@
 package build.pluto.builder;
 
+import java.io.File;
 import java.io.Serializable;
 
 import build.pluto.output.Output;
@@ -34,5 +35,11 @@ extends Serializable {
    * @return the new builder
    */
   public B makeBuilder(In input);
+
+  /**
+   * In case two or more builders generate the same file, using this method, a builder
+   * can declare that such an overlap is unproblematic.
+   */
+  public boolean isOverlappingGeneratedFileCompatible(File overlap, Serializable input, BuilderFactory<?, ?, ?> otherFactory, Serializable otherInput);
 
 }

@@ -1,6 +1,7 @@
 package build.pluto.test.build.once;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -23,9 +24,6 @@ public class SimpleCyclicAtOnceBuilder extends
 
   private static class SimpleCyclicAtOnceBuilderFactor implements BuilderFactory<ArrayList<TestBuilderInput>, None, SimpleCyclicAtOnceBuilder> {
 
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 1L;
 
     private static final SimpleCyclicAtOnceBuilderFactor instance = new SimpleCyclicAtOnceBuilderFactor();
@@ -38,6 +36,11 @@ public class SimpleCyclicAtOnceBuilder extends
 
     private Object readResolve() {
       return instance;
+    }
+
+    @Override
+    public boolean isOverlappingGeneratedFileCompatible(File overlap, Serializable input, BuilderFactory<?, ?, ?> otherFactory, Serializable otherInput) {
+      return false;
     }
 
 	};

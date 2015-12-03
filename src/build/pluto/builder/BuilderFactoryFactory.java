@@ -1,5 +1,6 @@
 package build.pluto.builder;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -114,6 +115,10 @@ public class BuilderFactoryFactory {
       @Override
       public String toString() {
         return builderClass.toString() + "(" + inputClass.toString() + ")";
+      }
+
+      public boolean isOverlappingGeneratedFileCompatible(File overlap, Serializable input, BuilderFactory<?, ?, ?> otherFactory, Serializable otherInput) {
+        return false;
       }
 
     }

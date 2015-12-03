@@ -73,8 +73,17 @@ public class DynamicAnalysis {
     for (FileRequirement freq : unit.getGeneratedFileRequirements()) {
       XATTR.setGenBy(freq.file, unit);
       other = generatedFiles.put(freq.file, unit);
-      if (other != null && other != unit)
-        throw new DuplicateFileGenerationException("Build unit " + unit + " generates same file as build unit " + other);
+      if (other != null && other != unit) {
+        BuildRequest<?, ?, ?, ?> unitReq = unit.getGeneratedBy();
+        BuildRequest<?, ?, ?, ?> otherReq = other.getGeneratedBy();
+        boolean overlapOK = unitReq.factory.isOverlappingGeneratedFileCompatible(
+            freq.file, 
+            unitReq.input, 
+            otherReq.factory,
+            otherReq.input);
+        if (!overlapOK)
+          throw new DuplicateFileGenerationException("Build unit " + unit + " generates same file as build unit " + other);
+      }
     }
   }
 

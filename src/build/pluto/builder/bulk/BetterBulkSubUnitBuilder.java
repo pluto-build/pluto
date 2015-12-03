@@ -20,6 +20,11 @@ public class BetterBulkSubUnitBuilder<SubIn extends Serializable, SubOut extends
       public BetterBulkSubUnitBuilder<SubIn, SubOut> makeBuilder(SubIn input) {
         return new BetterBulkSubUnitBuilder<SubIn, SubOut>(input, bulkRequest);
       }
+
+      @Override
+      public boolean isOverlappingGeneratedFileCompatible(File overlap, Serializable input, BuilderFactory<?, ?, ?> otherFactory, Serializable otherInput) {
+        return false;
+      }
     };
   }
   

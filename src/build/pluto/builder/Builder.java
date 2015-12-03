@@ -327,5 +327,4 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   protected BuildUnit<Out> getPreviousBuildUnit() {
     return previousResult;
   }
-  
 }
