@@ -41,6 +41,7 @@ public abstract class RemoteRequirement implements Requirement {
   /**
    * This implementation calls needsConsistencyCheck and isConsistentWithRemote
    */
+  @Override
   public boolean isConsistent() {
     long timestamp = getStartingTimestamp();
     if (!needsConsistencyCheck(timestamp))
