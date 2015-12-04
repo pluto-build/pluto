@@ -1,6 +1,5 @@
 package build.pluto.output;
 
-import java.io.Serializable;
 import java.util.Objects;
 
 public class OutputPersisted<T> implements Out<T> {
@@ -15,7 +14,7 @@ public class OutputPersisted<T> implements Out<T> {
     return val; 
   }
   
-  public static <T extends Serializable> OutputPersisted<T> of(T val) {
+  public static <T> OutputPersisted<T> of(T val) {
     return new OutputPersisted<>(val);
   }
 
