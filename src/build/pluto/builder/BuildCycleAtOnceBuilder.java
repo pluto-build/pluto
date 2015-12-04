@@ -125,7 +125,7 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
     }
   }
 
-  protected 
+  private 
 //@formatter:off
   <In_ extends Serializable,
    Out_ extends Output, 
