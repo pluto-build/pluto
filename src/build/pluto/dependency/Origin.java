@@ -45,7 +45,7 @@ public class Origin implements Serializable {
   }
   
   public static Origin from(BuildRequest<?, ?, ?, ?>... reqs) {
-    return Builder().from(reqs).get();
+    return Builder().add(reqs).get();
   }
   
   public static Builder Builder() { return new Builder(); }
@@ -61,7 +61,7 @@ public class Origin implements Serializable {
       return new Origin(reqs);
     }
     
-    public Builder from(BuildRequest<?, ?, ?, ?>... reqs) {
+    public Builder add(BuildRequest<?, ?, ?, ?>... reqs) {
       result = null;
       for (BuildRequest<?, ?, ?, ?> req : reqs)
         this.reqs.add(req);
