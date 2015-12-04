@@ -3,8 +3,8 @@ package build.pluto.dependency;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeSet;
 
 import build.pluto.builder.BuildRequest;
 
@@ -50,7 +50,7 @@ public class Origin implements Serializable {
   
   public static Builder Builder() { return new Builder(); }
   public static class Builder {
-    private Set<BuildRequest<?, ?, ?, ?>> reqs = new TreeSet<>();
+    private Set<BuildRequest<?, ?, ?, ?>> reqs = new HashSet<>();
     private Origin result = null;
     
     public Origin get() {
