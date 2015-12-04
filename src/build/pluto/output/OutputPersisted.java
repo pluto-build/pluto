@@ -3,7 +3,7 @@ package build.pluto.output;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class OutputPersisted<T extends Serializable> implements Out<T> {
+public class OutputPersisted<T> implements Out<T> {
   private static final long serialVersionUID = -897559877130499097L;
   
   public final T val;
