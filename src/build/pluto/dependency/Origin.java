@@ -7,6 +7,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import build.pluto.builder.BuildRequest;
+import build.pluto.builder.BuilderFactory;
+import build.pluto.output.Output;
+import build.pluto.output.OutputStamper;
 
 /**
  * Collection of BuildRequests from which other files originate.
@@ -61,6 +64,32 @@ public class Origin implements Serializable {
       return new Origin(reqs);
     }
     
+    public 
+  //@formatter:off
+    <In_ extends Serializable, 
+     Out_ extends Output, 
+     B_ extends build.pluto.builder.Builder<In_, Out_>, 
+     F_ extends BuilderFactory<In_, Out_, B_>, 
+     SubIn_ extends In_>
+  //@formatter:on
+    Builder add(F_ factory, In_ input) {
+      add(new BuildRequest<>(factory, input));
+      return this;
+    }
+
+    public 
+  //@formatter:off
+    <In_ extends Serializable, 
+     Out_ extends Output, 
+     B_ extends build.pluto.builder.Builder<In_, Out_>, 
+     F_ extends BuilderFactory<In_, Out_, B_>, 
+     SubIn_ extends In_>
+  //@formatter:on
+    Builder add(F_ factory, In_ input, OutputStamper<Out_> stamper) {
+      add(new BuildRequest<>(factory, input, stamper));
+      return this;
+    }
+
     public Builder add(BuildRequest<?, ?, ?, ?>... reqs) {
       result = null;
       for (BuildRequest<?, ?, ?, ?> req : reqs)
