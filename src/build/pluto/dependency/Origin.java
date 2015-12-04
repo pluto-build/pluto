@@ -68,7 +68,7 @@ public class Origin implements Serializable {
       return this;
     }
     
-    public Builder from(Origin origin) {
+    public Builder add(Origin origin) {
       result = null;
       if (origin != null)
         this.reqs.addAll(origin.reqs);
