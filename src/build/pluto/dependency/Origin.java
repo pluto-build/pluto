@@ -45,26 +45,31 @@ public class Origin implements Serializable {
   }
   
   public static Origin from(BuildRequest<?, ?, ?, ?>... reqs) {
-    return Builder().from(reqs).build();
+    return Builder().from(reqs).get();
   }
   
   public static Builder Builder() { return new Builder(); }
   public static class Builder {
     private Set<BuildRequest<?, ?, ?, ?>> reqs = new TreeSet<>();
+    private Origin result = null;
     
-    public Origin build() {
+    public Origin get() {
+      if (result != null)
+        return result;
       if (reqs.isEmpty())
         return null;
       return new Origin(reqs);
     }
     
     public Builder from(BuildRequest<?, ?, ?, ?>... reqs) {
+      result = null;
       for (BuildRequest<?, ?, ?, ?> req : reqs)
         this.reqs.add(req);
       return this;
     }
     
     public Builder from(Origin origin) {
+      result = null;
       if (origin != null)
         this.reqs.addAll(origin.reqs);
       return this;
