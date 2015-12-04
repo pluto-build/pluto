@@ -8,6 +8,7 @@ import java.util.List;
 import org.sugarj.common.FileCommands;
 
 import build.pluto.BuildUnit;
+import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
 import build.pluto.builder.BuilderFactory;
 import build.pluto.output.Output;
@@ -50,9 +51,8 @@ public abstract class SimpleOutputBuilder extends Builder<TestBuilderInput, Outp
 			if (line.startsWith("Dep:")) {
 				String depFile = line.substring(4);
 				TestBuilderInput depInput = new TestBuilderInput(input.getBasePath(), new File(input.getBasePath(), depFile));
-				SimpleOutputBuilderRequirement req = new SimpleOutputBuilderRequirement(this.factory(), depInput);
-				Output reqOut = requireBuild(req);
-				checkOutput(req, reqOut);
+				Output reqOut = requireBuild(this.factory(), depInput);
+				checkOutput(lastBuildReq(), reqOut);
 			} else {
 				contentLines.add(line);
 			}
@@ -67,6 +67,6 @@ public abstract class SimpleOutputBuilder extends Builder<TestBuilderInput, Outp
 	}
 
 	protected abstract Output output(TestBuilderInput input);
-	protected abstract void checkOutput(SimpleOutputBuilderRequirement req, Output reqOut);
+	protected abstract void checkOutput(BuildRequest<?, ?, ?, ?> buildRequest, Output reqOut);
 	protected abstract BuilderFactory<TestBuilderInput, Output, SimpleOutputBuilder> factory();
 }

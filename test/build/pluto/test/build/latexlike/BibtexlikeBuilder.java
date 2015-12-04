@@ -52,7 +52,7 @@ public class BibtexlikeBuilder extends Builder<File, OutputPersisted<File>> {
 
   @Override
   protected OutputPersisted<File> build(File input) throws Throwable {
-    requireBuild(new BuildRequest<>(LatexlikeBuilder.factory, input, IgnoreOutputStamper.instance));
+    requireBuild(LatexlikeBuilder.factory, input, IgnoreOutputStamper.instance);
 
     File outFile = FileCommands.replaceExtension(input, "outlike");
     require(outFile, BibtexlikeStamper.instance);

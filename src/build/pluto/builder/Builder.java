@@ -3,6 +3,7 @@ package build.pluto.builder;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 
 import build.pluto.BuildUnit;
@@ -10,9 +11,11 @@ import build.pluto.BuildUnit.State;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.FileRequirement;
 import build.pluto.dependency.IllegalDependencyException;
+import build.pluto.dependency.Origin;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.None;
 import build.pluto.output.Output;
+import build.pluto.output.OutputEqualStamper;
 import build.pluto.output.OutputStamper;
 import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamp;
@@ -46,6 +49,8 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   
   transient BuildUnitProvider manager;
   private transient Stamper defaultStamper;
+  
+  private transient BuildRequest<?, ?, ?, ?> lastBuildReq;
 
   public Builder(In input) {
     this.input = input;
@@ -53,6 +58,10 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
 
   protected In getInput() {
     return input;
+  }
+  
+  protected BuildRequest<?, ?, ?, ?> lastBuildReq() {
+    return lastBuildReq;
   }
 
   /**
@@ -177,7 +186,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    SubIn_ extends In_>
 //@formatter:on
   Out_ requireBuild(F_ factory, SubIn_ input) throws IOException {
-    return requireBuild(new BuildRequest<In_, Out_, B_, F_>(factory, input));
+    return requireBuild(factory, input, OutputEqualStamper.instance());
   }
 
   
@@ -191,7 +200,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    * @return the build output of the request
    * @throws IOException
    */
-  protected 
+  private 
 //@formatter:off
   <In_ extends Serializable,
    Out_ extends Output, 
@@ -199,6 +208,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    F_ extends BuilderFactory<In_, Out_, B_>>
 //@formatter:on
   Out_ requireBuild(BuildRequest<In_, Out_, B_, F_> req) throws IOException {
+    lastBuildReq = req;
     BuildRequirement<Out_> e = manager.require(req, true);
     result.requires(e);
     return e.getUnit().getBuildResult();
@@ -212,27 +222,14 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    *          all requirements which are needed to be consistent
    * @throws IOException
    */
-  protected void requireBuild(Collection<? extends BuildRequest<?, ?, ?, ?>> reqs) throws IOException {
-    if (reqs != null)
-      for (BuildRequest<?, ?, ?, ?> req : reqs) {
-        BuildRequirement<?> e = manager.require(req, false);
-        result.requires(e);
-      }
-  }
+  protected Collection<? extends Output> requireBuild(Origin origin) throws IOException {
+    if (origin == null)
+      return null;
 
-  /**
-   * Requires that the build result of all given {@link BuildRequest}s is
-   * consistent such that provided files can be required.
-   * 
-   * @param reqs
-   *          all requirements which are needed to be consistent
-   * @throws IOException
-   */
-  protected void requireBuild(BuildRequest<?, ?, ?, ?>[] reqs) throws IOException {
-    if (reqs != null)
-      for (BuildRequest<?, ?, ?, ?> req : reqs) {
-        requireBuild(req);
-      }
+    Collection<Output> outs = new ArrayList<>();
+    for (BuildRequest<?, ?, ?, ?> req : origin.getReqs())
+      outs.add(requireBuild(req));
+    return outs;
   }
 
   public void requireOther(Requirement req) {

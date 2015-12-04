@@ -12,7 +12,9 @@ import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.IllegalDependencyException;
+import build.pluto.dependency.Origin;
 import build.pluto.output.Output;
+import build.pluto.output.OutputStamper;
 import build.pluto.stamp.Stamp;
 
 public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out extends Output> extends Builder<ArrayList<In>, Out> {
@@ -78,14 +80,19 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
    * @throws IOException
    */
   @Override
-  protected void requireBuild(Collection<? extends BuildRequest<?, ?, ?, ?>> reqs) throws IOException {
-    if (reqs != null)
-      for (BuildRequest<?, ?, ?, ?> req : reqs) {
-        BuildRequirement<?> e = manager.require(req, false);
-        for (BuildUnit<Out> result : cyclicResults) {
-          result.requires(e);
-        }
+  protected Collection<? extends Output> requireBuild(Origin origin) throws IOException {
+    if (origin == null)
+      return null;
+    
+    Collection<Output> outs = new ArrayList<>();
+    for (BuildRequest<?, ?, ?, ?> req : origin.getReqs()) {
+      BuildRequirement<?> e = manager.require(req, false);
+      for (BuildUnit<Out> result : cyclicResults) {
+        result.requires(e);
       }
+      outs.add(e.getUnit().getBuildResult());
+    }
+    return outs;
   }
 
   @Override
@@ -132,6 +139,25 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
     }
     return e.getUnit().getBuildResult();
   }
+
+   @Override
+   protected 
+ //@formatter:off
+   <In_ extends Serializable, 
+    Out_ extends Output, 
+    B_ extends Builder<In_, Out_>, 
+    F_ extends BuilderFactory<In_, Out_, B_>, 
+    SubIn_ extends In_>
+ //@formatter:on
+   Out_ requireBuild(F_ factory, SubIn_ input, OutputStamper<? super Out_> ostamper) throws IOException {
+     Out_ out = super.requireBuild(factory, input, ostamper);
+     BuildRequirement<?> e = (BuildRequirement<?>) result.getRequirements().get(result.getRequirements().size() - 1);
+     for (BuildUnit<Out> result : cyclicResults) {
+       result.requires(e);
+     }
+     return out;
+   }
+
 
   @Override
   protected Out build(ArrayList<In> input) throws Throwable {

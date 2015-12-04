@@ -94,8 +94,7 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 				TestBuilderInput depInput = new TestBuilderInput(
 						input.basePath, new File(input.getBasePath(),
 								depFile));
-				SimpleRequirement req = new SimpleRequirement(factory, depInput);
-				requireBuild(req);
+				requireBuild(factory, depInput);
 			} else {
 				contentLines.add(line);
 			}

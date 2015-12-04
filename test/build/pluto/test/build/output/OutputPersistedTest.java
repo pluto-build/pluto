@@ -53,7 +53,7 @@ public class OutputPersistedTest extends SimpleBuildTest {
     }
 
     @Override
-    protected void checkOutput(SimpleOutputBuilderRequirement req, Output reqOut) {
+    protected void checkOutput(BuildRequest<?, ?, ?, ?> req, Output reqOut) {
       if (reqOut instanceof Out<?> && ((Out<?>) reqOut).val() == null)
         throw new AssertionError("Output of requirement " + req + " was null.");
       else if (!(reqOut instanceof Out<?>))
@@ -82,7 +82,7 @@ public class OutputPersistedTest extends SimpleBuildTest {
 
   @Override
   protected BuildRequest<?,?,?,?> requirementForInput(TestBuilderInput input) {
-    return new SimpleOutputBuilderRequirement(OutputPersistedBuilder.factory, input);
+    return new BuildRequest<>(OutputPersistedBuilder.factory, input);
   }
   
   private void checkAllOutputs() throws IOException {
