@@ -19,7 +19,7 @@ public class Origin implements Serializable {
   
   private final Set<? extends BuildRequest<?, ?, ?, ?>> reqs;
   
-  public Origin(Set<? extends BuildRequest<?, ?, ?, ?>> reqs) {
+  private Origin(Set<? extends BuildRequest<?, ?, ?, ?>> reqs) {
     if (reqs.isEmpty())
       throw new IllegalArgumentException("Origin requirements must be non-empty. Use a null object instead of the empty Origin.");
     this.reqs = Collections.unmodifiableSet(reqs);

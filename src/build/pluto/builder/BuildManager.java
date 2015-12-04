@@ -296,7 +296,7 @@ public class BuildManager extends BuildUnitProvider {
 
     File dep = builder.persistentPath();
     BuildUnit<Out> depResult = BuildUnit.read(dep);
-
+    
     checkInterrupt(true, dep, depResult, buildReq);
     
     // Dont execute require because it is cyclic, requireStack keeps track of
@@ -324,7 +324,7 @@ public class BuildManager extends BuildUnitProvider {
         }
       }
 
-      if (requireStack.isConsistent(buildReq)) {
+      if (depResult != null && requireStack.isConsistent(buildReq)) {
         report.messageFromSystem("Already consistent!", false, 7);
         return yield(buildReq, builder, depResult);
       }
