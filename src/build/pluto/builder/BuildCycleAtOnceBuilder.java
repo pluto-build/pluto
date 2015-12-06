@@ -61,12 +61,19 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
       try {
         result.requires(p, stamp);
       } catch (IllegalDependencyException e) {
-        if (e.dep.equals(result.getPersistentPath()))
-          try {
-            requireBuild(result.getGeneratedBy());
-          } catch (IOException e1) {
-            throw new RuntimeException(e1);
-          }
+        File path = result.getPersistentPath().getAbsoluteFile();
+        boolean ok = false;
+        for (File f : e.deps)
+          if (f.getAbsoluteFile().equals(path))
+            try {
+              requireBuild(result.getGeneratedBy());
+              ok = true;
+              break;
+            } catch (IOException e1) {
+              throw new RuntimeException(e1);
+            }
+        if (!ok)
+          throw e;
       }
     }
   }

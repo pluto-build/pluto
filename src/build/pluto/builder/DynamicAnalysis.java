@@ -2,6 +2,7 @@ package build.pluto.builder;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -40,7 +41,7 @@ public class DynamicAnalysis {
   public void reset(BuildUnit<?> unit) throws IOException {
     if (unit != null) {
       for (File f : unit.getGeneratedFiles()) {
-        XATTR.removeGenBy(f);
+        XATTR.removeGenBy(f, unit);
         generatedFiles.remove(f);
       }
     }
@@ -71,7 +72,7 @@ public class DynamicAnalysis {
       throw new DuplicateBuildUnitPathException("Build unit " + unit + " has same persistent path as build unit " + other);
 
     for (FileRequirement freq : unit.getGeneratedFileRequirements()) {
-      XATTR.setGenBy(freq.file, unit);
+      XATTR.addGenBy(freq.file, unit);
       other = generatedFiles.put(freq.file, unit);
       if (other != null && other != unit) {
         BuildRequest<?, ?, ?, ?> unitReq = unit.getGeneratedBy();
@@ -81,6 +82,7 @@ public class DynamicAnalysis {
             unitReq.input, 
             otherReq.factory,
             otherReq.input);
+        
         if (!overlapOK)
           throw new DuplicateFileGenerationException("Build unit " + unit + " generates same file as build unit " + other);
       }
@@ -100,21 +102,40 @@ public class DynamicAnalysis {
       else if (req instanceof FileRequirement) {
         File file = ((FileRequirement) req).file;
         if (file.exists()) {
-          File dep = null;
+          File[] deps = null;
           try {
-            dep = XATTR.getGenBy(file);
+            deps = XATTR.getGenBy(file);
           } catch (IOException e) {
             report.messageFromSystem("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, true, 0);
           }
-          if (dep != null) {
-
-            boolean foundDep = AbsoluteComparedFile.equals(unit.getPersistentPath(), dep) || unit.visit(new IsConnectedTo(dep), requiredUnits);
-            if (!foundDep)
-              throw new IllegalDependencyException(dep, 
+          
+          if (deps != null) {
+            boolean foundDep = false;
+            for (File dep : deps)
+              if (AbsoluteComparedFile.equals(unit.getPersistentPath(), dep)) {
+                foundDep = true;
+                break;
+              }
+            
+            if (!foundDep && deps.length == 1)
+              foundDep = unit.visit(new IsConnectedTo(deps[0]), requiredUnits);
+            else if (!foundDep)
+              foundDep = unit.visit(new IsConnectedToAny(deps), requiredUnits);
+            
+            if (!foundDep && deps.length == 1)
+              throw new IllegalDependencyException(deps, 
                   "Build unit " + unit.getPersistentPath() + " has a hidden dependency on file " + file 
-                + " without build-unit dependency on " + dep + ", which generated this file. "
+                + " without build-unit dependency on " + deps[0] + ", which generated this file. "
                 + "The builder " + unit.getGeneratedBy().createBuilder().description() + " should "
-                + "mark a dependency to " + dep + " by `requiring` the corresponding builder.");
+                + "mark a dependency to " + deps[0] + " by `requiring` the corresponding builder.");
+            else if (!foundDep)
+              throw new IllegalDependencyException(deps, 
+                  "Build unit " + unit.getPersistentPath() + " has a hidden dependency on file " + file 
+                + " without build-unit dependency on at least one of " + Arrays.toString(deps) + ", all "
+                + "of which generated this file. "
+                + "The builder " + unit.getGeneratedBy().createBuilder().description() + " should "
+                + "mark a dependency to one of " + Arrays.toString(deps) + " by `requiring` the corresponding"
+                + " builder.");
           }
         }
       }
@@ -138,7 +159,7 @@ public class DynamicAnalysis {
             File dep = generator.getPersistentPath();
             boolean foundDep = AbsoluteComparedFile.equals(unit.getPersistentPath(), dep) || unit.visit(new IsConnectedTo(dep));
             if (!foundDep)
-              throw new IllegalDependencyException(dep, 
+              throw new IllegalDependencyException(new File[]{dep}, 
                   "Build unit " + dep + " has a hidden dependency on the "
                 + "in-memory output of build unit " + generator + ". "
                 + "The builder " + unit.getGeneratedBy().createBuilder().description() + " should "
@@ -162,6 +183,37 @@ public class DynamicAnalysis {
     @Override
     public Boolean visit(BuildUnit<?> mod) {
       return AbsoluteComparedFile.equals(requiredUnit, mod.getPersistentPath());
+    }
+
+    @Override
+    public Boolean combine(Boolean t1, Boolean t2) {
+      return t1 || t2;
+    }
+
+    @Override
+    public Boolean init() {
+      return false;
+    }
+
+    @Override
+    public boolean cancel(Boolean t) {
+      return t;
+    }
+  }
+  
+  private static class IsConnectedToAny implements ModuleVisitor<Boolean> {
+    private final Set<File> requireAtLeastOne;
+    
+    public IsConnectedToAny(File[] requireAtLeastOne) {
+      Objects.requireNonNull(requireAtLeastOne);
+      this.requireAtLeastOne = new HashSet<File>();
+      for (File f : requireAtLeastOne)
+        this.requireAtLeastOne.add(f.getAbsoluteFile());
+    }
+    
+    @Override
+    public Boolean visit(BuildUnit<?> mod) {
+      return requireAtLeastOne.contains(mod.getPersistentPath().getAbsoluteFile());
     }
 
     @Override

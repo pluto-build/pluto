@@ -264,12 +264,16 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     try {
       result.requires(p, stamp);
     } catch (IllegalDependencyException e) {
-      if (e.dep.equals(result.getPersistentPath()))
-        try {
-          requireBuild(result.getGeneratedBy());
-        } catch (IOException e1) {
-          throw new RuntimeException(e1);
-        }
+      File path = result.getPersistentPath().getAbsoluteFile();
+      for (File f : e.deps)
+        if (f.getAbsoluteFile().equals(path))
+          try {
+            requireBuild(result.getGeneratedBy());
+            return;
+          } catch (IOException e1) {
+            throw new RuntimeException(e1);
+          }
+      throw e;
     }
   }
 

@@ -64,11 +64,13 @@ public class BuildManager extends BuildUnitProvider {
     if (depResult != null) {
       File builderClass = FileCommands.getRessourcePath(builder.getClass()).toFile();
 
-      File depFile = DynamicAnalysis.XATTR.getGenBy(builderClass);
-      if (depFile != null && depFile.exists()) {
-        BuildUnit<Out> metaBuilder = BuildUnit.read(depFile);
-        depResult.requireMeta(metaBuilder);
-      }
+      File[] depFiles = DynamicAnalysis.XATTR.getGenBy(builderClass);
+      if (depFiles != null) 
+        for (File depFile : depFiles) 
+          if (depFile.exists()) {
+            BuildUnit<Out> metaBuilder = BuildUnit.read(depFile);
+            depResult.requireMeta(metaBuilder);
+          }
 
       depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
     }
