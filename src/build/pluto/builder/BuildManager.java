@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.sugarj.common.Exec;
-import org.sugarj.common.FileCommands;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.InconsistenyReason;
@@ -19,7 +18,6 @@ import build.pluto.builder.BuildCycleException.CycleState;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
-import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.util.IReporting;
 import build.pluto.util.IReporting.BuildReason;
 
@@ -54,45 +52,7 @@ public class BuildManager extends BuildUnitProvider {
       throw RequiredBuilderFailed.init(new BuildRequirement<Out>(depResult, buildReq), new InterruptedException("Build was interrupted"));
     }
   }
-  
-  @SuppressWarnings("unused")
-  // @formatter:off
-  protected static 
-    <In extends Serializable,
-     Out extends Output>
-  // @formatter:on
-  void setUpMetaDependency(Builder<In, Out> builder, BuildUnit<Out> depResult) throws IOException {
-    if (depResult != null) {
-      File builderClass = FileCommands.getRessourcePath(builder.getClass()).toFile();
 
-      File[] depFiles = DynamicAnalysis.XATTR.getGenBy(builderClass);
-      boolean requireMeta = depFiles == null || depFiles.length == 0;
-      
-      if (depFiles != null) 
-        for (File depFile : depFiles) 
-          if (depFile.exists()) {
-            try {
-              // dummy statement that enables catching of ClassNotFoundException
-              if (false) Class.forName("java.lang.Class");
-
-              BuildUnit<Out> metaBuilder = BuildUnit.read(depFile);
-              if (metaBuilder != null) {
-                depResult.requireMeta(metaBuilder);
-                requireMeta = true;
-              }
-            } catch (ClassNotFoundException e) {
-              /*
-               * Do nothing. This happens when the file was generated
-               * in separate JVM and requires builder classfiles not
-               * available to the current JVM. 
-               */
-            }
-          }
-
-      if (requireMeta)
-        depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
-    }
-  }
 
   // @formatter:off
   protected 
