@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 
 import org.sugarj.common.FileCommands;
-import org.sugarj.common.Log;
 
 import build.pluto.builder.BuildManager;
 
@@ -47,8 +46,6 @@ public abstract class RemoteRequirement implements Requirement {
     long timestamp = getStartingTimestamp();
     if (!needsConsistencyCheck(timestamp))
       return true;
-    
-    Log.log.log("Check if the remote resource is consistent with the local resource", Log.CORE);
     
     boolean accessible = isRemoteResourceAccessible();
     if (accessible && isConsistentWithRemote()) {
@@ -104,28 +101,22 @@ public abstract class RemoteRequirement implements Requirement {
       return true;
     }
 
-    long lastConsistencyCheck = readPersistentPath();
-    long afterInterval = lastConsistencyCheck + consistencyCheckInterval;
-    // if afterInterval is non-positive overflow occured
-    // can happen if consistencyCheckInterval is unusually big
-    if (afterInterval > 0 && afterInterval < currentTime)
+    try {
+      long lastConsistencyCheck = readPersistentPath();
+      long afterInterval = lastConsistencyCheck + consistencyCheckInterval;
+      // if afterInterval is non-positive overflow occured
+      // can happen if consistencyCheckInterval is unusually big
+      if (afterInterval > 0 && afterInterval < currentTime)
+        return true;
+    } catch (IOException e) {
       return true;
-    
+    }
     return false;
   }
 
-  private long readPersistentPath() {
-    try {
-      String persistentPathContent = FileCommands.readFileAsString(persistentPath);
-      return Long.parseLong(persistentPathContent.replace("\n", ""));
-    } catch (IOException e) {
-      Log.log.logErr("There occured an error reading the persistentPath " + "of a RemoteRequirement", Log.CORE);
-    } catch (NumberFormatException e) {
-      Log.log.logErr("The content of the persistentPath of a " + "RemoteRequirement was not correctly written previously", Log.CORE);
-    }
-    // timestamp file was not found or was not correctly written.
-    // Therefore we need to force a consistencycheck.
-    return 0L;
+  private long readPersistentPath() throws IOException {
+    String persistentPathContent = FileCommands.readFileAsString(persistentPath);
+    return Long.parseLong(persistentPathContent.replace("\n", ""));
   }
 
   private void writePersistentPath(long timeStamp) {
@@ -135,7 +126,7 @@ public abstract class RemoteRequirement implements Requirement {
       }
       FileCommands.writeToFile(persistentPath, String.valueOf(timeStamp));
     } catch (IOException e) {
-      Log.log.logErr("There occured an error when creating or writing" + " the persistentPath of a RemoteRequirement", Log.CORE);
+      throw new RuntimeException("Failed to write remote requirement time stamp.", e);
     }
   }
 }
