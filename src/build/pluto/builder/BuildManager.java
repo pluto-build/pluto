@@ -68,8 +68,20 @@ public class BuildManager extends BuildUnitProvider {
       if (depFiles != null) 
         for (File depFile : depFiles) 
           if (depFile.exists()) {
-            BuildUnit<Out> metaBuilder = BuildUnit.read(depFile);
-            depResult.requireMeta(metaBuilder);
+            try {
+              // dummy statement that enables catching of ClassNotFoundException
+              if (false) Class.forName("java.lang.Class");
+
+              BuildUnit<Out> metaBuilder = BuildUnit.read(depFile);
+              if (metaBuilder != null)
+                depResult.requireMeta(metaBuilder);
+            } catch (ClassNotFoundException e) {
+              /*
+               * Do nothing. This happens when the file was generated
+               * in separate JVM and requires builder classfiles not
+               * available to the current JVM. 
+               */
+            }
           }
 
       depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
