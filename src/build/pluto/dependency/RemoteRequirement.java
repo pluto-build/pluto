@@ -39,7 +39,8 @@ public abstract class RemoteRequirement implements Requirement {
   }
 
   /**
-   * This implementation calls needsConsistencyCheck and isConsistentWithRemote
+   * This implementation calls needsConsistencyCheck, isRemoteResourceAccessible,
+   * isLocalResourceAvailable and isConsistentWithRemote
    */
   @Override
   public boolean isConsistent() {
@@ -104,7 +105,10 @@ public abstract class RemoteRequirement implements Requirement {
     }
 
     long lastConsistencyCheck = readPersistentPath();
-    if (lastConsistencyCheck + consistencyCheckInterval < currentTime)
+    long afterInterval = lastConsistencyCheck + consistencyCheckInterval;
+    // if afterInterval is non-positive overflow occured
+    // can happen if consistencyCheckInterval is unusually big
+    if (afterInterval > 0 && afterInterval < currentTime)
       return true;
     
     return false;

@@ -160,6 +160,17 @@ public class RemoteRequirementTest {
         assertEquals(6000L, contentOfFile);
     }
 
+    @Test
+    public void checkToBigIntervalCausingOverflow() {
+        MockRemoteRequirement req = new MockRemoteRequirement(tsPath, Long.MAX_VALUE);
+        req.setIsRemoteAccessible(true);
+        req.setIsLocalAvailable(true);
+        boolean consistency = writeTSOnce(req, 13000L, false);
+        long contentOfFile = readTimestampFromFile(tsPath);
+
+        assertEquals(true, consistency);
+    }
+
     private boolean writeTSOnce(
             MockRemoteRequirement req,
             long ts,
