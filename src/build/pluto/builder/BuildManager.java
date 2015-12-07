@@ -55,6 +55,7 @@ public class BuildManager extends BuildUnitProvider {
     }
   }
   
+  @SuppressWarnings("unused")
   // @formatter:off
   protected static 
     <In extends Serializable,
@@ -65,6 +66,8 @@ public class BuildManager extends BuildUnitProvider {
       File builderClass = FileCommands.getRessourcePath(builder.getClass()).toFile();
 
       File[] depFiles = DynamicAnalysis.XATTR.getGenBy(builderClass);
+      boolean requireMeta = depFiles == null || depFiles.length == 0;
+      
       if (depFiles != null) 
         for (File depFile : depFiles) 
           if (depFile.exists()) {
@@ -73,8 +76,10 @@ public class BuildManager extends BuildUnitProvider {
               if (false) Class.forName("java.lang.Class");
 
               BuildUnit<Out> metaBuilder = BuildUnit.read(depFile);
-              if (metaBuilder != null)
+              if (metaBuilder != null) {
                 depResult.requireMeta(metaBuilder);
+                requireMeta = true;
+              }
             } catch (ClassNotFoundException e) {
               /*
                * Do nothing. This happens when the file was generated
@@ -84,7 +89,8 @@ public class BuildManager extends BuildUnitProvider {
             }
           }
 
-      depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
+      if (requireMeta)
+        depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
     }
   }
 
