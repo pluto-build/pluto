@@ -48,10 +48,15 @@ public class Xattr {
     String oldVal = strategy.getXattr(p, "genBy");
     if (oldVal == null) // size oldVal == 0
       strategy.setXattr(p, "genBy", path);
-    else if (oldVal.charAt(0) != SEPC) // size oldVal == 1
-      strategy.setXattr(p, "genBy", SEP + oldVal + SEP + path);
-    else // size oldVal > 1
-      strategy.setXattr(p, "genBy", oldVal + SEP + path);
+    else if (oldVal.charAt(0) != SEPC) { // size oldVal == 1
+      if (!oldVal.equals(path))
+          strategy.setXattr(p, "genBy", SEP + oldVal + SEP + path);
+    }
+    else { // size oldVal > 1
+      String wrapped = oldVal.concat(SEP);
+      if (!wrapped.contains(SEP + path + SEP))
+        strategy.setXattr(p, "genBy", oldVal + SEP + path);
+    }
   }
   
   public void removeGenBy(File p, BuildUnit<?> unit) throws IOException {
@@ -73,7 +78,7 @@ public class Xattr {
       for (int i = 0; i < paths.length; i++)
         if (!paths[i].equals(path)) {
           count++;
-          newValB.append(paths[i]);
+          newValB.append(SEP).append(paths[i]);
         }
       if (count == 0)
         strategy.removeXattr(p, "genBy");
@@ -86,7 +91,6 @@ public class Xattr {
         String newVal = newValB.toString();
         strategy.setXattr(p, "genBy", newVal);
       }
-      
     }
   }
   
