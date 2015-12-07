@@ -304,10 +304,8 @@ public class BuildManager extends BuildUnitProvider {
         }
       }
 
-      if (depResult != null && requireStack.isConsistent(buildReq)) {
-        report.messageFromSystem("Already consistent!", false, 7);
+      if (depResult != null && requireStack.isConsistent(buildReq))
         return yield(buildReq, builder, depResult);
-      }
 
       Set<BuildReason> reasons = computeLocalBuildReasons(buildReq, needBuildResult, dep, depResult);
       
