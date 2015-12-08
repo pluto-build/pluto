@@ -418,7 +418,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity imple
 	
 	@Override
 	public String toString() {
-	  return "BuildUnit(" + generatedBy.factory + ": " + persistentPath + ")";
+	  return "BuildUnit(" + Objects.toString(generatedBy == null ? null : generatedBy.factory) + ": " + Objects.toString(persistentPath) + ")";
 	}
 	
 	@Override
