@@ -250,7 +250,11 @@ public class BuildManager extends BuildUnitProvider {
       BuildRequirement<Out> result = require(buildReq, true);
       return result.getUnit();
     } catch (RequiredBuilderFailed e) {
-      throw e.getCause();
+      Throwable cause = e.getCause();
+      if (cause != null)
+        throw cause;
+      else
+        throw e;
     } finally {
       Exec.shutdown();
     }
