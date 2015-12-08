@@ -106,7 +106,7 @@ public class LogReporting implements IReporting {
   @Override
   public <O extends Output> void buildRequirement(BuildRequest<?, O, ?, ?> req) {
     if ((log.getLoggingLevel() & Log.DETAIL) != 0)
-      log.beginTask("Require " + req.createBuilder().description(), Log.DETAIL);
+      log.beginTask("Require " + req.createBuilder().description() + " @ " + req.deepHashCode(), Log.DETAIL);
   }
 
   @Override

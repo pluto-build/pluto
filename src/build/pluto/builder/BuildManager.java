@@ -124,6 +124,7 @@ public class BuildManager extends BuildUnitProvider {
         checkInterrupt(false, dep, depResult, buildReq); // interrupt before consistency assertion because an interrupted build is never consistent. 
         assertConsistency(depResult);
       } finally {
+        report.messageFromSystem("Wrote " + dep, false, 10);
         depResult.write();
       }
       
