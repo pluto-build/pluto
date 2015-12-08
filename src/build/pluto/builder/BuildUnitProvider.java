@@ -45,7 +45,6 @@ public abstract class BuildUnitProvider {
 
   
   
-  @SuppressWarnings("unused")
   // @formatter:off
   protected 
     <In extends Serializable,
@@ -62,21 +61,22 @@ public abstract class BuildUnitProvider {
         for (File depFile : depFiles) 
           if (depFile.exists()) {
             try {
-              // dummy statement that enables catching of ClassNotFoundException
-              if (false) Class.forName("java.lang.Class");
-
               BuildUnit<Out> metaBuilder = BuildUnit.read(depFile);
               if (metaBuilder != null) {
                 depResult.requireMeta(metaBuilder);
                 requireMeta = true;
               }
-            } catch (ClassNotFoundException e) {
-              /*
-               * Do nothing. This happens when the file was generated
-               * in separate JVM and requires builder classfiles not
-               * available to the current JVM. 
-               */
-              report.messageFromSystem("Info: Could not setup metadependency to build script because class " + e.getMessage() + " is not available on current classpath.", false, 6);
+            } catch (RuntimeException e) {
+              if (e.getCause() instanceof ClassNotFoundException) {
+                /*
+                 * Do nothing. This happens when the file was generated
+                 * in separate JVM and requires builder classfiles not
+                 * available to the current JVM. 
+                 */
+                report.messageFromSystem("Info: Could not setup metadependency to build script because class " + e.getMessage() + " is not available on current classpath.", false, 6);
+              }
+              else
+                throw e;
             }
           }
 
