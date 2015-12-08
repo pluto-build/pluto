@@ -121,6 +121,8 @@ public abstract class PersistableEntity implements Serializable {
 
       entity.readEntity(in);
       return entity;
+    } catch (ClassNotFoundException e) {
+      throw new RuntimeException(e);
     } catch (Throwable e) {
       System.err.println("Could not read module's dependency file: " + p + ": " + e);
       e.printStackTrace();
