@@ -31,16 +31,15 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
   public BuildRequirement() { }
 
   public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req) {
-    this(unit, req, req.stamper.stampOf(unit.getBuildResult()));
+    this(Objects.requireNonNull(unit), Objects.requireNonNull(req), req.stamper.stampOf(unit.getBuildResult()));
     if (BuildManager.ASSERT_SERIALIZABLE && !assertStampSerializable()) {
       throw new AssertionError("Stamp of deserialized result is not equal to stamp of result of " + unit.getGeneratedBy().createBuilder().description() + "  " + ((build.pluto.output.Out<?>) unit.getBuildResult()).val().getClass());
     }
   }
   
   public BuildRequirement(BuildUnit<Out> unit, BuildRequest<?, Out, ?, ?> req, OutputStamp stamp) {
-    Objects.requireNonNull(unit);
-    this.unit = unit;
-    this.req = req;
+    this.unit = Objects.requireNonNull(unit);
+    this.req = Objects.requireNonNull(req);
     this.stamp = stamp;
   }
 
