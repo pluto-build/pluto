@@ -16,6 +16,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.sugarj.common.FileCommands;
+import org.sugarj.common.Log;
 
 public abstract class ScopedBuildTest {
 
@@ -39,6 +40,7 @@ public abstract class ScopedBuildTest {
 
   @Before
   public void initializeTestEnvironment() throws IOException {
+    Log.log.setLoggingLevel(Log.ALWAYS);
     basePath = Paths.get("testdata", getTestFolderName()).toAbsolutePath();
     testBasePath = basePath.resolve(name.getMethodName());
 
