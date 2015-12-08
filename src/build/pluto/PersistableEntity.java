@@ -102,11 +102,12 @@ public abstract class PersistableEntity implements Serializable {
       return null;
       
     ObjectInputStream in = null;
+    E entity = null;
     try {
       in = new ObjectInputStream(new FileInputStream(p));
       long id = in.readLong();
 
-      E entity = readFromMemoryCache(clazz, p);
+      entity = readFromMemoryCache(clazz, p);
       
       if (entity != null && id == clazz.getField("serialVersionUID").getLong(entity) && !entity.hasPersistentVersionChanged())
         return entity;
@@ -122,11 +123,17 @@ public abstract class PersistableEntity implements Serializable {
       entity.readEntity(in);
       return entity;
     } catch (ClassNotFoundException e) {
+      // Do not delete file, but remove it from the cache so that subsequent reads fail as well.
+      if (entity != null)
+        entity.removeFromMemoryCache();
       throw new RuntimeException(e);
     } catch (Throwable e) {
       System.err.println("Could not read module's dependency file: " + p + ": " + e);
       e.printStackTrace();
+      // File is not readable. We delete it to avoid repeated read failures.
       Files.delete(p.toPath());
+      if (entity != null)
+        entity.removeFromMemoryCache();
       return null;
     } finally {
       if (in != null)
@@ -174,6 +181,12 @@ public abstract class PersistableEntity implements Serializable {
   final protected void cacheInMemory() {
     synchronized (PersistableEntity.class) {
       inMemory.put(AbsoluteComparedFile.absolute(persistentPath), this);
+    }
+  }
+  
+  final protected void removeFromMemoryCache() {
+    synchronized (PersistableEntity.class) {
+      inMemory.remove(AbsoluteComparedFile.absolute(persistentPath));
     }
   }
 
