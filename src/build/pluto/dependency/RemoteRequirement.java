@@ -3,6 +3,7 @@ package build.pluto.dependency;
 import java.io.File;
 import java.io.IOException;
 
+import build.pluto.builder.BuildUnitProvider;
 import org.sugarj.common.FileCommands;
 
 import build.pluto.builder.BuildManager;
@@ -61,6 +62,11 @@ public abstract class RemoteRequirement implements Requirement {
     }
     else
       return false;
+  }
+
+  @Override
+  public boolean tryMakeConsistent(BuildUnitProvider manager) throws IOException {
+    return isConsistent();
   }
 
   protected long getStartingTimestamp() {
