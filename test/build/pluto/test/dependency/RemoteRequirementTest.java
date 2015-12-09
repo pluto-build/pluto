@@ -25,6 +25,7 @@ public class RemoteRequirementTest {
     public void checkToEarlyAndInconsistent() {
         MockRemoteRequirement req = new MockRemoteRequirement(tsPath, 5000L);
 
+        req.setIsLocalAvailable(true);
         boolean consistency = writeTSOnce(req, 1000L, false);
         long contentOfFile = readTimestampFromFile(tsPath);
 
@@ -36,6 +37,7 @@ public class RemoteRequirementTest {
     public void checkToEarlyAndConsistent() {
         MockRemoteRequirement req = new MockRemoteRequirement(tsPath, 5000L);
 
+        req.setIsLocalAvailable(true);
         boolean consistency = writeTSOnce(req, 1000L, true);
         long contentOfFile = readTimestampFromFile(tsPath);
 
@@ -58,6 +60,7 @@ public class RemoteRequirementTest {
     public void checkAfterIntervalAndConsistent() {
         MockRemoteRequirement req = new MockRemoteRequirement(tsPath, 1000L);
 
+        req.setIsLocalAvailable(true);
         boolean consistency = writeTSOnce(req, 6000L , true);
         long contentOfFile = readTimestampFromFile(tsPath);
 
@@ -69,6 +72,7 @@ public class RemoteRequirementTest {
     public void checkAfterTSWrittenOnceButToEarly() {
         MockRemoteRequirement req = new MockRemoteRequirement(tsPath, 5000L);
 
+        req.setIsLocalAvailable(true);
         writeTSOnce(req, 6000L, true);
 
         boolean consistency = writeTSOnce(req, 10000L, true);
@@ -82,6 +86,7 @@ public class RemoteRequirementTest {
     public void checkAfterTSWrittenOnceButToEarlyAndInconsistent() {
         MockRemoteRequirement req = new MockRemoteRequirement(tsPath, 5000L);
 
+        req.setIsLocalAvailable(true);
         writeTSOnce(req, 6000L, true);
 
         boolean consistency = writeTSOnce(req, 10000L, false);
@@ -94,6 +99,8 @@ public class RemoteRequirementTest {
     @Test
     public void checkAfterTSWrittenOnceAfterInterval() {
         MockRemoteRequirement req = new MockRemoteRequirement(tsPath, 5000L);
+
+        req.setIsLocalAvailable(true);
         writeTSOnce(req, 6000L, true);
 
         boolean consistency = writeTSOnce(req, 13000L, true);
@@ -106,6 +113,8 @@ public class RemoteRequirementTest {
     @Test
     public void checkAfterTSWrittenOnceAfterIntervalAndInconsistent() {
         MockRemoteRequirement req = new MockRemoteRequirement(tsPath, 5000L);
+
+        req.setIsLocalAvailable(true);
         writeTSOnce(req, 6000L, true);
 
         boolean consistency = writeTSOnce(req, 13000L, false);
@@ -121,6 +130,7 @@ public class RemoteRequirementTest {
                 tsPath,
                 RemoteRequirement.CHECK_NEVER);
         writeTSOnce(req, 6000L, true);
+        req.setIsLocalAvailable(true);
 
         boolean consistency = writeTSOnce(req, 13000L, false);
         assertEquals(true, consistency);
@@ -137,9 +147,9 @@ public class RemoteRequirementTest {
     @Test
     public void checkRemoteNotAccessibleAndLocalVersionAvailable() {
         MockRemoteRequirement req = new MockRemoteRequirement(tsPath, 5000L);
+        req.setIsLocalAvailable(true);
         writeTSOnce(req, 6000L, true);
         req.setIsRemoteAccessible(false);
-        req.setIsLocalAvailable(true);
         boolean consistency = writeTSOnce(req, 13000L, false);
         long contentOfFile = readTimestampFromFile(tsPath);
 
@@ -150,13 +160,14 @@ public class RemoteRequirementTest {
     @Test
     public void checkRemoteNotAccessibleAndLocalVersionNotAvailable() {
         MockRemoteRequirement req = new MockRemoteRequirement(tsPath, 5000L);
+        req.setIsLocalAvailable(true);
         writeTSOnce(req, 6000L, true);
         req.setIsRemoteAccessible(false);
         req.setIsLocalAvailable(false);
         boolean consistency = writeTSOnce(req, 13000L, false);
         long contentOfFile = readTimestampFromFile(tsPath);
 
-        assertEquals(false, consistency);
+        assertEquals(true, consistency);
         assertEquals(6000L, contentOfFile);
     }
 
