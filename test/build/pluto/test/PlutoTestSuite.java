@@ -15,6 +15,7 @@ import build.pluto.test.build.cycle.once.test.NestedCycleAtOnceTest;
 import build.pluto.test.build.latexlike.LatexlikeTest;
 import build.pluto.test.build.output.OutputPersistedTest;
 import build.pluto.test.build.output.OutputTransientTest;
+import build.pluto.test.dependency.RemoteRequirementTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({
@@ -26,9 +27,10 @@ import build.pluto.test.build.output.OutputTransientTest;
   RebuildInconsistentTest.class, 
   FixpointCycleTestSuite.class,
   NestedCycleAtOnceTest.class,
- LatexlikeTest.class,
+  LatexlikeTest.class,
   OutputPersistedTest.class,
-  OutputTransientTest.class})
+  OutputTransientTest.class,
+  RemoteRequirementTest.class})
 public class PlutoTestSuite {
   static {
     Log.log.setLoggingLevel(Log.ALWAYS);
