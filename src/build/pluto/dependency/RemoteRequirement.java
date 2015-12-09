@@ -43,20 +43,24 @@ public abstract class RemoteRequirement implements Requirement {
    */
   @Override
   public boolean isConsistent() {
+    boolean offline = !isRemoteResourceAccessible();
+    if (offline)
+     return true;
+
+    boolean localAvailable = isLocalResourceAvailable();
+    if (!offline && !localAvailable)
+      return false;
+
     long timestamp = getStartingTimestamp();
     if (!needsConsistencyCheck(timestamp))
       return true;
-    
-    boolean accessible = isRemoteResourceAccessible();
-    if (accessible && isConsistentWithRemote()) {
+
+    if (isConsistentWithRemote()) {
       writePersistentPath(timestamp);
       return true;
     }
-    
-    if (!accessible && isLocalResourceAvailable())
-      return true;
-    
-    return false;
+    else
+      return false;
   }
 
   protected long getStartingTimestamp() {
@@ -66,28 +70,28 @@ public abstract class RemoteRequirement implements Requirement {
 
   /**
    * Checks if the remote resource can be accessed.
-   * 
+   *
    * @return true if remote resourse can be accessed.
    */
   protected abstract boolean isRemoteResourceAccessible();
 
   /**
    * Checks if a version of the remote resource is available locally.
-   * 
+   *
    * @return true if a version of the remote resourse is locally available.
    */
   protected abstract boolean isLocalResourceAvailable();
 
   /**
    * Checks if the local state is consistent with the remote state.
-   * 
+   *
    * @return true if local state is consistent with remote state.
    */
   protected abstract boolean isConsistentWithRemote();
 
   /**
    * Checks if a consistencycheck needs to be made.
-   * 
+   *
    * @param currentTime
    *          the time to check if the consistency needs to be checked.
    * @return true if a consistencycheck needs to be made.
@@ -95,7 +99,7 @@ public abstract class RemoteRequirement implements Requirement {
   private boolean needsConsistencyCheck(long currentTime) {
     if (consistencyCheckInterval == CHECK_NEVER)
       return false;
-    
+
     if (!FileCommands.exists(persistentPath)) {
       writePersistentPath(currentTime);
       return true;
