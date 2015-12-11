@@ -42,6 +42,8 @@ import build.pluto.stamp.Stamper;
  */
 public abstract class Builder<In extends Serializable, Out extends Output> {
 
+  public final static File PLUTO_HOME = new File(System.getProperty("user.home"), ".pluto");
+  
   private final In input;
 
   transient BuildUnit<Out> result;
