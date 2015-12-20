@@ -3,6 +3,7 @@ package build.pluto.builder;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Path;
 
 import org.sugarj.common.FileCommands;
 
@@ -52,7 +53,11 @@ public abstract class BuildUnitProvider {
   // @formatter:on
   void setUpMetaDependency(Builder<In, Out> builder, BuildUnit<Out> depResult) throws IOException {
     if (depResult != null) {
-      File builderClass = FileCommands.getRessourcePath(builder.getClass()).toFile();
+      Path path = FileCommands.getRessourcePath(builder.getClass());
+      if(path == null) {
+        return;
+      }
+      File builderClass = path.toFile();
 
       File[] depFiles = DynamicAnalysis.XATTR.getGenBy(builderClass);
       boolean requireMeta = depFiles == null || depFiles.length == 0;
