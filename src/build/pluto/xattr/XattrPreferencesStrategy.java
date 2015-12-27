@@ -9,7 +9,7 @@ import java.util.prefs.Preferences;
 
 public class XattrPreferencesStrategy implements XattrStrategy {
 
-  private final Preferences prefs;
+  private Preferences prefs;
   
   public XattrPreferencesStrategy() {
     this.prefs = Preferences.userRoot().node(Xattr.PREFIX);
@@ -49,6 +49,18 @@ public class XattrPreferencesStrategy implements XattrStrategy {
       return attrs;
     } catch (BackingStoreException e) {
       return null;
+    }
+  }
+
+  @Override
+  public void clear() throws IOException {
+    try {
+      prefs.removeNode();
+      prefs.flush();
+    } catch (BackingStoreException e) {
+      throw new IOException(e);
+    } finally {
+      prefs = Preferences.userRoot().node(Xattr.PREFIX);
     }
   }
 
