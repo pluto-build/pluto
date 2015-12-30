@@ -55,12 +55,10 @@ public class XattrPreferencesStrategy implements XattrStrategy {
   @Override
   public void clear() throws IOException {
     try {
-      prefs.removeNode();
+      prefs.clear();
       prefs.flush();
     } catch (BackingStoreException e) {
       throw new IOException(e);
-    } finally {
-      prefs = Preferences.userRoot().node(Xattr.PREFIX);
     }
   }
 
