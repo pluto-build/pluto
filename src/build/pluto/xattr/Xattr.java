@@ -129,5 +129,8 @@ public class Xattr {
       files.add(new File(s));
     return files;
   }
+  
+  public void clear() throws IOException {
+    strategy.clear();
+  }
 }
-
