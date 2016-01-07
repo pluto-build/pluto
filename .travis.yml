@@ -1,8 +1,8 @@
 sudo: false
 
 script: |
-  # build (always) and deploy (master commits only)
-  if [[ "$TRAVIS_BRANCH" = "master" && "$TRAVIS_PULL_REQUEST" = false ]]; then
+  # build (always) and deploy (master or release commits only)
+  if [[ "$TRAVIS_PULL_REQUEST" = "false" ]] && [[ "$TRAVIS_BRANCH" = "master" || "$TRAVIS_BRANCH" = "release" ]]; then
     mvn deploy -U --batch-mode
   else
     # otherwise, just run test suite
