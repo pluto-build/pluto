@@ -46,7 +46,7 @@ public class Xattr {
   public void addGenBy(File p, BuildUnit<?> unit) throws IOException {
     String path = unit.getPersistentPath().toPath().toAbsolutePath().toString();
     String oldVal = strategy.getXattr(p, "genBy");
-    if (oldVal == null) // size oldVal == 0
+    if (oldVal == null || oldVal.isEmpty()) // size oldVal == 0
       strategy.setXattr(p, "genBy", path);
     else if (oldVal.charAt(0) != SEPC) { // size oldVal == 1
       if (!oldVal.equals(path))
@@ -63,7 +63,7 @@ public class Xattr {
     String path = unit.getPersistentPath().toPath().toAbsolutePath().toString();
 
     String oldVal = strategy.getXattr(p, "genBy");
-    if (oldVal == null) // size oldVal == 0
+    if (oldVal == null || oldVal.isEmpty()) // size oldVal == 0
       ; // nothing
     else if (oldVal.charAt(0) != SEPC) { // size oldVal == 1
       if (oldVal.equals(path))
