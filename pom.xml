@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>build.pluto</groupId>
 	<artifactId>pluto</artifactId>
-	<version>1.7.1</version>
+	<version>1.8.0</version>
 
 	<parent>
 		<groupId>build.pluto</groupId>
@@ -19,7 +19,7 @@
 		<dependency>
 			<groupId>org.sugarj</groupId>
 			<artifactId>common</artifactId>
-			<version>1.6.0</version>
+			<version>1.7.0</version>
 		</dependency>
 
 		<dependency>

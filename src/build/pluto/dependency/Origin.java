@@ -51,6 +51,19 @@ public class Origin implements Serializable {
     return Builder().add(reqs).get();
   }
   
+  public static 
+//@formatter:off
+  <In_ extends Serializable, 
+   Out_ extends Output, 
+   B_ extends build.pluto.builder.Builder<In_, Out_>, 
+   F_ extends BuilderFactory<In_, Out_, B_>, 
+   SubIn_ extends In_>
+//@formatter:on
+  Origin from(F_ factory, In_ input) {
+    return Builder().add(new BuildRequest<>(factory, input)).get();
+  }
+
+  
   public static Builder Builder() { return new Builder(); }
   public static class Builder {
     private Set<BuildRequest<?, ?, ?, ?>> reqs = new HashSet<>();

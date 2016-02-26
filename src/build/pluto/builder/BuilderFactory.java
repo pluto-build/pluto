@@ -41,5 +41,4 @@ extends Serializable {
    * can declare that such an overlap is unproblematic.
    */
   public boolean isOverlappingGeneratedFileCompatible(File overlap, Serializable input, BuilderFactory<?, ?, ?> otherFactory, Serializable otherInput);
-
 }
