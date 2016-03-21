@@ -24,6 +24,7 @@ public class TrackingBuildManager extends BuildManager {
 	private List<Serializable> requiredInputs = new ArrayList<>();
 	private List<Serializable> executedInputs = new ArrayList<>();
 	private List<Serializable> successfullyExecutedInputs = new ArrayList<>();
+	private List<BuilderFactory<?, ?, ?>> executedTools = new ArrayList<>();
 
 	public TrackingBuildManager() {
 		super(new LogReporting());
@@ -57,6 +58,7 @@ public class TrackingBuildManager extends BuildManager {
      F extends BuilderFactory<In, Out, B>>
   // @formatter:on
 	BuildRequirement<Out> executeBuilder(Builder<In, Out> builder, File dep, BuildRequest<In, Out, B, F> buildReq, Set<BuildReason> reasons) throws IOException {
+	  executedTools.add(buildReq.factory);
 		executedInputs.add(buildReq.input);
 		try {
 		  BuildRequirement<Out> result = super.executeBuilder(builder, dep, buildReq, reasons);
@@ -81,4 +83,7 @@ public class TrackingBuildManager extends BuildManager {
 		return successfullyExecutedInputs;
 	}
 
+	public List<BuilderFactory<?, ?, ?>> getExecutedTools() {
+    return executedTools;
+  }
 }
