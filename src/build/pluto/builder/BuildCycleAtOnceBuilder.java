@@ -87,7 +87,7 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
    * @throws IOException
    */
   @Override
-  protected Collection<? extends Output> requireBuild(Origin origin) throws IOException {
+  public Collection<? extends Output> requireBuild(Origin origin) throws IOException {
     if (origin == null)
       return null;
     
@@ -148,7 +148,7 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
   }
 
    @Override
-   protected 
+   public 
  //@formatter:off
    <In_ extends Serializable, 
     Out_ extends Output, 
