@@ -33,11 +33,31 @@ public class NullYamlObject implements YamlObject {
 
 	@Override
 	public Integer asInt() {
-		return null;
+		return 0;
 	}
 
 	@Override
 	public Double asDouble() {
-		return null;
+		return 0.0d;
 	}
+
+ @Override
+  public Float asFloat() {
+    return 0.0f;
+  }
+
+  @Override
+  public Boolean asBoolean() {
+    return false;
+  }
+
+  @Override
+  public Character asChar() {
+    return '\u0000';
+  }
+
+  @Override
+  public Long asLong() {
+    return 0L;
+  }
 }

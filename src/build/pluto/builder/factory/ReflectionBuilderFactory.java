@@ -1,4 +1,4 @@
-package build.pluto.builder;
+package build.pluto.builder.factory;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,35 +9,11 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 
+import build.pluto.builder.Builder;
+import build.pluto.executor.InputParser;
 import build.pluto.output.Output;
 
-public class BuilderFactoryFactory {
-  /**
-   * Creates a BuilderFactory which creates a new builder by calling a unary
-   * constructor of the builder class passing the input object. So builder B for
-   * input In needs to define an accessible constructor B(In). The generated
-   * builder factory implements proper serialization and equals checks.
-   * 
-   * @param builderClass
-   *          the class of the builder to use
-   * @param inputClass
-   *          the class of the input
-   * @return a builder factory for the both classes
-   * @throws IllegalArgumentException
-   *           if the constructor is not found or not accessible
-   */
-  public static 
-//@formatter:off
-  <
-    In_ extends Serializable, 
-    Out_ extends Output,
-    B_ extends Builder<In_, Out_>
-  > //@formatter:on
-  BuilderFactory<In_, Out_, B_> of(Class<? extends B_> builderClass, Class<In_> inputClass) {
-    return new ReflectionBuilderFactory<In_, Out_, B_>(builderClass, inputClass);
-  }
-  
-  public static class ReflectionBuilderFactory
+public class ReflectionBuilderFactory
 //@formatter:off
   <
     In_ extends Serializable, 
@@ -50,10 +26,12 @@ public class BuilderFactoryFactory {
     private Class<? extends B_> builderClass;
     private Class<In_> inputClass;
     private Constructor<? extends B_> builderConstructor;
+    private InputParser<In_> parser;
 
-    public ReflectionBuilderFactory(Class<? extends B_> builderClass, Class<In_> inputClass) {
+    ReflectionBuilderFactory(Class<? extends B_> builderClass, Class<In_> inputClass, InputParser<In_> parser) {
       this.builderClass = builderClass;
       this.inputClass = inputClass;
+      this.parser = parser;
       this.initContructor();
     }
 
@@ -81,12 +59,19 @@ public class BuilderFactoryFactory {
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
       builderClass = (Class<B_>) stream.readObject();
       inputClass = (Class<In_>) stream.readObject();
+      parser = (InputParser<In_>) stream.readObject();
       initContructor();
     }
 
     private void writeObject(ObjectOutputStream stream) throws IOException, ClassNotFoundException {
       stream.writeObject(builderClass);
       stream.writeObject(inputClass);
+      stream.writeObject(parser);
+    }
+    
+    @Override
+    public InputParser<In_> inputParser() {
+      return parser;
     }
 
     @Override
@@ -128,6 +113,4 @@ public class BuilderFactoryFactory {
     public boolean isOverlappingGeneratedFileCompatible(File overlap, Serializable input, BuilderFactory<?, ?, ?> otherFactory, Serializable otherInput) {
       return false;
     }
-
   }
-}

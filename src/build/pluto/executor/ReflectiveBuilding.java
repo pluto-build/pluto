@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Set;
 
 import build.pluto.builder.Builder;
-import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.factory.BuilderFactory;
 import build.pluto.dependency.Origin;
 import build.pluto.executor.config.yaml.YamlObject;
 import build.pluto.output.Output;
@@ -43,7 +43,7 @@ public class ReflectiveBuilding {
 	
 	@SuppressWarnings("unchecked")
 	private <In extends Serializable, Out extends Output> 
-			ExecutableBuilderFactory<In, Out, Builder<In, Out>> 
+			BuilderFactory<In, Out, Builder<In, Out>> 
 			loadBuilderFactory(String builderClassName) throws ClassNotFoundException {
 		
 		Class<Builder<In, Out>> builderClass = (Class<Builder<In, Out>>) loader.loadClass(builderClassName);
@@ -53,8 +53,8 @@ public class ReflectiveBuilding {
 			Field factoryField = builderClass.getField("factory");
 			if (factoryField != null) {
 				Object val = factoryField.get(null);
-				if (ExecutableBuilderFactory.class.isAssignableFrom(val.getClass()))
-					return (ExecutableBuilderFactory<In, Out, Builder<In, Out>>) val;
+				if (BuilderFactory.class.isAssignableFrom(val.getClass()))
+					return (BuilderFactory<In, Out, Builder<In, Out>>) val;
 				else if (BuilderFactory.class.isAssignableFrom(val.getClass())) 
 					throw new IllegalArgumentException("Required a builder factory of type ExecutableBuilderFactory that supports input parsing.");
 			}
@@ -66,7 +66,7 @@ public class ReflectiveBuilding {
 		try {
 			Method factoryMethod = builderClass.getMethod("factory");
 			if (factoryMethod != null)
-				return (ExecutableBuilderFactory<In, Out, Builder<In, Out>>) factoryMethod.invoke(null);
+				return (BuilderFactory<In, Out, Builder<In, Out>>) factoryMethod.invoke(null);
 		} catch (SecurityException | IllegalArgumentException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
 			// ignore
 		}
@@ -89,7 +89,7 @@ public class ReflectiveBuilding {
 			throws Throwable {
 		
 		setupClassLoader(classPath);
-		ExecutableBuilderFactory<In, Out, Builder<In, Out>> factory = loadBuilderFactory(builderClass);
+		BuilderFactory<In, Out, Builder<In, Out>> factory = loadBuilderFactory(builderClass);
 		InputParser<In> parser = factory.inputParser();
 		
 		In in = parser.parse(builderInput, target, workingDir);

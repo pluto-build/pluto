@@ -14,5 +14,14 @@ public interface YamlObject {
 	
 	public Integer asInt();
 	
+	public Float asFloat();
+	
 	public Double asDouble();
+
+  public Boolean asBoolean();
+
+  public Character asChar();
+
+  public Long asLong();
+
 }

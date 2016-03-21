@@ -1,7 +1,7 @@
 package build.pluto.test.build.cycle.fixpoint;
 
-import build.pluto.builder.BuilderFactory;
-import build.pluto.builder.BuilderFactoryFactory;
+import build.pluto.builder.factory.BuilderFactory;
+import build.pluto.builder.factory.BuilderFactoryFactory;
 import build.pluto.output.OutputPersisted;
 
 public class DivideByBuilder extends NumericBuilder {

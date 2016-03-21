@@ -21,7 +21,7 @@ import org.sugarj.common.Log;
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildManagers;
 import build.pluto.builder.BuildRequest;
-import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.factory.BuilderFactory;
 import build.pluto.output.OutputPersisted;
 import build.pluto.test.build.ScopedBuildTest;
 import build.pluto.test.build.ScopedPath;

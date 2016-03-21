@@ -13,9 +13,9 @@ import org.sugarj.common.FileCommands;
 
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
-import build.pluto.builder.BuilderFactory;
-import build.pluto.builder.BuilderFactoryFactory;
 import build.pluto.builder.CycleHandlerFactory;
+import build.pluto.builder.factory.BuilderFactory;
+import build.pluto.builder.factory.BuilderFactoryFactory;
 import build.pluto.output.IgnoreOutputStamper;
 import build.pluto.output.OutputPersisted;
 import build.pluto.stamp.FileContentStamper;

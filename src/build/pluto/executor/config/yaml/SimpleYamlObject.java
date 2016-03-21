@@ -47,4 +47,24 @@ public class SimpleYamlObject implements YamlObject {
 	public Double asDouble() {
 		return (Double) val;
 	}
+
+  @Override
+  public Float asFloat() {
+    return (Float) val;
+  }
+
+  @Override
+  public Boolean asBoolean() {
+    return (Boolean) val;
+  }
+
+  @Override
+  public Character asChar() {
+    return (Character) val;
+  }
+
+  @Override
+  public Long asLong() {
+    return (Long) val;
+  }
 }

@@ -13,7 +13,7 @@ import build.pluto.builder.BuildCycleException;
 import build.pluto.builder.BuildManager;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
-import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.factory.BuilderFactory;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.output.Output;
 import build.pluto.util.IReporting.BuildReason;
