@@ -5,10 +5,18 @@ import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.objenesis.Objenesis;
 import org.objenesis.ObjenesisStd;
@@ -28,24 +36,43 @@ public class ReflectionInputParser<In extends Serializable> implements InputPars
   }
   
   @Override
+  @SuppressWarnings("unchecked")
   public In parse(YamlObject yinput, String target, File workingDir) throws Throwable {
+    try {
+      // is there a builder class and a constructor that accepts the builder?
+      Class<?> inputBuilderClass = Class.forName(inputClass.getName() + "$Builder");
+      for (Constructor<?> cons : inputClass.getDeclaredConstructors())
+        if (cons.getParameterTypes().length == 1 && cons.getParameterTypes()[0].isAssignableFrom(inputBuilderClass)) {
+          cons.setAccessible(true);
+          Object inputBuilder = parseReflective(inputBuilderClass, yinput, workingDir);
+          return (In) cons.newInstance(inputBuilder);
+        }
+    } catch (ClassNotFoundException e) {
+    } catch (InvocationTargetException e) {
+      throw e.getCause();
+    }
+    
+    return parseReflective(inputClass, yinput, workingDir);
+  }
+  
+  private <T> T parseReflective(Class<T> cl, YamlObject yinput, File workingDir) throws IllegalArgumentException, IllegalAccessException {
     Objenesis objenesis = new ObjenesisStd();
-    In input = objenesis.newInstance(inputClass);
+    T obj = objenesis.newInstance(cl);
     
     Map<String, YamlObject> map = yinput.asMap();
-    for (Field field : inputClass.getFields()) {
+    for (Field field : cl.getDeclaredFields()) {
       YamlObject yval = map.get(field.getName());
       if (yval != NullYamlObject.instance) {
-        Object val = cast(yval, field.getType(), workingDir);
+        Object val = cast(yval, field.getGenericType(), workingDir);
         field.setAccessible(true);
-        field.set(input, val);
+        field.set(obj, val);
       }
     }
     
-    return input;
+    return obj;
   }
 
-  private Object cast(YamlObject yval, Class<?> type, File workingDir) {
+  private Object cast(YamlObject yval, Type type, File workingDir) {
     if (type == boolean.class)
       return yval.asBoolean();
     else if (type == char.class)
@@ -69,8 +96,18 @@ public class ReflectionInputParser<In extends Serializable> implements InputPars
       return val;
     }
     
-    if (type.isArray()) {
-      Class<?> component = type.getComponentType();
+    if (type instanceof GenericArrayType) {
+      GenericArrayType arType = (GenericArrayType) type;
+      Type component = arType.getGenericComponentType();
+      List<YamlObject> ylist = yval.asList();
+      Object[] ar = (Object[]) Array.newInstance(classOfType(component), ylist.size());
+      for (int i = 0; i < ar.length; i++)
+        ar[i] = cast(ylist.get(i), component, workingDir);
+      return ar;
+    }
+    
+    if (type instanceof Class<?> && ((Class<?>) type).isArray()) {
+      Class<?> component = ((Class<In>) type).getComponentType();
       List<YamlObject> ylist = yval.asList();
       Object[] ar = (Object[]) Array.newInstance(component, ylist.size());
       for (int i = 0; i < ar.length; i++)
@@ -78,22 +115,52 @@ public class ReflectionInputParser<In extends Serializable> implements InputPars
       return ar;
     }
     
-    if (Collection.class.isAssignableFrom(type)) {
-      List<YamlObject> ylist = yval.asList();
-      Collection<Object> col = constructCollection(type, ylist.size());
-      if (col != null) {
-        for (YamlObject o : ylist)
-          col.add(o);
-        
-        return col;
+    if (type instanceof ParameterizedType) {
+      Class<?> colClass = classOfType(((ParameterizedType) type).getRawType());
+      Type[] targs = ((ParameterizedType) type).getActualTypeArguments();
+      if (Collection.class.isAssignableFrom(colClass) && targs.length == 1) {
+        Type component = targs[0];
+        List<YamlObject> ylist = yval.asList();
+        Collection<Object> col = constructCollection(colClass, ylist.size());
+        if (col != null) {
+          for (YamlObject o : ylist)
+            col.add(cast(o, component, workingDir));
+          
+          return col;
+        }
       }
     }
     
-    return yval.asObject();
+    throw new UnsupportedOperationException("Cannot parse " + yval + " as " + type);
+  }
+
+  private Class<?> classOfType(Type type) {
+    if (type instanceof Class<?>)
+      return (Class<?>) type;
+    if (type instanceof GenericArrayType)
+      throw new UnsupportedOperationException();
+    if (type instanceof ParameterizedType)
+      return classOfType(((ParameterizedType) type).getRawType());
+    if (type instanceof TypeVariable<?>) {
+      Type[] bounds = ((TypeVariable) type).getBounds();
+      if (bounds.length == 0)
+        return Object.class;
+      if (bounds.length == 1)
+        return classOfType(bounds[0]);
+      throw new UnsupportedOperationException();
+    }
+    if (type instanceof WildcardType)
+      throw new UnsupportedOperationException();
+    throw new UnsupportedOperationException();
   }
 
   @SuppressWarnings("unchecked")
   private Collection<Object> constructCollection(Class<?> type, int size) {
+    if (type == List.class)
+      return new ArrayList<>(size);
+    if (type == Set.class)
+      return new HashSet<>(size);
+      
     try {
       Constructor<?> cons0 = type.getConstructor();
       if (cons0 != null)

@@ -37,7 +37,7 @@ public class SimpleYamlObject implements YamlObject {
 	}
 	
 	public String asString() {
-		return (String) val;
+		return val == null ? null : val.toString();
 	}
 	
 	public Integer asInt() {
