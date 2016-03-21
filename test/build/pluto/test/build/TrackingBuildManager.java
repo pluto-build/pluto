@@ -17,6 +17,7 @@ import build.pluto.builder.factory.BuilderFactory;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.output.Output;
 import build.pluto.util.IReporting.BuildReason;
+import build.pluto.util.IReporting;
 import build.pluto.util.LogReporting;
 
 public class TrackingBuildManager extends BuildManager {
@@ -29,6 +30,10 @@ public class TrackingBuildManager extends BuildManager {
 	public TrackingBuildManager() {
 		super(new LogReporting());
 	}
+	
+	public TrackingBuildManager(IReporting reporting) {
+    super(reporting);
+  }
 
 	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildRequirement<Out> 
 	    require(F factory, In input) throws IOException {
