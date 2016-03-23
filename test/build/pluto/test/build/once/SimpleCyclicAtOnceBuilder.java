@@ -11,7 +11,8 @@ import org.sugarj.common.FileCommands;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildCycleAtOnceBuilder;
-import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.factory.BuilderFactory;
+import build.pluto.executor.InputParser;
 import build.pluto.output.None;
 import build.pluto.stamp.FileContentStamper;
 import build.pluto.stamp.Stamper;
@@ -41,6 +42,11 @@ public class SimpleCyclicAtOnceBuilder extends
     @Override
     public boolean isOverlappingGeneratedFileCompatible(File overlap, Serializable input, BuilderFactory<?, ?, ?> otherFactory, Serializable otherInput) {
       return false;
+    }
+
+    @Override
+    public InputParser<ArrayList<TestBuilderInput>> inputParser() {
+      return null;
     }
 
 	};

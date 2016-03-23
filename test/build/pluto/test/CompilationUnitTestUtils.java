@@ -13,8 +13,9 @@ import java.util.Set;
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
-import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.factory.BuilderFactory;
 import build.pluto.dependency.BuildRequirement;
+import build.pluto.executor.InputParser;
 import build.pluto.output.Output;
 
 public class CompilationUnitTestUtils {
@@ -95,6 +96,11 @@ public class CompilationUnitTestUtils {
     @Override
     public boolean isOverlappingGeneratedFileCompatible(File overlap, Serializable input, BuilderFactory<?, ?, ?> otherFactory, Serializable otherInput) {
       return false;
+    }
+
+    @Override
+    public InputParser<NodeInput> inputParser() {
+      return null;
     }
 
 	};

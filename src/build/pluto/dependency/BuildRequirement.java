@@ -119,10 +119,12 @@ public class BuildRequirement<Out extends Output> implements Requirement, Extern
   @SuppressWarnings("unchecked")
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
     File unitPath = (File) in.readObject();
+    unit = BuildUnit.read(unitPath);
+    if (unit == null)
+      throw new IOException("Could not read build unit " + unitPath);
     hasFailed = in.readBoolean();
     req = (BuildRequest<?, Out, ?, ?>) in.readObject();
     stamp = (OutputStamp) in.readObject();
-    unit = BuildUnit.read(unitPath);
   }
 
   public BuildUnit<Out> getUnit() {

@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import build.pluto.builder.BuildRequest;
-import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.factory.BuilderFactory;
 import build.pluto.output.Output;
 import build.pluto.output.OutputStamper;
 

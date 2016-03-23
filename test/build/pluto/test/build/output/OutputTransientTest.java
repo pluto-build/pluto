@@ -21,8 +21,8 @@ import org.junit.Test;
 
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
-import build.pluto.builder.BuilderFactory;
-import build.pluto.builder.BuilderFactoryFactory;
+import build.pluto.builder.factory.BuilderFactory;
+import build.pluto.builder.factory.BuilderFactoryFactory;
 import build.pluto.output.None;
 import build.pluto.output.Out;
 import build.pluto.output.Output;

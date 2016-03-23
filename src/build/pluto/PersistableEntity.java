@@ -122,14 +122,11 @@ public abstract class PersistableEntity implements Serializable {
 
       entity.readEntity(in);
       return entity;
-    } catch (ClassNotFoundException e) {
-      // Do not delete file, but remove it from the cache so that subsequent reads fail as well.
-      if (entity != null)
-        entity.removeFromMemoryCache();
-      throw new RuntimeException(e);
-    } catch (Throwable e) {
-      System.err.println("Could not read module's dependency file: " + p + ": " + e);
-      e.printStackTrace();
+    } catch (Exception e) {
+      Log.log.logErr("Could not read module's dependency file: " + p, e, Log.DETAIL);
+      if ((Log.log.getLoggingLevel() & Log.DETAIL) == 0)
+        Log.log.logErr("Could not read module's dependency file: " + p + ": " + e, Log.CACHING);
+
       // File is not readable. We delete it to avoid repeated read failures.
       Files.delete(p.toPath());
       if (entity != null)

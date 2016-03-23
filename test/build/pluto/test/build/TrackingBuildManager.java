@@ -13,10 +13,11 @@ import build.pluto.builder.BuildCycleException;
 import build.pluto.builder.BuildManager;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
-import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.factory.BuilderFactory;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.output.Output;
 import build.pluto.util.IReporting.BuildReason;
+import build.pluto.util.IReporting;
 import build.pluto.util.LogReporting;
 
 public class TrackingBuildManager extends BuildManager {
@@ -24,10 +25,15 @@ public class TrackingBuildManager extends BuildManager {
 	private List<Serializable> requiredInputs = new ArrayList<>();
 	private List<Serializable> executedInputs = new ArrayList<>();
 	private List<Serializable> successfullyExecutedInputs = new ArrayList<>();
+	private List<BuilderFactory<?, ?, ?>> executedTools = new ArrayList<>();
 
 	public TrackingBuildManager() {
 		super(new LogReporting());
 	}
+	
+	public TrackingBuildManager(IReporting reporting) {
+    super(reporting);
+  }
 
 	public <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> BuildRequirement<Out> 
 	    require(F factory, In input) throws IOException {
@@ -57,6 +63,7 @@ public class TrackingBuildManager extends BuildManager {
      F extends BuilderFactory<In, Out, B>>
   // @formatter:on
 	BuildRequirement<Out> executeBuilder(Builder<In, Out> builder, File dep, BuildRequest<In, Out, B, F> buildReq, Set<BuildReason> reasons) throws IOException {
+	  executedTools.add(buildReq.factory);
 		executedInputs.add(buildReq.input);
 		try {
 		  BuildRequirement<Out> result = super.executeBuilder(builder, dep, buildReq, reasons);
@@ -81,4 +88,7 @@ public class TrackingBuildManager extends BuildManager {
 		return successfullyExecutedInputs;
 	}
 
+	public List<BuilderFactory<?, ?, ?>> getExecutedTools() {
+    return executedTools;
+  }
 }

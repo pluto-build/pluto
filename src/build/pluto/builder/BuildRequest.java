@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Objects;
 
+import build.pluto.builder.factory.BuilderFactory;
 import build.pluto.output.Output;
 import build.pluto.output.OutputEqualStamper;
 import build.pluto.output.OutputStamper;

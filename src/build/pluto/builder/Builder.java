@@ -8,6 +8,7 @@ import java.util.Collection;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
+import build.pluto.builder.factory.BuilderFactory;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.FileRequirement;
 import build.pluto.dependency.IllegalDependencyException;
@@ -154,7 +155,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    * @return the output of the build
    * @throws IOException
    */
-  protected 
+  public 
 //@formatter:off
   <In_ extends Serializable, 
    Out_ extends Output, 
@@ -179,7 +180,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    * @return the output of the build
    * @throws IOException
    */
-  protected 
+  public
 //@formatter:off
   <In_ extends Serializable, 
    Out_ extends Output, 
@@ -224,7 +225,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    *          all requirements which are needed to be consistent
    * @throws IOException
    */
-  protected Collection<? extends Output> requireBuild(Origin origin) throws IOException {
+   public Collection<? extends Output> requireBuild(Origin origin) throws IOException {
     if (origin == null)
       return null;
 

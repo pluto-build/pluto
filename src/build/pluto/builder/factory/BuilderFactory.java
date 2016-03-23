@@ -1,8 +1,10 @@
-package build.pluto.builder;
+package build.pluto.builder.factory;
 
 import java.io.File;
 import java.io.Serializable;
 
+import build.pluto.builder.Builder;
+import build.pluto.executor.InputParser;
 import build.pluto.output.Output;
 
 /**
@@ -41,4 +43,9 @@ extends Serializable {
    * can declare that such an overlap is unproblematic.
    */
   public boolean isOverlappingGeneratedFileCompatible(File overlap, Serializable input, BuilderFactory<?, ?, ?> otherFactory, Serializable otherInput);
+
+  /**
+   * @return the parser that translates a YAML object into an object of type `In` 
+   */
+  public InputParser<In> inputParser();
 }

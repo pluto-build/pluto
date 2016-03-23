@@ -10,7 +10,7 @@ import org.sugarj.common.FileCommands;
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildRequest;
 import build.pluto.builder.Builder;
-import build.pluto.builder.BuilderFactory;
+import build.pluto.builder.factory.BuilderFactory;
 import build.pluto.output.Output;
 import build.pluto.stamp.FileHashStamper;
 import build.pluto.stamp.Stamper;
