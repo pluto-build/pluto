@@ -21,12 +21,16 @@ import build.pluto.util.TraceReporting;
 
 public class BuildManagers {
 
-  private final static Map<Thread, BuildManager> activeManagers = new HashMap<>();
+  private final static ThreadLocal<Map<String, BuildManager>> activeManagers = new ThreadLocal<Map<String, BuildManager>>() {
+    protected Map<String, BuildManager> initialValue() {
+      return new HashMap<>();
+    }
+  };
 
   private static IReporting defaultReport() {
     return new TraceReporting(new LogReporting());
   }
-  
+
   public static <Out extends Output> BuildUnit<Out> readResult(BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
     return BuildUnit.read(buildReq.createBuilder().persistentPath());
   }
@@ -34,6 +38,7 @@ public class BuildManagers {
   public static void clean(boolean dryRun, BuildRequest<?, ?, ?, ?> req) throws IOException {
     clean(dryRun, req, defaultReport());
   }
+
   public static void clean(boolean dryRun, BuildRequest<?, ?, ?, ?> req, IReporting report) throws IOException {
     BuildUnit<?> unit = readResult(req);
     if (unit == null)
@@ -56,21 +61,31 @@ public class BuildManagers {
   public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq) throws Throwable {
     return build(buildReq, defaultReport());
   }
+
   public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq, IReporting report) throws Throwable {
-    Pair<BuildManager, Boolean> manager = getBuildManagerForCurrentThread(report);
+    return build(buildReq, report, null);
+  }
+  
+  public static <Out extends Output> Out build(BuildRequest<?, Out, ?, ?> buildReq, IReporting report, String path) throws Throwable {
+    Pair<BuildManager, Boolean> manager = getBuildManagerForCurrentThread(report, path);
     try {
       return manager.b ? manager.a.requireInitially(buildReq).getBuildResult() : manager.a.require(buildReq, true).getUnit().getBuildResult();
     } finally {
       if (manager.b)
-        activeManagers.remove(Thread.currentThread());
+        removeBuildManagerForCurrentThread(path);
     }
   }
 
   public static <Out extends Output> List<Out> buildAll(Iterable<? extends BuildRequest<?, Out, ?, ?>> buildReqs) throws Throwable {
     return buildAll(buildReqs, new LogReporting());
   }
+  
   public static <Out extends Output> List<Out> buildAll(Iterable<? extends BuildRequest<?, Out, ?, ?>> buildReqs, IReporting report) throws Throwable {
-    Pair<BuildManager, Boolean> manager = getBuildManagerForCurrentThread(report);
+    return buildAll(buildReqs, report, null);
+  }
+
+  public static <Out extends Output> List<Out> buildAll(Iterable<? extends BuildRequest<?, Out, ?, ?>> buildReqs, IReporting report, String path) throws Throwable {
+    Pair<BuildManager, Boolean> manager = getBuildManagerForCurrentThread(report, path);
 
     try {
       List<Out> out = new ArrayList<>();
@@ -85,20 +100,33 @@ public class BuildManagers {
       return out;
     } finally {
       if (manager.b)
-        activeManagers.remove(Thread.currentThread());
+        removeBuildManagerForCurrentThread(path);
     }
   }
+  
+  public static void resetDynamicAnalysis() throws IOException {
+    resetDynamicAnalysis(null);
+  }
 
-  private static synchronized Pair<BuildManager, Boolean> getBuildManagerForCurrentThread(IReporting report) {
-    Thread current = Thread.currentThread();
-    BuildManager manager = activeManagers.get(current);
+  public static void resetDynamicAnalysis(String path) throws IOException {
+    Pair<BuildManager, Boolean> manager = getBuildManagerForCurrentThread(defaultReport(), path);
+    manager.a.resetDynamicAnalysis();
+  }
+
+  private static synchronized Pair<BuildManager, Boolean> getBuildManagerForCurrentThread(IReporting report, String path) {
+    final Map<String, BuildManager> map = activeManagers.get();
+    BuildManager manager = map.get(path);
     boolean freshManager = manager == null;
     if (freshManager) {
-      manager = new BuildManager(report);
-      activeManagers.put(current, manager);
+      manager = new BuildManager(report, path);
+      map.put(path, manager);
     }
     return new Pair<>(manager, freshManager);
   }
-
+  
+  private static synchronized void removeBuildManagerForCurrentThread(String path) {
+    final Map<String, BuildManager> map = activeManagers.get();
+    map.remove(path);
+  }
 
 }

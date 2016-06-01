@@ -60,7 +60,7 @@ public class FixpointCycleBuildResultProvider extends BuildUnitProvider {
    *          the cycle to compile
    */
   public FixpointCycleBuildResultProvider(BuildUnitProvider parentManager, BuildCycle cycle) {
-    super(parentManager.report);
+    super(parentManager.report, parentManager.dynamicAnalysis);
     this.parentManager = parentManager;
     this.cycle = cycle;
     this.requiredUnitsInIteration = new HashSet<>();

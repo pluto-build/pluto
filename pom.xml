@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>build.pluto</groupId>
 	<artifactId>pluto</artifactId>
-	<version>1.9.0</version>
+	<version>1.9.1</version>
 
 	<parent>
 		<groupId>build.pluto</groupId>

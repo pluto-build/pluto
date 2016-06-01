@@ -21,6 +21,8 @@ import build.pluto.dependency.Requirement;
 import build.pluto.output.Output;
 import build.pluto.util.IReporting;
 import build.pluto.util.IReporting.BuildReason;
+import build.pluto.xattr.Xattr;
+import build.pluto.xattr.XattrPreferencesStrategy;
 
 import com.cedarsoftware.util.DeepEquals;
 
@@ -30,15 +32,17 @@ public class BuildManager extends BuildUnitProvider {
   
   private ExecutingStack executingStack;
   private transient RequireStack requireStack;
-  private transient DynamicAnalysis analysis;
 
   private static Map<Thread, Long> requireInitiallyTimestamps = new HashMap<>();
 
   protected BuildManager(IReporting report) {
-    super(report);
+    this(report, null);
+  }
+  
+  protected BuildManager(IReporting report, String path) {
+    super(report, new DynamicAnalysis(report, new Xattr(new XattrPreferencesStrategy(path))));
     this.executingStack = new ExecutingStack();
     this.requireStack = new RequireStack();
-    this.analysis = new DynamicAnalysis(report);
   }
 
   private <Out extends Output> void checkInterrupt(boolean duringRequire, File dep, BuildUnit<Out> depResult, BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
@@ -69,7 +73,7 @@ public class BuildManager extends BuildUnitProvider {
     BuildUnit<Out> depResult = BuildUnit.read(dep);
     BuildUnit<Out> previousDepResult = depResult == null ? null : depResult.clone();
     
-    analysis.reset(depResult);
+    dynamicAnalysis.reset(depResult);
     report.startedBuilder(buildReq, builder, depResult, reasons);
     
     depResult = BuildUnit.create(dep, buildReq);
@@ -121,7 +125,7 @@ public class BuildManager extends BuildUnitProvider {
       this.requireStack.finishRebuild(buildReq);
 
       try {
-        analysis.check(depResult, inputHash);
+        dynamicAnalysis.check(depResult, inputHash);
         checkInterrupt(false, dep, depResult, buildReq); // interrupt before consistency assertion because an interrupted build is never consistent. 
         assertConsistency(depResult);
       } finally {
@@ -210,7 +214,7 @@ public class BuildManager extends BuildUnitProvider {
       if (!depResult.isFinished())
         depResult.setState(State.finished(true));
 
-      analysis.check(depResult, inputHash);
+      dynamicAnalysis.check(depResult, inputHash);
     } else {
       depResult.setState(State.FAILURE);
     }
@@ -383,6 +387,10 @@ public class BuildManager extends BuildUnitProvider {
     }
 
     return yield(buildReq, builder, depResult);
+  }
+  
+  public void resetDynamicAnalysis() throws IOException {
+    dynamicAnalysis.xattr().clear();
   }
 
   private <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> Set<BuildReason> computeLocalBuildReasons(final BuildRequest<In, Out, B, F> buildReq, boolean needBuildResult, File dep, BuildUnit<Out> depResult) {

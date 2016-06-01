@@ -8,13 +8,24 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 public class XattrPreferencesStrategy implements XattrStrategy {
+  private final static String PREFIX = "build.pluto";
 
   private Preferences prefs;
-  
-  public XattrPreferencesStrategy() {
-    this.prefs = Preferences.userRoot().node(Xattr.PREFIX);
+
+  public XattrPreferencesStrategy(String pathName) {
+    final String path;
+    if (pathName == null || pathName.isEmpty()) {
+      path = PREFIX;
+    } else {
+      pathName = pathName.replace('\\', '/');
+      if(pathName.startsWith("/")) {
+        pathName = pathName.substring(1);
+      }
+      path = PREFIX + "/" + pathName;
+    }
+    this.prefs = Preferences.userRoot().node(path);
   }
-  
+
   @Override
   public void setXattr(File p, String k, String value) throws IOException {
     String key = p.getAbsolutePath() + ":" + k;
@@ -22,7 +33,7 @@ public class XattrPreferencesStrategy implements XattrStrategy {
       key = p.hashCode() + ":" + k;
     prefs.put(key, value);
   }
-  
+
   @Override
   public void removeXattr(File p, String k) throws IOException {
     String key = p.getAbsolutePath() + ":" + k;
