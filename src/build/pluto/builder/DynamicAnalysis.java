@@ -21,18 +21,20 @@ import build.pluto.output.Output;
 import build.pluto.util.AbsoluteComparedFile;
 import build.pluto.util.IReporting;
 import build.pluto.xattr.Xattr;
+import build.pluto.xattr.XattrPreferencesStrategy;
 
 import com.cedarsoftware.util.DeepEquals;
 import com.cedarsoftware.util.Traverser;
 
 public class DynamicAnalysis {
-  public final static Xattr XATTR = Xattr.getDefault();
   
+  private final Xattr xattr;
   private final IReporting report;
   private Map<File, BuildUnit<?>> generatedFiles;
   private Map<Output, BuildUnit<?>> generatedOutput;
 
-  public DynamicAnalysis(IReporting report) {
+  public DynamicAnalysis(IReporting report, Xattr xattr) {
+    this.xattr = xattr;
     this.report = report;
     this.generatedFiles = new HashMap<>();
     this.generatedOutput = new HashMap<>();
@@ -41,7 +43,7 @@ public class DynamicAnalysis {
   public void reset(BuildUnit<?> unit) throws IOException {
     if (unit != null) {
       for (File f : unit.getGeneratedFiles()) {
-        XATTR.removeGenBy(f, unit);
+        xattr.removeGenBy(f, unit);
         generatedFiles.remove(f);
       }
     }
@@ -52,6 +54,10 @@ public class DynamicAnalysis {
     checkGeneratedFilesOverlap(unit);
     checkUnitDependency(unit);
     checkGeneratedOutputs(unit);
+  }
+  
+  public Xattr xattr() {
+    return xattr;
   }
 
   /**
@@ -72,7 +78,7 @@ public class DynamicAnalysis {
       throw new DuplicateBuildUnitPathException("Build unit " + unit + " has same persistent path as build unit " + other);
 
     for (FileRequirement freq : unit.getGeneratedFileRequirements()) {
-      XATTR.addGenBy(freq.file, unit);
+      xattr.addGenBy(freq.file, unit);
       other = generatedFiles.put(freq.file, unit);
       if (other != null && other != unit) {
         BuildRequest<?, ?, ?, ?> unitReq = unit.getGeneratedBy();
@@ -104,7 +110,7 @@ public class DynamicAnalysis {
         if (file.exists()) {
           File[] deps = null;
           try {
-            deps = XATTR.getGenBy(file);
+            deps = xattr.getGenBy(file);
           } catch (IOException e) {
             report.messageFromSystem("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, true, 0);
           }

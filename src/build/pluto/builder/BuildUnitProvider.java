@@ -17,9 +17,11 @@ import build.pluto.util.IReporting;
 public abstract class BuildUnitProvider {
 
   protected final IReporting report;
+  protected final DynamicAnalysis dynamicAnalysis;
   
-  public BuildUnitProvider(IReporting report) {
+  public BuildUnitProvider(IReporting report, DynamicAnalysis dynamicAnalysis) {
     this.report = report;
+    this.dynamicAnalysis = dynamicAnalysis;
   }
   
   public abstract
@@ -60,7 +62,7 @@ public abstract class BuildUnitProvider {
       }
       File builderClass = path.toFile();
 
-      File[] depFiles = DynamicAnalysis.XATTR.getGenBy(builderClass);
+      File[] depFiles = dynamicAnalysis.xattr().getGenBy(builderClass);
       boolean requireMeta = depFiles == null || depFiles.length == 0;
       
       if (depFiles != null) 
