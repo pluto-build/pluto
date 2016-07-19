@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -69,10 +70,13 @@ public class PreferencesDatabase implements MultiMapDatabase<File, File> {
   public Collection<File> get(File key) {
     String val = prefs.get(internalKey(key), null);
     if (val == null)
-      return Collections.emptySet();
+      return new ArrayList<File>(0);
     
-    if (val.charAt(0) != SEPC)
-      return Collections.singleton(new File(val));
+    if (val.charAt(0) != SEPC) {
+      List<File> files = new ArrayList<File>(1);
+      files.add(new File(val));
+      return files;
+    }
     
     String[] paths = val.substring(1).split(SEP);
     ArrayList<File> files = new ArrayList<>(paths.length);
