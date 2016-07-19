@@ -123,7 +123,7 @@ public class DynamicAnalysis {
             report.messageFromSystem("WARNING: Could not verify build-unit dependency due to exception \"" + e.getMessage() + "\" while reading metadata: " + file, true, 0);
           }
           
-          if (deps != null) {
+          if (deps != null && !deps.isEmpty()) {
             boolean foundDep = false;
             for (File dep : deps)
               if (AbsoluteComparedFile.equals(unit.getPersistentPath(), dep)) {
