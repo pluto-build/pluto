@@ -4,7 +4,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -50,7 +51,7 @@ public class PreferencesDatabase implements MultiMapDatabase<File, File> {
     
   @Override
   public void addAll(File key, Collection<? extends File> newVals) {
-    Collection<File> vals = get(key);
+    Set<File> vals = new HashSet<>(get(key));
     vals.addAll(newVals);
     set(key, vals);
   }
@@ -69,25 +70,22 @@ public class PreferencesDatabase implements MultiMapDatabase<File, File> {
   @Override
   public Collection<File> get(File key) {
     String val = prefs.get(internalKey(key), null);
-    if (val == null)
-      return new ArrayList<File>(0);
+    if (val == null || val.isEmpty())
+      return Collections.emptySet();
     
-    if (val.charAt(0) != SEPC) {
-      List<File> files = new ArrayList<File>(1);
-      files.add(new File(val));
-      return files;
-    }
+    if (val.charAt(0) != SEPC) 
+      return Collections.singleton(new File(val));
     
     String[] paths = val.substring(1).split(SEP);
     ArrayList<File> files = new ArrayList<>(paths.length);
     for (int i = 0; i < paths.length; i++)
       files.set(i, new File(paths[i]));
-    return files;
+    return Collections.unmodifiableList(files);
   }
 
   @Override
   public void remove(File key, File val) {
-    Collection<File> vals = get(key);
+    Set<File> vals = new HashSet<>(get(key));
     vals.remove(val);
     set(key, vals);
   }
