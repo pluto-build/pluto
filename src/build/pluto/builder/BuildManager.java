@@ -18,11 +18,10 @@ import build.pluto.builder.BuildCycleException.CycleState;
 import build.pluto.builder.factory.BuilderFactory;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.Requirement;
+import build.pluto.dependency.database.PreferencesDatabase;
 import build.pluto.output.Output;
 import build.pluto.util.IReporting;
 import build.pluto.util.IReporting.BuildReason;
-import build.pluto.xattr.Xattr;
-import build.pluto.xattr.XattrPreferencesStrategy;
 
 import com.cedarsoftware.util.DeepEquals;
 
@@ -40,7 +39,7 @@ public class BuildManager extends BuildUnitProvider {
   }
   
   protected BuildManager(IReporting report, String path) {
-    super(report, new DynamicAnalysis(report, new Xattr(new XattrPreferencesStrategy(path))));
+    super(report, new DynamicAnalysis(report, new PreferencesDatabase(path)));
     this.executingStack = new ExecutingStack();
     this.requireStack = new RequireStack();
   }
@@ -390,7 +389,7 @@ public class BuildManager extends BuildUnitProvider {
   }
   
   public void resetDynamicAnalysis() throws IOException {
-    dynamicAnalysis.xattr().clear();
+    dynamicAnalysis.resetAnalysis();
   }
 
   private <In extends Serializable, Out extends Output, B extends Builder<In, Out>, F extends BuilderFactory<In, Out, B>> Set<BuildReason> computeLocalBuildReasons(final BuildRequest<In, Out, B, F> buildReq, boolean needBuildResult, File dep, BuildUnit<Out> depResult) {

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Path;
+import java.util.Collection;
 
 import org.sugarj.common.FileCommands;
 
@@ -62,8 +63,8 @@ public abstract class BuildUnitProvider {
       }
       File builderClass = path.toFile();
 
-      File[] depFiles = dynamicAnalysis.xattr().getGenBy(builderClass);
-      boolean requireMeta = depFiles == null || depFiles.length == 0;
+      Collection<File> depFiles = dynamicAnalysis.getGenBy(builderClass);
+      boolean requireMeta = depFiles == null || depFiles.size() == 0;
       
       if (depFiles != null) 
         for (File depFile : depFiles) 
