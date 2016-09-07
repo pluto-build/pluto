@@ -1,5 +1,7 @@
 package build.pluto.test;
 
+import build.pluto.test.tracing.PIDTest;
+import build.pluto.test.tracing.STraceTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -19,20 +21,23 @@ import build.pluto.test.dependency.RemoteRequirementTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({
-  CompilationUnitVisitTest.class,
-  BuildFailureTest.class,
-  BuildInterruptTest.class,
-  BuildManagerCycleDetectionTest.class, 
-  CycleAtOnceBuilderTest.class, 
-  RebuildInconsistentTest.class, 
-  FixpointCycleTestSuite.class,
-  NestedCycleAtOnceTest.class,
-  LatexlikeTest.class,
-  OutputPersistedTest.class,
-  OutputTransientTest.class,
-  RemoteRequirementTest.class})
+        CompilationUnitVisitTest.class,
+        BuildFailureTest.class,
+        BuildInterruptTest.class,
+        BuildManagerCycleDetectionTest.class,
+        CycleAtOnceBuilderTest.class,
+        RebuildInconsistentTest.class,
+        FixpointCycleTestSuite.class,
+        NestedCycleAtOnceTest.class,
+        LatexlikeTest.class,
+        OutputPersistedTest.class,
+        OutputTransientTest.class,
+        RemoteRequirementTest.class,
+        PIDTest.class,
+        STraceTest.class
+})
 public class PlutoTestSuite {
-  static {
-    Log.log.setLoggingLevel(Log.ALWAYS);
-  }
+    static {
+        Log.log.setLoggingLevel(Log.ALWAYS);
+    }
 }
