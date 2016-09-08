@@ -1,17 +1,16 @@
 package build.pluto.tracing;
 
 import java.io.File;
-import java.util.Date;
 
 public class FileDependency {
-    FileReadMode mode;
+    FileAccessMode mode;
     File file;
 
-    public FileReadMode getMode() {
+    public FileAccessMode getMode() {
         return mode;
     }
 
-    public void setMode(FileReadMode mode) {
+    public void setMode(FileAccessMode mode) {
         this.mode = mode;
     }
 
@@ -23,7 +22,7 @@ public class FileDependency {
         this.file = file;
     }
 
-   public FileDependency(FileReadMode mode, File file) {
+   public FileDependency(FileAccessMode mode, File file) {
         this.mode = mode;
         this.file = file;
     }

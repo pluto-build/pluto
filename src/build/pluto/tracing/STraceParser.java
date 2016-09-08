@@ -1,12 +1,8 @@
 package build.pluto.tracing;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,10 +35,10 @@ public class STraceParser {
 
         Matcher m = r.matcher(line);
         if (m.find()) {
-            FileReadMode mode = null;
-            if (m.group(3).contains("O_RDONLY")) mode = FileReadMode.READ_MODE;
-            if (m.group(3).contains("O_WRONLY")) mode = FileReadMode.WRITE_MODE;
-            if (m.group(3).contains("O_RDWR")) mode = FileReadMode.WRITE_MODE;
+            FileAccessMode mode = null;
+            if (m.group(3).contains("O_RDONLY")) mode = FileAccessMode.READ_MODE;
+            if (m.group(3).contains("O_WRONLY")) mode = FileAccessMode.WRITE_MODE;
+            if (m.group(3).contains("O_RDWR")) mode = FileAccessMode.WRITE_MODE;
 
             File file = new File(m.group(2));
 

@@ -4,13 +4,12 @@ import build.pluto.test.build.ScopedBuildTest;
 import build.pluto.test.build.ScopedPath;
 import build.pluto.test.build.cycle.fixpoint.FileUtils;
 import build.pluto.tracing.FileDependency;
-import build.pluto.tracing.FileReadMode;
+import build.pluto.tracing.FileAccessMode;
 import build.pluto.tracing.Tracer;
 import org.junit.Test;
 import org.sugarj.common.FileCommands;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -42,7 +41,7 @@ public class STraceTest extends ScopedBuildTest {
         assert(deps.size() > 0);
         boolean foundFile = false;
         for (FileDependency d: deps) {
-            if (d.getFile().getAbsoluteFile().equals(file.getAbsoluteFile()) && d.getMode() == FileReadMode.READ_MODE)
+            if (d.getFile().getAbsoluteFile().equals(file.getAbsoluteFile()) && d.getMode() == FileAccessMode.READ_MODE)
                 foundFile = true;
         }
         if (!foundFile) throw new Exception("Did not trace read file...");
@@ -57,7 +56,7 @@ public class STraceTest extends ScopedBuildTest {
         assert(deps1.size() > 0);
         foundFile = false;
         for (FileDependency d: deps1) {
-            if (d.getFile().getAbsoluteFile().equals(file2.getAbsoluteFile()) && d.getMode() == FileReadMode.READ_MODE)
+            if (d.getFile().getAbsoluteFile().equals(file2.getAbsoluteFile()) && d.getMode() == FileAccessMode.READ_MODE)
                 foundFile = true;
         }
         if (!foundFile) throw new Exception("Did not trace read file...");
@@ -70,9 +69,9 @@ public class STraceTest extends ScopedBuildTest {
         foundFile = false;
         boolean foundWrongFile = false;
         for (FileDependency d: deps2) {
-            if (d.getFile().getAbsoluteFile().equals(file3.getAbsoluteFile()) && d.getMode() == FileReadMode.READ_MODE)
+            if (d.getFile().getAbsoluteFile().equals(file3.getAbsoluteFile()) && d.getMode() == FileAccessMode.READ_MODE)
                 foundFile = true;
-            if (d.getFile().getAbsoluteFile().equals(file2.getAbsoluteFile()) && d.getMode() == FileReadMode.READ_MODE)
+            if (d.getFile().getAbsoluteFile().equals(file2.getAbsoluteFile()) && d.getMode() == FileAccessMode.READ_MODE)
                 foundWrongFile = true;
         }
         if (!foundFile) throw new Exception("Did not trace read file2...");
@@ -86,7 +85,7 @@ public class STraceTest extends ScopedBuildTest {
         assert(deps.size() > 0);
         foundFile = false;
         for (FileDependency d: deps) {
-            if (d.getFile().getAbsoluteFile().equals(file4.getAbsoluteFile()) && d.getMode() == FileReadMode.WRITE_MODE)
+            if (d.getFile().getAbsoluteFile().equals(file4.getAbsoluteFile()) && d.getMode() == FileAccessMode.WRITE_MODE)
                 foundFile = true;
         }
         if (!foundFile) throw new Exception("Did not trace written file...");

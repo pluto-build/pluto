@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import build.pluto.executor.InputParser;
 import org.sugarj.common.FileCommands;
 
 import build.pluto.BuildUnit;
@@ -22,7 +23,27 @@ import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 
   public static BuilderFactory<TestBuilderInput, None, SimpleBuilder> factory = BuilderFactoryFactory.of(SimpleBuilder.class, TestBuilderInput.class);
-	
+	public static BuilderFactory<TestBuilderInput, None, SimpleBuilder> factoryFileDepDiscovery = new BuilderFactory<TestBuilderInput, None, SimpleBuilder>() {
+		@Override
+		public SimpleBuilder makeBuilder(TestBuilderInput input) {
+			SimpleBuilder builder = new SimpleBuilder(input);
+			builder.setFileDiscovery(true);
+			return builder;
+		}
+
+		@Override
+		public boolean isOverlappingGeneratedFileCompatible(File overlap, Serializable input, BuilderFactory<?, ?, ?> otherFactory, Serializable otherInput) {
+			return false;
+		}
+
+		@Override
+		public InputParser<TestBuilderInput> inputParser() {
+			return null;
+		}
+	};
+
+
+	private boolean fileDiscovery = false;
 
 	public static class TestBuilderInput implements Serializable {
 		/**
@@ -61,7 +82,7 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 
 	@Override
   protected String description(TestBuilderInput input) {
-		return "Test Builder for " + input.getInputPath();
+		return "Test Builder for " + input.getInputPath() + "(File Discovery: " + fileDiscovery + ")";
 	}
 
 	@Override
@@ -76,7 +97,8 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 
 	@Override
   protected None build(TestBuilderInput input) throws IOException {
-		require(input.inputPath);
+  		if (!this.useFileDependencyDiscovery())
+			require(input.inputPath);
 		List<String> allLines = FileCommands.readFileLines(input.inputPath);
 
 		if (!allLines.isEmpty() && allLines.get(0).equals("#fail"))
@@ -94,7 +116,10 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 				TestBuilderInput depInput = new TestBuilderInput(
 						input.basePath, new File(input.getBasePath(),
 								depFile));
-				requireBuild(factory, depInput);
+				if (useFileDependencyDiscovery())
+					requireBuild(factoryFileDepDiscovery, depInput);
+				else
+					requireBuild(factory, depInput);
 			} else {
 				contentLines.add(line);
 			}
@@ -103,9 +128,18 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
 		// Write the content to a generated file
 		File generatedFile = FileCommands.addExtension(input.inputPath.toPath(), "gen").toFile();
 		FileCommands.writeLinesFile(generatedFile, contentLines);
-		provide(generatedFile);
+		if (!this.useFileDependencyDiscovery())
+			provide(generatedFile);
 		setState(BuildUnit.State.finished(true));
 		return None.val;
 	}
 
+	@Override
+	protected boolean useFileDependencyDiscovery() {
+		return fileDiscovery;
+	}
+
+	public void setFileDiscovery(boolean fileDiscovery) {
+		this.fileDiscovery = fileDiscovery;
+	}
 }

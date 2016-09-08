@@ -2,6 +2,7 @@ package build.pluto.tracing;
 
 import build.pluto.util.SystemUtils;
 import org.sugarj.common.Exec;
+import org.sugarj.common.Log;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -35,6 +36,11 @@ public class Tracer {
      * Starts tracing file dependencies. Starts strace if necessary and attaches it to the current process
      */
     public void start() throws TracingException {
+        try {
+            Thread.sleep(300);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         if (result == null)
             runTracer();
     }
@@ -50,12 +56,18 @@ public class Tracer {
     int readCount = 0;
 
     public List<FileDependency> popDependencies() throws TracingException {
+        try {
+            Thread.sleep(300);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         if (result == null)
             throw new TracingException("Trace was not running...");
         List<String> errMsgs = new ArrayList<>(result.peekErrMsgs());
         List<String> newMsgs = errMsgs.subList(readCount, errMsgs.size());
         STraceParser p = new STraceParser(newMsgs.toArray(new String[newMsgs.size()]));
         readCount = errMsgs.size();
+        Log.log.log("New readCount: "+ readCount, Log.ALWAYS);
         return p.readDependencies();
     }
 
@@ -64,10 +76,15 @@ public class Tracer {
      */
     public List<FileDependency> stop() {
         // TODO: check here
-        result.kill();
-        STraceParser p = new STraceParser(result.errMsgs);
-        result = null;
-        return p.readDependencies();
+        if (result != null) {
+            result.kill();
+            readCount = 0;
+            STraceParser p = new STraceParser(result.errMsgs);
+            result = null;
+            return p.readDependencies();
+        }
+        else
+            return new ArrayList<>();
     }
 
 }

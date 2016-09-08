@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.State;
@@ -21,6 +22,9 @@ import build.pluto.output.OutputStamper;
 import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamp;
 import build.pluto.stamp.Stamper;
+import build.pluto.tracing.FileAccessMode;
+import build.pluto.tracing.FileDependency;
+import build.pluto.tracing.Tracer;
 
 /**
  * The builder class is the abstract base class of each builder. It contains an
@@ -131,12 +135,31 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     this.manager = manager;
     this.defaultStamper = defaultStamper();
     try {
-      return build(this.input);
+      if (this.useFileDependencyDiscovery())
+        manager.tracer.start();
+      Out res = build(this.input);
+      if (this.useFileDependencyDiscovery()) {
+        generateCurrentFileDependencies();
+        //this.report("Stopping tracer...");
+        //manager.tracer.stop();
+      }
+      return res;
     } finally {
       this.result = null;
       this.previousResult = null;
       this.manager = null;
       this.defaultStamper = null;
+    }
+  }
+
+  private void generateCurrentFileDependencies() throws Tracer.TracingException {
+    List<FileDependency> fileDeps = manager.tracer.popDependencies();
+    this.report(fileDeps.toString());
+    for (FileDependency d: fileDeps) {
+      if (d.getMode() == FileAccessMode.READ_MODE)
+        this.require(d.getFile());
+      if (d.getMode() == FileAccessMode.WRITE_MODE)
+        this.provide(d.getFile());
     }
   }
 
@@ -211,6 +234,13 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    F_ extends BuilderFactory<In_, Out_, B_>>
 //@formatter:on
   Out_ requireBuild(BuildRequest<In_, Out_, B_, F_> req) throws IOException {
+    if (this.useFileDependencyDiscovery())
+      try {
+        this.generateCurrentFileDependencies();
+      } catch (Tracer.TracingException e) {
+        // TODO: What to do here?
+        e.printStackTrace();
+      }
     lastBuildReq = req;
     BuildRequirement<Out_> e = manager.require(req, true);
     result.requires(e);
@@ -221,7 +251,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    * Requires that the build result of all given {@link BuildRequest}s is
    * consistent such that provided files can be required.
    * 
-   * @param reqs
+   * @param origin
    *          all requirements which are needed to be consistent
    * @throws IOException
    */
@@ -331,4 +361,11 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   protected BuildUnit<Out> getPreviousBuildUnit() {
     return previousResult;
   }
+
+  /**
+   * This method determines if the builder explicitly calls provide and require, or if these file dependencies are automatically detected by a tracer.
+   * If this method returns true, the defaultStamper() is used for all dependencies.
+   * @return
+   */
+  protected boolean useFileDependencyDiscovery() { return false; }
 }
