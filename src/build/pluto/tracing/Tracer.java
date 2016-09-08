@@ -11,20 +11,6 @@ import java.util.List;
  * Created by Manuel Weiel on 9/7/16.
  */
 public class Tracer {
-
-    private Tracer() {
-
-    }
-
-    private static Tracer instance;
-
-    public static Tracer getInstance() {
-        if (instance == null)
-            instance = new Tracer();
-        return instance;
-    }
-
-
     public class TracingException extends Exception {
         public TracingException(String msg) {
             super(msg);
