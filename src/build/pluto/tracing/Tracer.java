@@ -3,6 +3,7 @@ package build.pluto.tracing;
 import build.pluto.util.SystemUtils;
 import org.sugarj.common.Exec;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,10 +34,7 @@ public class Tracer {
 
     Exec.NonBlockingExecutionResult result;
 
-    /**
-     * Starts tracing file dependencies. Starts strace if necessary and attaches it to the current process
-     */
-    public void start() throws TracingException {
+    private void runTracer() throws TracingException {
         int pid = SystemUtils.getCurrentProcessID();
 
         if (pid == -1) {
@@ -48,12 +46,41 @@ public class Tracer {
     }
 
     /**
+     * Starts tracing file dependencies. Starts strace if necessary and attaches it to the current process
+     */
+    public void start() throws TracingException {
+        if (result == null)
+            runTracer();
+    }
+
+    public List<FileDependency> getAllDependencies() throws TracingException {
+        if (result == null)
+            throw new TracingException("Trace was not running...");
+        List<String> resultList = result.peekErrMsgs();
+        STraceParser p = new STraceParser(resultList.toArray(new String[resultList.size()]));
+        return p.readDependencies();
+    }
+
+    int readCount = 0;
+
+    public List<FileDependency> popDependencies() throws TracingException {
+        if (result == null)
+            throw new TracingException("Trace was not running...");
+        List<String> errMsgs = new ArrayList<>(result.peekErrMsgs());
+        List<String> newMsgs = errMsgs.subList(readCount, errMsgs.size());
+        STraceParser p = new STraceParser(newMsgs.toArray(new String[newMsgs.size()]));
+        readCount = errMsgs.size();
+        return p.readDependencies();
+    }
+
+    /**
      * Stops tracing and returns all traced file dependencies
      */
     public List<FileDependency> stop() {
         // TODO: check here
         result.kill();
         STraceParser p = new STraceParser(result.errMsgs);
+        result = null;
         return p.readDependencies();
     }
 
