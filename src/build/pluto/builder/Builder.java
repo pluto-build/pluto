@@ -136,7 +136,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     this.defaultStamper = defaultStamper();
     try {
       if (this.useFileDependencyDiscovery())
-        manager.tracer.start();
+        manager.tracer.ensureStarted();
       Out res = build(this.input);
       if (this.useFileDependencyDiscovery()) {
         generateCurrentFileDependencies();

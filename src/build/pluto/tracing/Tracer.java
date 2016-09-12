@@ -35,7 +35,7 @@ public class Tracer {
     /**
      * Starts tracing file dependencies. Starts strace if necessary and attaches it to the current process
      */
-    public void start() throws TracingException {
+    public void ensureStarted() throws TracingException {
         try {
             Thread.sleep(300);
         } catch (InterruptedException e) {
@@ -43,6 +43,7 @@ public class Tracer {
         }
         if (result == null)
             runTracer();
+        popDependencies();
     }
 
     public List<FileDependency> getAllDependencies() throws TracingException {
@@ -67,7 +68,6 @@ public class Tracer {
         List<String> newMsgs = errMsgs.subList(readCount, errMsgs.size());
         STraceParser p = new STraceParser(newMsgs.toArray(new String[newMsgs.size()]));
         readCount = errMsgs.size();
-        Log.log.log("New readCount: "+ readCount, Log.ALWAYS);
         return p.readDependencies();
     }
 
@@ -77,6 +77,7 @@ public class Tracer {
     public List<FileDependency> stop() {
         // TODO: check here
         if (result != null) {
+            Log.log.log("Stopping tracer...", Log.ALWAYS);
             result.kill();
             readCount = 0;
             STraceParser p = new STraceParser(result.errMsgs);

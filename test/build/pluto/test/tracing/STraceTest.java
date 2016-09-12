@@ -32,7 +32,7 @@ public class STraceTest extends ScopedBuildTest {
     @Test
     public void testTracing() throws Exception {
         Tracer t = new Tracer();
-        t.start();
+        t.ensureStarted();
         Thread.sleep(200);
         assert(0 == FileUtils.readIntFromFile(file));
         Thread.sleep(200);
@@ -47,7 +47,7 @@ public class STraceTest extends ScopedBuildTest {
         if (!foundFile) throw new Exception("Did not trace read file...");
 
         // Test restarting and popping dependencies
-        t.start();
+        t.ensureStarted();
         Thread.sleep(200);
         assert(0 == FileUtils.readIntFromFile(file2));
         Thread.sleep(200);
