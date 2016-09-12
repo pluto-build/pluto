@@ -1,5 +1,6 @@
 package build.pluto.dependency.database;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,6 +41,10 @@ public class XodusDatabase<K extends Comparable<K>, V extends Comparable<V>> imp
   final String dbName;
   final ComparableBinding keyBinding;
   final ComparableBinding valBinding;
+  
+  public static XodusDatabase<File, File> createFileDatabase(final String dbName) {
+    return new XodusDatabase<File, File>(dbName, FileByteIterableBinding.BINDING, FileByteIterableBinding.BINDING);
+  }
   
   public XodusDatabase(final String dbName, ComparableBinding keyBinding, ComparableBinding valBinding) {
     this.dbName = dbName;
