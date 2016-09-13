@@ -11,8 +11,6 @@ import java.util.TreeSet;
 
 import org.sugarj.common.Exec;
 
-import com.cedarsoftware.util.DeepEquals;
-
 import build.pluto.BuildUnit;
 import build.pluto.BuildUnit.InconsistenyReason;
 import build.pluto.BuildUnit.State;
@@ -20,10 +18,12 @@ import build.pluto.builder.BuildCycleException.CycleState;
 import build.pluto.builder.factory.BuilderFactory;
 import build.pluto.dependency.BuildRequirement;
 import build.pluto.dependency.Requirement;
-import build.pluto.dependency.database.XodusDatabase;
+import build.pluto.dependency.database.PreferencesDatabase;
 import build.pluto.output.Output;
 import build.pluto.util.IReporting;
 import build.pluto.util.IReporting.BuildReason;
+
+import com.cedarsoftware.util.DeepEquals;
 
 public class BuildManager extends BuildUnitProvider {
 
@@ -39,7 +39,7 @@ public class BuildManager extends BuildUnitProvider {
   }
   
   protected BuildManager(IReporting report, String path) {
-    super(report, new DynamicAnalysis(report, XodusDatabase.createFileDatabase(path)));
+    super(report, new DynamicAnalysis(report, new PreferencesDatabase(path)));
     this.executingStack = new ExecutingStack();
     this.requireStack = new RequireStack();
   }
