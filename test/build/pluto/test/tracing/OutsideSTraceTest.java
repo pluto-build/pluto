@@ -3,9 +3,7 @@ package build.pluto.test.tracing;
 import build.pluto.test.build.ScopedBuildTest;
 import build.pluto.test.build.ScopedPath;
 import build.pluto.test.build.cycle.fixpoint.FileUtils;
-import build.pluto.tracing.FileDependency;
-import build.pluto.tracing.FileAccessMode;
-import build.pluto.tracing.Tracer;
+import build.pluto.tracing.*;
 import org.junit.Test;
 import org.sugarj.common.FileCommands;
 
@@ -15,7 +13,7 @@ import java.util.List;
 /**
  * Created by manuel on 9/7/16.
  */
-public class STraceTest extends ScopedBuildTest {
+public class OutsideSTraceTest extends ScopedBuildTest {
 
     @ScopedPath("test.txt")
     private File file;
@@ -31,11 +29,9 @@ public class STraceTest extends ScopedBuildTest {
 
     @Test
     public void testTracing() throws Exception {
-        Tracer t = new Tracer();
+        ITracer t = new OutsideTracer();
         t.ensureStarted();
-        Thread.sleep(200);
         assert(0 == FileUtils.readIntFromFile(file));
-        Thread.sleep(200);
         List<FileDependency> deps = t.popDependencies();
         t.stop();
         System.out.println(deps);
@@ -49,9 +45,7 @@ public class STraceTest extends ScopedBuildTest {
 
         // Test restarting and popping dependencies
         t.ensureStarted();
-        Thread.sleep(200);
         assert(0 == FileUtils.readIntFromFile(file2));
-        Thread.sleep(200);
         List<FileDependency> deps1 = t.popDependencies();
         System.out.println(deps1);
         assert(deps1.size() > 0);
@@ -63,7 +57,6 @@ public class STraceTest extends ScopedBuildTest {
         if (!foundFile) throw new Exception("Did not trace read file...");
 
         assert(1 == FileUtils.readIntFromFile(file3));
-        Thread.sleep(100);
 
         List<FileDependency> deps2 = t.popDependencies();
         assert(deps2.size() > 0);
@@ -80,7 +73,6 @@ public class STraceTest extends ScopedBuildTest {
 
         // Test detecting write dependencies...
         FileCommands.writeToFile(file4, "hello world");
-        Thread.sleep(100);
         deps = t.popDependencies();
         t.stop();
         System.out.println(deps);

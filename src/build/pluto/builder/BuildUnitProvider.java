@@ -6,6 +6,8 @@ import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.Collection;
 
+import build.pluto.tracing.ITracer;
+import build.pluto.tracing.OutsideTracer;
 import build.pluto.tracing.Tracer;
 import org.sugarj.common.FileCommands;
 
@@ -18,14 +20,14 @@ import build.pluto.util.IReporting;
 
 public abstract class BuildUnitProvider {
 
-    protected final Tracer tracer;
+    protected final ITracer tracer;
     protected final IReporting report;
     protected final DynamicAnalysis dynamicAnalysis;
 
     public BuildUnitProvider(IReporting report, DynamicAnalysis dynamicAnalysis) {
         this.report = report;
         this.dynamicAnalysis = dynamicAnalysis;
-        this.tracer = new Tracer();
+        this.tracer = new OutsideTracer();
     }
 
     public abstract

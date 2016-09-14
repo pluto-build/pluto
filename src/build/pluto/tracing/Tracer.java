@@ -11,12 +11,8 @@ import java.util.List;
 /**
  * Created by Manuel Weiel on 9/7/16.
  */
-public class Tracer {
-    public class TracingException extends Exception {
-        public TracingException(String msg) {
-            super(msg);
-        }
-    }
+public class Tracer implements ITracer {
+
 
 
     Exec.NonBlockingExecutionResult result;
@@ -35,6 +31,7 @@ public class Tracer {
     /**
      * Starts tracing file dependencies. Starts strace if necessary and attaches it to the current process
      */
+    @Override
     public void ensureStarted() throws TracingException {
         try {
             Thread.sleep(300);
@@ -56,6 +53,7 @@ public class Tracer {
 
     int readCount = 0;
 
+    @Override
     public List<FileDependency> popDependencies() throws TracingException {
         try {
             Thread.sleep(300);
@@ -74,7 +72,8 @@ public class Tracer {
     /**
      * Stops tracing and returns all traced file dependencies
      */
-    public List<FileDependency> stop() {
+    @Override
+    public void stop() {
         // TODO: check here
         if (result != null) {
             Log.log.log("Stopping tracer...", Log.ALWAYS);
@@ -82,10 +81,7 @@ public class Tracer {
             readCount = 0;
             STraceParser p = new STraceParser(result.errMsgs);
             result = null;
-            return p.readDependencies();
         }
-        else
-            return new ArrayList<>();
     }
 
 }
