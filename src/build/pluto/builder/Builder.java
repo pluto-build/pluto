@@ -44,15 +44,15 @@ import build.pluto.stamp.Stamper;
 public abstract class Builder<In extends Serializable, Out extends Output> {
 
   public final static File PLUTO_HOME = new File(System.getProperty("user.home"), ".pluto");
-  
+
   private final In input;
 
   transient BuildUnit<Out> result;
   private transient BuildUnit<Out> previousResult;
-  
+
   transient BuildUnitProvider manager;
   private transient Stamper defaultStamper;
-  
+
   private transient BuildRequest<?, ?, ?, ?> lastBuildReq;
 
   public Builder(In input) {
@@ -62,7 +62,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   protected In getInput() {
     return input;
   }
-  
+
   protected BuildRequest<?, ?, ?, ?> lastBuildReq() {
     return lastBuildReq;
   }
@@ -155,7 +155,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    * @return the output of the build
    * @throws IOException
    */
-  public 
+  public
 //@formatter:off
   <In_ extends Serializable, 
    Out_ extends Output, 
@@ -192,7 +192,6 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     return requireBuild(factory, input, OutputEqualStamper.instance());
   }
 
-  
   /**
    * Requires the result of the given build request is consistent. After such a
    * call this builder may require any file provided by building the build
@@ -203,7 +202,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    * @return the build output of the request
    * @throws IOException
    */
-  private 
+  private
 //@formatter:off
   <In_ extends Serializable,
    Out_ extends Output, 
@@ -225,7 +224,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    *          all requirements which are needed to be consistent
    * @throws IOException
    */
-   public Collection<? extends Output> requireBuild(Origin origin) throws IOException {
+  public Collection<? extends Output> requireBuild(Origin origin) throws IOException {
     if (origin == null)
       return null;
 
@@ -236,7 +235,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   }
 
   public void requireOther(Requirement req) {
-      result.requireOther(req);
+    result.requireOther(req);
   }
 
   /**
@@ -306,11 +305,10 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   public void provide(File p, Stamper stamper) {
     result.generates(p, stamper.stampOf(p));
   }
-  
+
   public void provide(FileRequirement req) {
     result.generates(req);
   }
-
 
   public void setState(State state) {
     result.setState(state);
@@ -327,7 +325,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   protected BuildUnit<Out> getBuildUnit() {
     return result;
   }
-  
+
   protected BuildUnit<Out> getPreviousBuildUnit() {
     return previousResult;
   }
