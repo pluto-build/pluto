@@ -5,13 +5,13 @@
 >
   <modelVersion>4.0.0</modelVersion>
   <artifactId>pluto</artifactId>
-  <version>1.10.0-SNAPSHOT</version>
+  <version>1.11.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <parent>
     <groupId>build.pluto</groupId>
     <artifactId>maven-config-java</artifactId>
-    <version>1.1.0-SNAPSHOT</version>
+    <version>1.2.0-SNAPSHOT</version>
     <relativePath />
   </parent>
 
@@ -19,7 +19,7 @@
     <dependency>
       <groupId>org.sugarj</groupId>
       <artifactId>common</artifactId>
-      <version>1.7.0-SNAPSHOT</version>
+      <version>1.7.1</version>
     </dependency>
     <dependency>
       <groupId>com.cedarsoftware</groupId>
@@ -57,7 +57,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <!-- Set fork count to 0 to prevent concurrent builds, because Pluto does not support concurrent builds 
+          <!-- Set fork count to 0 to prevent concurrent builds, because Pluto does not support concurrent builds
             yet. -->
           <forkCount>0</forkCount>
           <forkMode>never</forkMode>
@@ -84,7 +84,7 @@
       <id>pluto-build</id>
       <url>https://raw.githubusercontent.com/pluto-build/pluto-build.github.io/master/mvnrepository/</url>
       <releases>
-        <enabled>false</enabled>
+        <enabled>true</enabled>
       </releases>
       <snapshots>
         <enabled>true</enabled>
