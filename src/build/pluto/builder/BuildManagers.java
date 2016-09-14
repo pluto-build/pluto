@@ -71,8 +71,10 @@ public class BuildManagers {
     try {
       return manager.b ? manager.a.requireInitially(buildReq).getBuildResult() : manager.a.require(buildReq, true).getUnit().getBuildResult();
     } finally {
-      if (manager.b)
+      if (manager.b) {
+        manager.a.close();
         removeBuildManagerForCurrentThread(path);
+      }
     }
   }
 
@@ -99,8 +101,10 @@ public class BuildManagers {
           }
       return out;
     } finally {
-      if (manager.b)
+      if (manager.b) {
+        manager.a.close();
         removeBuildManagerForCurrentThread(path);
+      }
     }
   }
   

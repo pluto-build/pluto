@@ -1,6 +1,7 @@
 package build.pluto.dependency.database;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -14,8 +15,8 @@ import org.sugarj.common.StringCommands;
 public class PreferencesDatabase implements MultiMapDatabase<File, File> {
   private final static String PREFIX = "build.pluto";
   private static final char SEPC = 0;
-  private static final String SEP = new String(new char[]{SEPC});
-  
+  private static final String SEP = new String(new char[] { SEPC });
+
   private Preferences prefs;
 
   public PreferencesDatabase(String pathName) {
@@ -24,31 +25,30 @@ public class PreferencesDatabase implements MultiMapDatabase<File, File> {
       path = PREFIX;
     } else {
       pathName = pathName.replace('\\', '/');
-      if(pathName.startsWith("/")) {
+      if (pathName.startsWith("/")) {
         pathName = pathName.substring(1);
       }
       path = PREFIX + "/" + pathName;
     }
     this.prefs = Preferences.userRoot().node(path);
   }
-  
+
   private String internalKey(File key) {
     String internalKey = key.getAbsolutePath();
     if (internalKey.length() > Preferences.MAX_KEY_LENGTH)
       internalKey = String.valueOf(key.hashCode());
     return internalKey;
   }
-  
+
   private void set(File key, Collection<File> vals) {
     prefs.put(internalKey(key), StringCommands.printListSeparated(vals, SEP));
   }
-
 
   @Override
   public void add(File key, File val) {
     addAll(key, Collections.singleton(val));
   }
-    
+
   @Override
   public void addAll(File key, Collection<? extends File> newVals) {
     Set<File> vals = new HashSet<>(get(key));
@@ -72,10 +72,10 @@ public class PreferencesDatabase implements MultiMapDatabase<File, File> {
     String val = prefs.get(internalKey(key), null);
     if (val == null || val.isEmpty())
       return Collections.emptySet();
-    
-    if (val.charAt(0) != SEPC) 
+
+    if (val.charAt(0) != SEPC)
       return Collections.singleton(new File(val));
-    
+
     String[] paths = val.substring(1).split(SEP);
     ArrayList<File> files = new ArrayList<>(paths.length);
     for (int i = 0; i < paths.length; i++)
@@ -94,7 +94,7 @@ public class PreferencesDatabase implements MultiMapDatabase<File, File> {
   public void removeAll(File key) {
     prefs.remove(internalKey(key));
   }
-  
+
   @Override
   public void removeForEach(Collection<? extends File> keys, File val) {
     for (File key : keys)
@@ -108,7 +108,16 @@ public class PreferencesDatabase implements MultiMapDatabase<File, File> {
       prefs.flush();
     } catch (BackingStoreException e) {
       throw new RuntimeException(e);
-    }    
+    }
   }
 
+  @Override
+  public void close() throws IOException {
+    try {
+      prefs.sync();
+    } catch (BackingStoreException e) {
+      throw new IOException(e);
+    }
+    prefs = null;
+  }
 }

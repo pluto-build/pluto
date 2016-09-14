@@ -10,7 +10,7 @@ import java.util.Collection;
  * @author seba
  *
  */
-public interface MultiMapDatabase<K, V> {
+public interface MultiMapDatabase<K, V> extends AutoCloseable {
   public void add(K key, V val) throws IOException;
   public void addAll(K key, Collection<? extends V> val) throws IOException;
   public void addForEach(Collection<? extends K> keys, V val) throws IOException;
@@ -20,4 +20,5 @@ public interface MultiMapDatabase<K, V> {
   public void removeAll(K key) throws IOException;
   public void removeForEach(Collection<? extends K> keys, V val) throws IOException;
   public void clear() throws IOException;
+  public void close() throws IOException;
 }
