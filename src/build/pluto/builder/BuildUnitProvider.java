@@ -8,6 +8,7 @@ import java.util.Collection;
 
 import build.pluto.tracing.ITracer;
 import build.pluto.tracing.OutsideTracer;
+import build.pluto.tracing.SynchronizedTracer;
 import build.pluto.tracing.Tracer;
 import org.sugarj.common.FileCommands;
 
@@ -27,7 +28,7 @@ public abstract class BuildUnitProvider {
     public BuildUnitProvider(IReporting report, DynamicAnalysis dynamicAnalysis) {
         this.report = report;
         this.dynamicAnalysis = dynamicAnalysis;
-        this.tracer = new OutsideTracer();
+        this.tracer = new SynchronizedTracer(new Tracer());
     }
 
     public abstract

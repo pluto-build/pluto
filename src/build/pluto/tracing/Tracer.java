@@ -33,11 +33,11 @@ public class Tracer implements ITracer {
      */
     @Override
     public void ensureStarted() throws TracingException {
-        try {
+        /*try {
             Thread.sleep(300);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }*/
         if (result == null)
             runTracer();
         popDependencies();
@@ -55,11 +55,11 @@ public class Tracer implements ITracer {
 
     @Override
     public List<FileDependency> popDependencies() throws TracingException {
-        try {
+        /*try {
             Thread.sleep(300);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }*/
         if (result == null)
             throw new TracingException("Trace was not running...");
         List<String> errMsgs = new ArrayList<>(result.peekErrMsgs());

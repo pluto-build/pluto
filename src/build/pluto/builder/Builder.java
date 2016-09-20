@@ -24,6 +24,7 @@ import build.pluto.stamp.Stamp;
 import build.pluto.stamp.Stamper;
 import build.pluto.tracing.FileAccessMode;
 import build.pluto.tracing.FileDependency;
+import build.pluto.tracing.ITracer;
 import build.pluto.tracing.Tracer;
 
 /**
@@ -244,6 +245,12 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     lastBuildReq = req;
     BuildRequirement<Out_> e = manager.require(req, true);
     result.requires(e);
+    if (this.useFileDependencyDiscovery())
+      try {
+        manager.tracer.popDependencies();
+      } catch (ITracer.TracingException e1) {
+        e1.printStackTrace();
+      }
     return e.getUnit().getBuildResult();
   }
 

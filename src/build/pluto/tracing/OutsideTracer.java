@@ -41,7 +41,7 @@ public class OutsideTracer implements ITracer {
         writeDummyFile();
         long start = System.currentTimeMillis();
         try {
-            while (FileUtils.readLines(tracingFile).size() == 0 && System.currentTimeMillis() - start < 1000) {
+            while (FileUtils.readLines(tracingFile).size() == 0 && System.currentTimeMillis() - start < 10000) {
                 // nop
             }
         } catch (IOException e) {
