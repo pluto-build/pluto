@@ -21,7 +21,7 @@ import build.pluto.util.IReporting;
 
 public abstract class BuildUnitProvider {
 
-    protected final ITracer tracer;
+    protected ITracer tracer;
     protected final IReporting report;
     protected final DynamicAnalysis dynamicAnalysis;
 
@@ -95,5 +95,13 @@ public abstract class BuildUnitProvider {
             if (requireMeta)
                 depResult.requires(builderClass, LastModifiedStamper.instance.stampOf(builderClass));
         }
+    }
+
+    public ITracer getTracer() {
+        return tracer;
+    }
+
+    public void setTracer(ITracer tracer) {
+        this.tracer = tracer;
     }
 }

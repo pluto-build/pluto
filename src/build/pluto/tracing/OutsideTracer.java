@@ -57,8 +57,8 @@ public class OutsideTracer implements ITracer {
         boolean notReadDummy = true;
         do {
             deps = popDependencies();
-            for (FileDependency d: deps) {
-                if (d.getFile().getAbsoluteFile().equals(tracingFile.getAbsoluteFile()))
+            for (FileDependency d : deps) {
+                if (d.getFile().getAbsoluteFile().equals(dummyFile.getAbsoluteFile()))
                     notReadDummy = false;
             }
         } while (deps != null && notReadDummy);
@@ -68,21 +68,16 @@ public class OutsideTracer implements ITracer {
     public List<FileDependency> popDependencies() throws TracingException {
         List<String> lines = null;
         List<FileDependency> dependencies = new ArrayList<>();
-        boolean notReadDummy = true;
-        do {
-            try {
-                lines = FileCommands.readFileLines(tracingFile);
-            } catch (IOException e) {
-                throw new TracingException("Could not read tracing file. Check permissions.");
-            }
-            STraceParser p = new STraceParser(lines.toArray(new String[lines.size()]));
-            dependencies.addAll(p.readDependencies());
-            clearTracingFile();
-            for (FileDependency d: dependencies) {
-                if (d.getFile().getAbsoluteFile().equals(tracingFile.getAbsoluteFile()))
-                    notReadDummy = false;
-            }
-        } while (notReadDummy);
+        try {
+            lines = FileCommands.readFileLines(tracingFile);
+        } catch (IOException e) {
+            throw new TracingException("Could not read tracing file. Check permissions.");
+        }
+        STraceParser p = new STraceParser(lines.toArray(new String[lines.size()]));
+        for (FileDependency d: p.readDependencies())
+            if (!d.getFile().getAbsoluteFile().equals(tracingFile.getAbsoluteFile()))
+                dependencies.add(d);
+        clearTracingFile();
         return dependencies;
     }
 

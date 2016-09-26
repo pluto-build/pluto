@@ -9,6 +9,7 @@ import build.pluto.test.build.once.SimpleRequirement;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.sugarj.common.Log;
 
 import java.io.File;
 import java.io.IOException;
@@ -69,6 +70,7 @@ public class BuildFailureTestWithDepDiscovery extends SimpleBuildTest {
 
   @Test
   public void testSuccessAfterFailureBuild() throws IOException {
+    Log.log.setLoggingLevel(Log.ALWAYS);
     Files.copy(dep1FileFail.toPath(), dep1File.toPath());
     TrackingBuildManager manager = new TrackingBuildManager();
     try {
@@ -76,6 +78,7 @@ public class BuildFailureTestWithDepDiscovery extends SimpleBuildTest {
     } catch (Exception e) {
     }
     validateThat(requiredFilesOf(manager).containsSameElements(mainFile, dep1File));
+    manager.getTracer().stop();
 
     Files.copy(dep1FileGood.toPath(), dep1File.toPath(), StandardCopyOption.REPLACE_EXISTING);
     manager = new TrackingBuildManager();
@@ -96,6 +99,7 @@ public class BuildFailureTestWithDepDiscovery extends SimpleBuildTest {
     } catch (Exception e) {
     }
     validateThat(requiredFilesOf(manager).containsSameElements(mainFile, dep1File, dep2File));
+    manager.getTracer().stop();
 
     Files.copy(dep1FileFail.toPath(), dep1File.toPath(), StandardCopyOption.REPLACE_EXISTING);
     manager = new TrackingBuildManager();

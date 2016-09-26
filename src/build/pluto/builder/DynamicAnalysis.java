@@ -98,7 +98,7 @@ public class DynamicAnalysis {
             otherReq.input);
         
         if (!overlapOK)
-          throw new DuplicateFileGenerationException("Build unit " + unit + " generates same file as build unit " + other);
+          throw new DuplicateFileGenerationException("Build unit " + unit + " generates same file (" + file + ") as build unit " + other);
       }
     }
   }

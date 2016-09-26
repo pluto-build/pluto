@@ -157,10 +157,12 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     List<FileDependency> fileDeps = manager.tracer.popDependencies();
     this.report(fileDeps.toString());
     for (FileDependency d: fileDeps) {
-      if (d.getMode() == FileAccessMode.READ_MODE)
-        this.require(d.getFile());
-      if (d.getMode() == FileAccessMode.WRITE_MODE)
-        this.provide(d.getFile());
+      if (!d.getFile().getAbsoluteFile().equals(this.persistentPath().getAbsoluteFile())) {
+        if (d.getMode() == FileAccessMode.READ_MODE)
+          this.require(d.getFile());
+        if (d.getMode() == FileAccessMode.WRITE_MODE)
+          this.provide(d.getFile());
+      }
     }
   }
 

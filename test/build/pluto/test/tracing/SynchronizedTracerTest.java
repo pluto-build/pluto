@@ -1,0 +1,62 @@
+package build.pluto.test.tracing;
+
+import build.pluto.test.build.ScopedBuildTest;
+import build.pluto.test.build.ScopedPath;
+import build.pluto.test.build.UnitValidators;
+import build.pluto.tracing.FileDependency;
+import build.pluto.tracing.ITracer;
+import build.pluto.tracing.SynchronizedTracer;
+import build.pluto.tracing.Tracer;
+import org.junit.Test;
+import org.sugarj.common.FileCommands;
+import org.sugarj.common.util.Predicate;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+/**
+ * Created by manuel on 9/21/16.
+ */
+public class SynchronizedTracerTest extends ScopedBuildTest {
+
+    private boolean find(List<FileDependency> deps, Predicate<FileDependency> predicate) {
+        for (FileDependency d: deps) {
+            if (predicate.isFullfilled(d))
+                return true;
+        }
+        return false;
+    }
+
+    @ScopedPath("test.txt")
+    private File testFile;
+
+    @Test
+    public void testSynchronized1() throws ITracer.TracingException, IOException {
+        SynchronizedTracer tracer = new SynchronizedTracer(new Tracer());
+
+        tracer.ensureStarted();
+
+        FileCommands.readFileAsString(testFile);
+
+        List<FileDependency> deps = tracer.popDependencies();
+
+        System.out.println(deps);
+
+        assert(find(deps, new Predicate<FileDependency>() {
+            @Override
+            public boolean isFullfilled(FileDependency fileDependency) {
+                return fileDependency.getFile().getAbsoluteFile().equals(testFile.getAbsoluteFile());
+            }
+        }));
+
+        deps = tracer.popDependencies();
+
+        assert(!find(deps, new Predicate<FileDependency>() {
+            @Override
+            public boolean isFullfilled(FileDependency fileDependency) {
+                return fileDependency.getFile().getAbsoluteFile().equals(testFile.getAbsoluteFile());
+            }
+        }));
+    }
+}

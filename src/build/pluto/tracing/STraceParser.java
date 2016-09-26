@@ -31,6 +31,9 @@ public class STraceParser {
     }
 
     private FileDependency tryParseLine(String line) {
+        if (line == null)
+            return null;
+
         Pattern r = Pattern.compile(MATCH_PATTERN);
 
         Matcher m = r.matcher(line);
