@@ -1,7 +1,10 @@
 package build.pluto.tracing;
 
+import org.sugarj.common.Log;
+
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,7 +48,9 @@ public class STraceParser {
 
             File file = new File(m.group(2));
 
-            return new FileDependency(mode, file);
+            long mils = (long)(Float.parseFloat(m.group(1))*1000);
+
+            return new FileDependency(mode, file, new Date(mils));
         }
 
         return null;

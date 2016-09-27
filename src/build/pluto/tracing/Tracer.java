@@ -25,7 +25,7 @@ public class Tracer implements ITracer {
         }
 
         // TODO: check if stracing is possible, not just parse correct lines in stop().
-        result = Exec.runNonBlocking("strace", "-f", "-q", "-e", "trace=open", "-t", "-p", Integer.toString(pid));
+        result = Exec.runNonBlocking("strace", "-f", "-q", "-e", "trace=open", "-ttt", "-p", Integer.toString(pid));
     }
 
     /**
