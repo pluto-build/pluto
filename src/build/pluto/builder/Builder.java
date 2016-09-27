@@ -146,6 +146,9 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
       }
       return res;
     } finally {
+      if (this.useFileDependencyDiscovery()) {
+        generateCurrentFileDependencies();
+      }
       this.result = null;
       this.previousResult = null;
       this.manager = null;

@@ -76,11 +76,11 @@ public class Tracer implements ITracer {
     public void stop() {
         // TODO: check here
         if (result != null) {
-            Log.log.log("Stopping tracer...", Log.ALWAYS);
+            Log.log.log("Stopping tracer...", Log.DETAIL);
             result.kill();
             readCount = 0;
-            STraceParser p = new STraceParser(result.errMsgs);
             result = null;
+            Log.log.log("Tracer stopped...", Log.DETAIL);
         }
     }
 

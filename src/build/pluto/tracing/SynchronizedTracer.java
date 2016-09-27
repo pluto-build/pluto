@@ -18,6 +18,7 @@ public class SynchronizedTracer implements ITracer {
     private ITracer baseTracer;
     private List<FileDependency> buffer;
     private File dummyFile = new File(PLUTO_HOME + "/dummy.tmp");
+    private static int TIMEOUT = 10000;
 
     public SynchronizedTracer(ITracer baseTracer) {
         this.baseTracer = baseTracer;
@@ -67,8 +68,11 @@ public class SynchronizedTracer implements ITracer {
             e.printStackTrace();
         }
 
+        long start = System.currentTimeMillis();
         while (!bufferContainsDummy()) {
             buffer.addAll(baseTracer.popDependencies());
+            if (System.currentTimeMillis() - start > TIMEOUT)
+                throw new RuntimeException("Could not synchronize tracer... Maybe tracer is not running anymore?");
         }
         return clearUpToDummy();
     }
@@ -82,6 +86,7 @@ public class SynchronizedTracer implements ITracer {
 
     @Override
     public void stop() {
+        this.buffer = new ArrayList<>();
         baseTracer.stop();
     }
 }

@@ -24,6 +24,7 @@ import build.pluto.util.IReporting;
 import build.pluto.util.IReporting.BuildReason;
 
 import com.cedarsoftware.util.DeepEquals;
+import org.sugarj.common.StringCommands;
 
 public class BuildManager extends BuildUnitProvider {
 
@@ -128,7 +129,7 @@ public class BuildManager extends BuildUnitProvider {
         checkInterrupt(false, dep, depResult, buildReq); // interrupt before consistency assertion because an interrupted build is never consistent. 
         assertConsistency(depResult);
       } finally {
-        report.messageFromSystem("Wrote " + dep, false, 10);
+        report.messageFromSystem("Wrote " + dep + " (gen: " + StringCommands.printListSeparated(depResult.getRequiredFiles(), ",") + "; prov: " + StringCommands.printListSeparated(depResult.getGeneratedFiles(), ",") + ")", false, 10);
         depResult.write();
       }
       

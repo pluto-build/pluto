@@ -78,6 +78,11 @@ public class STraceTest extends ScopedBuildTest {
         if (!foundFile) throw new Exception("Did not trace read file2...");
         if (foundWrongFile) throw new Exception("Did trace read file that should have been popped...");
 
+        // Test stopping and restarting
+        t.stop();
+        t.ensureStarted();
+        Thread.sleep(1000);
+
         // Test detecting write dependencies...
         FileCommands.writeToFile(file4, "hello world");
         Thread.sleep(100);

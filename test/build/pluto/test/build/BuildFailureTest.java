@@ -19,6 +19,7 @@ import build.pluto.builder.BuildRequest;
 import build.pluto.test.build.once.SimpleBuilder;
 import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 import build.pluto.test.build.once.SimpleRequirement;
+import org.sugarj.common.Log;
 
 public class BuildFailureTest extends SimpleBuildTest {
 
@@ -70,6 +71,7 @@ public class BuildFailureTest extends SimpleBuildTest {
   
   @Test
   public void testSuccessAfterFailureBuild() throws IOException {
+    Log.log.setLoggingLevel(Log.ALWAYS);
     Files.copy(dep1FileFail.toPath(), dep1File.toPath());
     TrackingBuildManager manager = new TrackingBuildManager();
     try {
