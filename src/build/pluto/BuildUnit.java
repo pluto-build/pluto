@@ -91,6 +91,19 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity imple
         requirements.add(new FileRequirement(file, stampOfFile));
     }
 
+    private boolean requirementsContains(File file) {
+        for (Requirement r: requirements) {
+            if (r instanceof FileRequirement && ((FileRequirement)r).file.getAbsoluteFile().equals(file.getAbsoluteFile()))
+                return true;
+        }
+        return false;
+    }
+
+    public void requiresOnce(File file, Stamp stampOfFile) {
+        if (!requirementsContains(file))
+            requires(file, stampOfFile);
+    }
+
     public <Out_ extends Output> void requires(BuildRequirement<Out_> req) {
         Objects.requireNonNull(req);
         requirements.add(req);
@@ -108,12 +121,29 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity imple
         requirements.add(req);
     }
 
+    private boolean generatesContain(File file) {
+        for (FileRequirement r: generatedFiles) {
+            if (r.file.getAbsoluteFile().equals(file.getAbsoluteFile()))
+                return true;
+        }
+        return false;
+    }
+
     public void generates(File file, Stamp stampOfFile) {
-        generatedFiles.add(new FileRequirement(file, stampOfFile));
+        generates(new FileRequirement(file, stampOfFile));
     }
 
     public void generates(FileRequirement req) {
         generatedFiles.add(req);
+    }
+
+    public void generatesOnce(File file, Stamp stampOfFile) {
+       generatesOnce(new FileRequirement(file, stampOfFile));
+    }
+
+    public void generatesOnce(FileRequirement req) {
+        if (generatesContain(req.file))
+            generatedFiles.add(req);
     }
 
 

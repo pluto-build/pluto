@@ -5,6 +5,7 @@ import java.util.Date;
 
 public class FileDependency {
     FileAccessMode mode;
+    boolean fileExisted;
     File file;
     Date date;
 
@@ -28,13 +29,25 @@ public class FileDependency {
         this.file = file;
     }
 
+    public boolean getFileExisted() {
+        return fileExisted;
+    }
+
+    public void setFileExisted(boolean fileExisted) {
+        this.fileExisted = fileExisted;
+    }
+
     public FileDependency(FileAccessMode mode, File file, Date date) {
         this.mode = mode;
         this.file = file;
         this.date = date;
+        this.fileExisted = true;
     }
 
     public String toString() {
-        return date.toString() + ": " + file.toString() + " (" + mode + ")";
+        String notExisting = "";
+        if (!fileExisted)
+            notExisting = " (X)";
+        return date.toString() + ": " + file.toString() + " (" + mode + notExisting + ")";
     }
 }

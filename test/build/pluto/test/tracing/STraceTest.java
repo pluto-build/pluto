@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.sugarj.common.FileCommands;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -87,7 +88,6 @@ public class STraceTest extends ScopedBuildTest {
         FileCommands.writeToFile(file4, "hello world");
         Thread.sleep(100);
         deps = t.popDependencies();
-        t.stop();
         System.out.println(deps);
         assert(deps.size() > 0);
         foundFile = false;
@@ -96,5 +96,7 @@ public class STraceTest extends ScopedBuildTest {
                 foundFile = true;
         }
         if (!foundFile) throw new Exception("Did not trace written file...");
+
+        t.stop();
     }
 }

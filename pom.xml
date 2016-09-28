@@ -19,7 +19,7 @@
 		<dependency>
 			<groupId>org.sugarj</groupId>
 			<artifactId>common</artifactId>
-			<version>1.7.1-SNAPSHOT</version>
+			<version>1.7.2-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>

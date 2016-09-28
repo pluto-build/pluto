@@ -50,7 +50,12 @@ public class STraceParser {
 
             long mils = (long)(Float.parseFloat(m.group(1))*1000);
 
-            return new FileDependency(mode, file, new Date(mils));
+            FileDependency dep = new FileDependency(mode, file, new Date(mils));
+            if (m.group(4).contains("ENO"))
+                dep.setFileExisted(false);
+
+
+            return dep;
         }
 
         return null;

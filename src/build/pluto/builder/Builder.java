@@ -162,9 +162,9 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     for (FileDependency d: fileDeps) {
       if (!d.getFile().getAbsoluteFile().equals(this.persistentPath().getAbsoluteFile())) {
         if (d.getMode() == FileAccessMode.READ_MODE)
-          this.require(d.getFile());
+          this.requireOnce(d.getFile());
         if (d.getMode() == FileAccessMode.WRITE_MODE)
-          this.provide(d.getFile());
+          this.provideOnce(d.getFile());
       }
     }
   }
@@ -323,6 +323,39 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   }
 
   /**
+   * Requires the given file stamped with the default stamper of this builder once. If it was already required, the call will be ignored.
+   * The call to require needs to be placed before any calculation is done which
+   * depends on the file.
+   *
+   * @param p
+   *          the required file
+   */
+  public void requireOnce(File p) {
+    requireOnce(p, defaultStamper.stampOf(p));
+  }
+
+  public void requireOnce(File p, Stamper stamper) {
+    requireOnce(p, stamper.stampOf(p));
+  }
+
+  public void requireOnce(File p, Stamp stamp) {
+    try {
+      result.requiresOnce(p, stamp);
+    } catch (IllegalDependencyException e) {
+      File path = result.getPersistentPath().getAbsoluteFile();
+      for (File f : e.deps)
+        if (f.getAbsoluteFile().equals(path))
+          try {
+            requireBuild(result.getGeneratedBy());
+            return;
+          } catch (IOException e1) {
+            throw new RuntimeException(e1);
+          }
+      throw e;
+    }
+  }
+
+  /**
    * States that this builder provides the given file. The provide call has to
    * be made after the file has been generated completely. The file is stamped
    * with the last modified stamper. As long the last modified time does not
@@ -351,6 +384,37 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   
   public void provide(FileRequirement req) {
     result.generates(req);
+  }
+
+  /**
+   * States that this builder provides the given file. The provide call has to
+   * be made after the file has been generated completely. The file is stamped
+   * with the last modified stamper. As long the last modified time does not
+   * change, the file is regarded as consistent.
+   *
+   * @param p
+   *          the provided file
+   */
+  public void provideOnce(File p) {
+    result.generatesOnce(p, LastModifiedStamper.instance.stampOf(p));
+  }
+
+  /**
+   * Provides the given file stamped with the given stamper. As long as the
+   * stamp does not change, the file is regarded as consistent.The provide call
+   * has to be made after the file has been generated completely.
+   *
+   * @param p
+   *          the provided file
+   * @param stamper
+   *          the stamper used to stamp the file
+   */
+  public void provideOnce(File p, Stamper stamper) {
+    result.generatesOnce(p, stamper.stampOf(p));
+  }
+
+  public void provideOnce(FileRequirement req) {
+    result.generatesOnce(req);
   }
 
 
