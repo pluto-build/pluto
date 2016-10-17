@@ -1,19 +1,5 @@
 package build.pluto.test.build;
 
-import static build.pluto.test.build.Validators.requiredFilesOf;
-import static build.pluto.test.build.Validators.validateThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import build.pluto.BuildUnit;
 import build.pluto.builder.BuildManagers;
 import build.pluto.builder.BuildRequest;
@@ -21,13 +7,29 @@ import build.pluto.builder.RequiredBuilderFailed;
 import build.pluto.test.build.once.SimpleBuilder;
 import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 import build.pluto.test.build.once.SimpleRequirement;
+import build.pluto.tracing.ITracer;
+import build.pluto.tracing.SynchronizedTracer;
+import build.pluto.tracing.Tracer;
+import org.junit.*;
 import org.sugarj.common.Log;
 
-public class BuildInterruptTest extends SimpleBuildTest {
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+
+import static build.pluto.test.build.Validators.requiredFilesOf;
+import static build.pluto.test.build.Validators.validateThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class BuildInterruptTestWithDepDiscovery extends SimpleBuildTest {
+
+  private static ITracer tracer = new SynchronizedTracer(new Tracer());
 
   @Override
   protected BuildRequest<?, ?, ?, ?> requirementForInput(TestBuilderInput input) {
-    return new SimpleRequirement(SimpleBuilder.factory, input);
+    return new SimpleRequirement(SimpleBuilder.factoryFileDepDiscovery, input);
   }
   
   private File mainFile;
@@ -51,12 +53,18 @@ public class BuildInterruptTest extends SimpleBuildTest {
     dep2File = getRelativeFile("dep2.txt");
     Log.log.setLoggingLevel(Log.ALWAYS);
   }
+
+  @AfterClass
+  public static void stopTracer() {
+    tracer.stop();
+  }
   
   @Test
   public void testSuccessfulBuild() throws IOException {
     Files.copy(dep0FileGood.toPath(), dep0File.toPath());
     Files.copy(dep1FileGood.toPath(), dep1File.toPath());
     TrackingBuildManager manager = new TrackingBuildManager();
+    manager.setTracer(tracer);
     buildMainFile(manager);
 
     validateThat(requiredFilesOf(manager).containsAll(mainFile, dep0File, dep1File, dep2File));
@@ -68,6 +76,7 @@ public class BuildInterruptTest extends SimpleBuildTest {
     Files.copy(dep0FileFail.toPath(), dep0File.toPath());
     Files.copy(dep1FileGood.toPath(), dep1File.toPath());
     TrackingBuildManager manager = new TrackingBuildManager();
+    manager.setTracer(tracer);
     try {
       buildMainFile(manager);
     } catch (RequiredBuilderFailed e) {
@@ -87,6 +96,7 @@ public class BuildInterruptTest extends SimpleBuildTest {
     Files.copy(dep0FileGood.toPath(), dep0File.toPath());
     Files.copy(dep1FileFail.toPath(), dep1File.toPath());
     TrackingBuildManager manager = new TrackingBuildManager();
+    manager.setTracer(tracer);
     try {
       buildMainFile(manager);
     } catch (RequiredBuilderFailed e) {
@@ -98,7 +108,6 @@ public class BuildInterruptTest extends SimpleBuildTest {
 
     BuildRequest<?,?,?,?> req = requirementForInput(new TestBuilderInput(testBasePath.toFile(), mainFile));
     BuildUnit<?> unit = BuildManagers.readResult(req);
-    Log.log.log(unit.getGeneratedFileRequirements(), Log.DETAIL);
     assertFalse(unit.isConsistent());
   }
 
@@ -107,6 +116,7 @@ public class BuildInterruptTest extends SimpleBuildTest {
     Files.copy(dep0FileGood.toPath(), dep0File.toPath());
     Files.copy(dep1FileFail.toPath(), dep1File.toPath());
     TrackingBuildManager manager = new TrackingBuildManager();
+    manager.setTracer(tracer);
     try {
       buildMainFile(manager);
     } catch (Exception e) {
@@ -115,6 +125,7 @@ public class BuildInterruptTest extends SimpleBuildTest {
     
     Files.copy(dep1FileGood.toPath(), dep1File.toPath(), StandardCopyOption.REPLACE_EXISTING);
     manager = new TrackingBuildManager();
+    manager.setTracer(tracer);
     try {
       buildMainFile(manager);
     } catch (Exception e) {
@@ -128,6 +139,7 @@ public class BuildInterruptTest extends SimpleBuildTest {
     Files.copy(dep0FileGood.toPath(), dep0File.toPath());
     Files.copy(dep1FileGood.toPath(), dep1File.toPath());
     TrackingBuildManager manager = new TrackingBuildManager();
+    manager.setTracer(tracer);
     try {
       buildMainFile(manager);
     } catch (Exception e) {
@@ -136,6 +148,7 @@ public class BuildInterruptTest extends SimpleBuildTest {
     
     Files.copy(dep1FileFail.toPath(), dep1File.toPath(), StandardCopyOption.REPLACE_EXISTING);
     manager = new TrackingBuildManager();
+    manager.setTracer(tracer);
     try {
       buildMainFile(manager);
     } catch (Exception e) {
@@ -149,6 +162,7 @@ public class BuildInterruptTest extends SimpleBuildTest {
     Files.copy(dep0FileGood.toPath(), dep0File.toPath());
     Files.copy(dep1FileFail.toPath(), dep1File.toPath());
     TrackingBuildManager manager = new TrackingBuildManager();
+    manager.setTracer(tracer);
     boolean failed = false;
     try {
       buildMainFile(manager);
@@ -158,6 +172,7 @@ public class BuildInterruptTest extends SimpleBuildTest {
     Assert.assertTrue(failed);
     
     manager = new TrackingBuildManager();
+    manager.setTracer(tracer);
     failed = false;
     try {
       buildMainFile(manager);

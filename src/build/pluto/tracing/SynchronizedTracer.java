@@ -18,7 +18,8 @@ public class SynchronizedTracer implements ITracer {
     private ITracer baseTracer;
     private List<FileDependency> buffer;
     private File dummyFile = new File(PLUTO_HOME + "/dummy.tmp");
-    private static int TIMEOUT = 10000;
+    private static int TIMEOUT = 1000;
+    private static int MAX_RETRIES = 5;
 
     public SynchronizedTracer(ITracer baseTracer) {
         this.baseTracer = baseTracer;
@@ -57,7 +58,19 @@ public class SynchronizedTracer implements ITracer {
         }
         baseTracer.ensureStarted();
         this.buffer = new ArrayList<>();
-        synchronize();
+        int tries = 0;
+        while (tries < MAX_RETRIES) {
+            try {
+                synchronize();
+                tries = MAX_RETRIES;
+            }
+            catch (TracingException te) {
+                Log.log.log("Couldn't synchronize tracer... Trying again.", Log.DETAIL);
+                tries++;
+                if (tries == MAX_RETRIES)
+                    throw te;
+            }
+        }
         this.buffer = new ArrayList<>();
     }
 
@@ -85,8 +98,25 @@ public class SynchronizedTracer implements ITracer {
     }
 
     @Override
+    public void pause() throws TracingException {
+        buffer.addAll(synchronize());
+        baseTracer.pause();
+    }
+
+    @Override
+    public void unpause() throws TracingException {
+        synchronize();
+        baseTracer.unpause();
+    }
+
+    @Override
     public void stop() {
         this.buffer = new ArrayList<>();
         baseTracer.stop();
+    }
+
+    @Override
+    public boolean isRunning() {
+        return baseTracer.isRunning();
     }
 }

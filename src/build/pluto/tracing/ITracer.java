@@ -16,5 +16,10 @@ public interface ITracer {
 
     List<FileDependency> popDependencies() throws TracingException;
 
+    void pause() throws TracingException;
+    void unpause() throws TracingException;
+
     void stop();
+
+    boolean isRunning();
 }

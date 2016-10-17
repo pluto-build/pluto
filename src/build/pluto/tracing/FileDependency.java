@@ -48,6 +48,6 @@ public class FileDependency {
         String notExisting = "";
         if (!fileExisted)
             notExisting = " (X)";
-        return date.toString() + ": " + file.toString() + " (" + mode + notExisting + ")";
+        return file.toString() + " (" + mode + notExisting + ")";
     }
 }

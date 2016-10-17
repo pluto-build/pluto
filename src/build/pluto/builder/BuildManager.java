@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import build.pluto.tracing.ITracer;
 import org.sugarj.common.Exec;
 
 import build.pluto.BuildUnit;
@@ -47,6 +48,12 @@ public class BuildManager extends BuildUnitProvider {
 
   private <Out extends Output> void checkInterrupt(boolean duringRequire, File dep, BuildUnit<Out> depResult, BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
     if (Thread.interrupted()) {
+      try {
+        if (tracer.isRunning())
+          tracer.pause();
+      } catch (ITracer.TracingException e) {
+        e.printStackTrace();
+      }
       if (depResult == null)
         depResult = BuildUnit.create(dep, buildReq);
       if (!duringRequire) {
@@ -54,6 +61,12 @@ public class BuildManager extends BuildUnitProvider {
         depResult.setState(BuildUnit.State.FAILURE);
       }
       report.canceledBuilderInterrupt(buildReq, depResult);
+      try {
+        if (tracer.isRunning())
+          tracer.unpause();
+      } catch (ITracer.TracingException e) {
+        e.printStackTrace();
+      }
       throw RequiredBuilderFailed.init(new BuildRequirement<Out>(depResult, buildReq), new InterruptedException("Build was interrupted"));
     }
   }

@@ -2,6 +2,7 @@ package build.pluto.tracing;
 
 import org.apache.commons.io.FileUtils;
 import org.sugarj.common.FileCommands;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.File;
 import java.io.IOException;
@@ -82,9 +83,27 @@ public class OutsideTracer implements ITracer {
     }
 
     @Override
+    public void pause() {
+        // TODO: Implement
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void unpause() {
+        // TODO: Implement
+        throw new NotImplementedException();
+    }
+
+    @Override
     public void stop() {
         // TODO: Is this right?
         if (tracingFile.exists())
             clearTracingFile();
+    }
+
+    @Override
+    public boolean isRunning() {
+        // TODO: Implement
+        throw new NotImplementedException();
     }
 }

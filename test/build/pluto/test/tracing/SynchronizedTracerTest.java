@@ -31,6 +31,9 @@ public class SynchronizedTracerTest extends ScopedBuildTest {
     @ScopedPath("test.txt")
     private File testFile;
 
+    @ScopedPath("test2.txt")
+    private File testFile2;
+
     @Test
     public void testSynchronized1() throws ITracer.TracingException, IOException {
         SynchronizedTracer tracer = new SynchronizedTracer(new Tracer());
@@ -56,6 +59,32 @@ public class SynchronizedTracerTest extends ScopedBuildTest {
             @Override
             public boolean isFullfilled(FileDependency fileDependency) {
                 return fileDependency.getFile().getAbsoluteFile().equals(testFile.getAbsoluteFile());
+            }
+        }));
+
+        tracer.pause();
+
+        FileCommands.readFileAsString(testFile2);
+
+        tracer.unpause();
+
+        FileCommands.readFileAsString(testFile);
+
+        deps = tracer.popDependencies();
+
+        System.out.println(deps);
+
+        assert(find(deps, new Predicate<FileDependency>() {
+            @Override
+            public boolean isFullfilled(FileDependency fileDependency) {
+                return fileDependency.getFile().getAbsoluteFile().equals(testFile.getAbsoluteFile());
+            }
+        }));
+
+        assert(!find(deps, new Predicate<FileDependency>() {
+            @Override
+            public boolean isFullfilled(FileDependency fileDependency) {
+                return fileDependency.getFile().getAbsoluteFile().equals(testFile2.getAbsoluteFile());
             }
         }));
     }

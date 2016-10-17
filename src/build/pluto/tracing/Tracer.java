@@ -25,8 +25,8 @@ public class Tracer implements ITracer {
         }
 
         // TODO: check if stracing is possible, not just parse correct lines in stop().
-        //result = Exec.runNonBlocking("strace", "-f", "-q", "-e", "trace=open", "-ttt", "-p", Integer.toString(pid));
-        result = new Exec(false).runNonBlockingWithPrefix("strace", null, "strace", "-f", "-q", "-e", "trace=open", "-ttt", "-p", Integer.toString(pid));
+        result = Exec.runNonBlocking("strace", "-f", "-q", "-e", "trace=open", "-ttt", "-p", Integer.toString(pid));
+        //result = new Exec(false).runNonBlockingWithPrefix("strace", null, "strace", "-f", "-q", "-e", "trace=open", "-ttt", "-p", Integer.toString(pid));
     }
 
     /**
@@ -63,11 +63,35 @@ public class Tracer implements ITracer {
         }*/
         if (result == null)
             throw new TracingException("Trace was not running...");
-        List<String> errMsgs = new ArrayList<>(result.peekErrMsgs());
+        /*List<String> errMsgs = new ArrayList<>(result.peekErrMsgs());
         List<String> newMsgs = errMsgs.subList(readCount, errMsgs.size());
         STraceParser p = new STraceParser(newMsgs.toArray(new String[newMsgs.size()]));
         readCount = errMsgs.size();
+        return p.readDependencies();*/
+        List<String> newMsgs = new ArrayList<>(result.popErrMsgs());
+        STraceParser p = new STraceParser(newMsgs.toArray(new String[newMsgs.size()]));
+        if (!pauseBuffer.isEmpty())
+        {
+            List<FileDependency> newDeps = p.readDependencies();
+            newDeps.addAll(pauseBuffer);
+            pauseBuffer.clear();
+            return newDeps;
+        }
         return p.readDependencies();
+    }
+
+    private List<FileDependency> pauseBuffer = new ArrayList<>();
+
+    @Override
+    public void pause() throws TracingException {
+        pauseBuffer = popDependencies();
+    }
+
+    public void unpause() throws TracingException {
+        if (result == null)
+            throw new TracingException("Tracer is not running...");
+
+        result.popErrMsgs();
     }
 
     /**
@@ -83,6 +107,11 @@ public class Tracer implements ITracer {
             result = null;
             Log.log.log("Tracer stopped...", Log.DETAIL);
         }
+    }
+
+    @Override
+    public boolean isRunning() {
+        return result != null;
     }
 
 }
