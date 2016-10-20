@@ -26,6 +26,7 @@ import build.pluto.tracing.FileAccessMode;
 import build.pluto.tracing.FileDependency;
 import build.pluto.tracing.ITracer;
 import build.pluto.tracing.Tracer;
+import org.sugarj.common.Log;
 
 /**
  * The builder class is the abstract base class of each builder. It contains an
@@ -145,9 +146,10 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
         //manager.tracer.stop();
       }
       return res;
-    } finally {
+    }
+    finally {
       if (this.useFileDependencyDiscovery()) {
-        generateCurrentFileDependencies();
+          generateCurrentFileDependencies();
       }
       this.result = null;
       this.previousResult = null;
@@ -157,15 +159,21 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   }
 
   private void generateCurrentFileDependencies() throws Tracer.TracingException {
-    List<FileDependency> fileDeps = manager.tracer.popDependencies();
-    this.report(fileDeps.toString());
-    for (FileDependency d: fileDeps) {
-      if (!d.getFile().getAbsoluteFile().equals(this.persistentPath().getAbsoluteFile())) {
-        if (d.getMode() == FileAccessMode.READ_MODE)
-          this.requireOnce(d.getFile());
-        if (d.getMode() == FileAccessMode.WRITE_MODE)
-          this.provideOnce(d.getFile());
+    if (!Thread.currentThread().isInterrupted()) {
+      List<FileDependency> fileDeps = manager.tracer.popDependencies();
+      this.report(fileDeps.toString());
+      for (FileDependency d : fileDeps) {
+        if (!d.getFile().getAbsoluteFile().equals(this.persistentPath().getAbsoluteFile())) {
+          if (d.getMode() == FileAccessMode.READ_MODE)
+            this.requireOnce(d.getFile());
+          if (d.getMode() == FileAccessMode.WRITE_MODE)
+            this.provideOnce(d.getFile());
+        }
       }
+    } else {
+      manager.tracer.popDependencies();
+      Log.log.log("Thread interrupted. No file dependencies are added...", Log.DETAIL);
+      Thread.currentThread().interrupt();
     }
   }
 

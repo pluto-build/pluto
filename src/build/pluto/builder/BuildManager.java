@@ -48,12 +48,6 @@ public class BuildManager extends BuildUnitProvider {
 
   private <Out extends Output> void checkInterrupt(boolean duringRequire, File dep, BuildUnit<Out> depResult, BuildRequest<?, Out, ?, ?> buildReq) throws IOException {
     if (Thread.interrupted()) {
-      try {
-        if (tracer.isRunning())
-          tracer.pause();
-      } catch (ITracer.TracingException e) {
-        e.printStackTrace();
-      }
       if (depResult == null)
         depResult = BuildUnit.create(dep, buildReq);
       if (!duringRequire) {
@@ -61,12 +55,6 @@ public class BuildManager extends BuildUnitProvider {
         depResult.setState(BuildUnit.State.FAILURE);
       }
       report.canceledBuilderInterrupt(buildReq, depResult);
-      try {
-        if (tracer.isRunning())
-          tracer.unpause();
-      } catch (ITracer.TracingException e) {
-        e.printStackTrace();
-      }
       throw RequiredBuilderFailed.init(new BuildRequirement<Out>(depResult, buildReq), new InterruptedException("Build was interrupted"));
     }
   }
@@ -142,7 +130,7 @@ public class BuildManager extends BuildUnitProvider {
         checkInterrupt(false, dep, depResult, buildReq); // interrupt before consistency assertion because an interrupted build is never consistent. 
         assertConsistency(depResult);
       } finally {
-        report.messageFromSystem("Wrote " + dep + " (gen: " + StringCommands.printListSeparated(depResult.getRequiredFiles(), ",") + "; prov: " + StringCommands.printListSeparated(depResult.getGeneratedFiles(), ",") + ")", false, 10);
+        report.messageFromSystem("Wrote " + dep + " (req: " + StringCommands.printListSeparated(depResult.getRequiredFiles(), ",") + "; prov: " + StringCommands.printListSeparated(depResult.getGeneratedFiles(), ",") + ")", false, 10);
         depResult.write();
       }
       
@@ -459,6 +447,6 @@ public class BuildManager extends BuildUnitProvider {
   }
 
   private <Out extends Output> void assertConsistency(BuildUnit<Out> depResult) {
-    assert depResult.isConsistentShallowReason() == InconsistenyReason.NO_REASON : "Build manager does not guarantee soundness, got consistency status " + depResult.isConsistentShallowReason() + " for " + depResult.getPersistentPath();
+    assert depResult.isConsistentShallowReason() == InconsistenyReason.NO_REASON : "Build manager does not guarantee soundness, got consistency status " + depResult.isConsistentShallowReason() + " for " + depResult.getPersistentPath() + ": " + depResult.getRequiredFiles();
   }
 }

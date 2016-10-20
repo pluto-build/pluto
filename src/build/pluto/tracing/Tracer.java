@@ -91,7 +91,7 @@ public class Tracer implements ITracer {
         if (result == null)
             throw new TracingException("Tracer is not running...");
 
-        result.popErrMsgs();
+        Log.log.log("Skipped msgs: " + result.popErrMsgs(), Log.DETAIL);
     }
 
     /**
