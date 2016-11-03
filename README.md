@@ -17,11 +17,10 @@ docker build -t pluto-docker .
 * Run docker image
 
 ```
-docker run -t -i --security-opt seccomp:unconfined -v /Users/<user>/:/share/home/ pluto-docker
+docker run -t -i --security-opt seccomp:unconfined -v <working copy>/:/share/pluto/ -w /share/pluto pluto-docker
 ```
 
 Boots into a terminal and shares home folder.
-Navigate to pluto repository folder (`/share/home/...`).
 Tests that include dependency discovery can then be run by
 
 ```
