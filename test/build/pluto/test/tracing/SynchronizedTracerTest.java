@@ -62,12 +62,6 @@ public class SynchronizedTracerTest extends ScopedBuildTest {
             }
         }));
 
-        tracer.pause();
-
-        FileCommands.readFileAsString(testFile2);
-
-        tracer.unpause();
-
         FileCommands.readFileAsString(testFile);
 
         deps = tracer.popDependencies();

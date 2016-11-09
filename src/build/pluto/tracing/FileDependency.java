@@ -44,6 +44,29 @@ public class FileDependency {
         this.fileExisted = true;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        FileDependency that = (FileDependency) o;
+
+        if (getFileExisted() != that.getFileExisted()) return false;
+        if (getMode() != that.getMode()) return false;
+        if (getFile() != null ? !getFile().equals(that.getFile()) : that.getFile() != null) return false;
+        return getDate() != null ? getDate().equals(that.getDate()) : that.getDate() == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getMode() != null ? getMode().hashCode() : 0;
+        result = 31 * result + (getFileExisted() ? 1 : 0);
+        result = 31 * result + (getFile() != null ? getFile().hashCode() : 0);
+        result = 31 * result + (getDate() != null ? getDate().hashCode() : 0);
+        return result;
+    }
+
     public String toString() {
         String notExisting = "";
         if (!fileExisted)

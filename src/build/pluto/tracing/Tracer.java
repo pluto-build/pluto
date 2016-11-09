@@ -2,9 +2,13 @@ package build.pluto.tracing;
 
 import build.pluto.util.SystemUtils;
 import org.sugarj.common.Exec;
+import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
+import org.sugarj.common.StringCommands;
+import org.sugarj.common.path.AbsolutePath;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,11 +17,24 @@ import java.util.List;
  */
 public class Tracer implements ITracer {
 
-
+    final File logFile;
 
     Exec.NonBlockingExecutionResult result;
 
+    public Tracer() {
+        this.logFile = null;
+    }
+
+    public Tracer(File logFile) {
+        this.logFile = logFile;
+    }
+
     private void runTracer() throws TracingException {
+
+        if (logFile != null && logFile.exists())
+            logFile.delete();
+
+
         int pid = SystemUtils.getCurrentProcessID();
 
         if (pid == -1) {
@@ -69,29 +86,18 @@ public class Tracer implements ITracer {
         readCount = errMsgs.size();
         return p.readDependencies();*/
         List<String> newMsgs = new ArrayList<>(result.popErrMsgs());
-        STraceParser p = new STraceParser(newMsgs.toArray(new String[newMsgs.size()]));
-        if (!pauseBuffer.isEmpty())
-        {
-            List<FileDependency> newDeps = p.readDependencies();
-            newDeps.addAll(pauseBuffer);
-            pauseBuffer.clear();
-            return newDeps;
+
+        if (logFile != null && newMsgs.size() > 0) {
+            try {
+                FileCommands.appendToFile(new AbsolutePath(logFile.getAbsolutePath()), StringCommands.printListSeparated(newMsgs, "\n") + "\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+
+        STraceParser p = new STraceParser(newMsgs.toArray(new String[newMsgs.size()]));
+
         return p.readDependencies();
-    }
-
-    private List<FileDependency> pauseBuffer = new ArrayList<>();
-
-    @Override
-    public void pause() throws TracingException {
-        pauseBuffer = popDependencies();
-    }
-
-    public void unpause() throws TracingException {
-        if (result == null)
-            throw new TracingException("Tracer is not running...");
-
-        Log.log.log("Skipped msgs: " + result.popErrMsgs(), Log.DETAIL);
     }
 
     /**

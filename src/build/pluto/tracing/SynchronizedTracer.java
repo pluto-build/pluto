@@ -1,12 +1,15 @@
 package build.pluto.tracing;
 
+import org.fusesource.jansi.Ansi;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import static build.pluto.builder.Builder.PLUTO_HOME;
 
@@ -17,8 +20,8 @@ public class SynchronizedTracer implements ITracer {
 
     private ITracer baseTracer;
     private List<FileDependency> buffer;
-    private File dummyFile = new File(PLUTO_HOME + "/dummy.tmp");
-    private static int TIMEOUT = 1000;
+    //private File lastDummyFile;
+    private static int TIMEOUT = 10000;
     private static int MAX_RETRIES = 5;
 
     public SynchronizedTracer(ITracer baseTracer) {
@@ -26,87 +29,112 @@ public class SynchronizedTracer implements ITracer {
         this.buffer = new ArrayList<>();
     }
 
-    private boolean bufferContainsDummy() {
+    /*private boolean bufferContainsFile(File file) {
         for (FileDependency d: buffer) {
-            if (d.getFile().getAbsoluteFile().equals(dummyFile.getAbsoluteFile())) {
+            if (d.getFile().getAbsoluteFile().equals(file.getAbsoluteFile())) {
                 return true;
             }
         }
         return false;
     }
 
-    private List<FileDependency> clearUpToDummy() {
+      private List<FileDependency> clearUpToDummy() {
         List<FileDependency> deps = new ArrayList<>();
 
         if (bufferContainsDummy()) {
-            while (!buffer.get(0).getFile().getAbsoluteFile().equals(dummyFile.getAbsoluteFile())) {
+            while (!buffer.get(0).getFile().getAbsoluteFile().toString().endsWith("synchronize.plutodummy")) {
                 deps.add(buffer.remove(0));
             }
             buffer.remove(0);
             if (bufferContainsDummy())
                 deps.addAll(clearUpToDummy());
+        } else {
+            deps.addAll(buffer);
+            buffer.clear();
         }
         return deps;
+    }*/
+
+    Random r = new Random();
+
+    private File newDummyFile() {
+        return new File(PLUTO_HOME + "/" + r.nextInt() + "synchronize.plutodummy");
     }
 
     @Override
     public void ensureStarted() throws TracingException {
+        File dummy = newDummyFile();
         try {
-            FileCommands.writeToFile(dummyFile, "");
+            FileCommands.readFileLines(dummy);
         } catch (IOException e) {
-            e.printStackTrace();
         }
-        baseTracer.ensureStarted();
         this.buffer = new ArrayList<>();
         int tries = 0;
         while (tries < MAX_RETRIES) {
             try {
-                synchronize();
+                baseTracer.ensureStarted();
+                synchronize(newDummyFile());
                 tries = MAX_RETRIES;
             }
             catch (TracingException te) {
-                Log.log.log("Couldn't synchronize tracer... Trying again.", Log.DETAIL);
+                Log.log.log("Couldn't synchronize tracer... Trying again.", Log.DETAIL, Ansi.Color.RED);
                 tries++;
                 if (tries == MAX_RETRIES)
                     throw te;
             }
         }
         this.buffer = new ArrayList<>();
+        Log.log.log("Tracer started and synchronized...", Log.DETAIL);
     }
 
-    private List<FileDependency> synchronize() throws TracingException {
+    public List<FileDependency> synchronize(File dummy) throws TracingException {
         try {
-            FileCommands.readFileAsString(dummyFile);
+            FileCommands.readFileAsString(dummy);
         } catch (IOException e) {
-            e.printStackTrace();
         }
 
+        List<FileDependency> result = new ArrayList<>();
+        result.addAll(buffer);
+        buffer.clear();
+
         long start = System.currentTimeMillis();
-        while (!bufferContainsDummy()) {
-            buffer.addAll(baseTracer.popDependencies());
+
+        boolean foundDummy = false;
+        while (!foundDummy) {
+            for (FileDependency fd : baseTracer.popDependencies()) {
+                if (foundDummy)
+                    buffer.add(fd);
+                else if (fd.getFile().getAbsolutePath().equals(dummy.getAbsolutePath())) {
+                    foundDummy = true;
+                } else if (!fd.getFile().getAbsolutePath().endsWith("synchronize.plutodummy")) {
+                    result.add(fd);
+                }
+            }
             if (System.currentTimeMillis() - start > TIMEOUT)
-                throw new RuntimeException("Could not synchronize tracer... Maybe tracer is not running anymore?");
+                throw new TracingException("Could not synchronize tracer... Maybe tracer is not running anymore?");
         }
-        return clearUpToDummy();
+        return result;
+
+        /*while (!bufferContainsDummy()) {
+            buffer.addAll(baseTracer.popDependencies());
+            if (System.currentTimeMillis() - start > TIMEOUT) {
+                if (retries < MAX_RETRIES) {
+                    retries++;
+                    Log.log.log("Could not synchronize tracer... Trying again.", Log.DETAIL, Ansi.Color.RED);
+                    synchronize();
+                    retries = 0;
+                    return buffer;
+                } else {
+                    throw new TracingException("Could not synchronize tracer... Maybe tracer is not running anymore?");
+                }
+            }
+        }
+        return clearUpToDummy();*/
     }
 
     @Override
     public List<FileDependency> popDependencies() throws TracingException {
-        buffer.addAll(baseTracer.popDependencies());
-
-        return synchronize();
-    }
-
-    @Override
-    public void pause() throws TracingException {
-        buffer.addAll(synchronize());
-        baseTracer.pause();
-    }
-
-    @Override
-    public void unpause() throws TracingException {
-        synchronize();
-        baseTracer.unpause();
+        return synchronize(newDummyFile());
     }
 
     @Override

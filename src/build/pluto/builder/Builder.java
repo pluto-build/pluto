@@ -26,6 +26,7 @@ import build.pluto.tracing.FileAccessMode;
 import build.pluto.tracing.FileDependency;
 import build.pluto.tracing.ITracer;
 import build.pluto.tracing.Tracer;
+import org.fusesource.jansi.Ansi;
 import org.sugarj.common.Log;
 
 /**
@@ -161,7 +162,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
   private void generateCurrentFileDependencies() throws Tracer.TracingException {
     if (!Thread.currentThread().isInterrupted()) {
       List<FileDependency> fileDeps = manager.tracer.popDependencies();
-      this.report(fileDeps.toString());
+      Log.log.log(fileDeps.toString(), Log.DETAIL, Ansi.Color.BLUE);
       for (FileDependency d : fileDeps) {
         if (!d.getFile().getAbsoluteFile().equals(this.persistentPath().getAbsoluteFile())) {
           if (d.getMode() == FileAccessMode.READ_MODE)
@@ -172,7 +173,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
       }
     } else {
       manager.tracer.popDependencies();
-      Log.log.log("Thread interrupted. No file dependencies are added...", Log.DETAIL);
+      Log.log.log("Thread interrupted. No file dependencies are added...", Log.DETAIL, Ansi.Color.BLUE);
       Thread.currentThread().interrupt();
     }
   }

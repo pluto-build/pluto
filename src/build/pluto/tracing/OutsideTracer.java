@@ -83,18 +83,6 @@ public class OutsideTracer implements ITracer {
     }
 
     @Override
-    public void pause() {
-        // TODO: Implement
-        throw new NotImplementedException();
-    }
-
-    @Override
-    public void unpause() {
-        // TODO: Implement
-        throw new NotImplementedException();
-    }
-
-    @Override
     public void stop() {
         // TODO: Is this right?
         if (tracingFile.exists())

@@ -1,5 +1,6 @@
 package build.pluto.tracing;
 
+import org.fusesource.jansi.Ansi;
 import org.sugarj.common.Log;
 
 import java.io.File;
@@ -15,6 +16,7 @@ import java.util.regex.Pattern;
 public class STraceParser {
 
     private static String MATCH_PATTERN = ".* (.*) open\\(\"(.*)\",(.*)\\) = (.*)";
+    private static String MATCH_PATTERN_PARTIAL = ".* (.*) open\\(\"(.*)\",(.*) \\<unfinished \\.\\.\\.\\>";
     private String[] lines;
 
     public STraceParser(String[] lines) {
@@ -48,7 +50,7 @@ public class STraceParser {
 
             File file = new File(m.group(2));
 
-            long mils = (long)(Float.parseFloat(m.group(1))*1000);
+            long mils = (long) (Float.parseFloat(m.group(1)) * 1000);
 
             FileDependency dep = new FileDependency(mode, file, new Date(mils));
             if (m.group(4).contains("ENO"))
@@ -56,6 +58,32 @@ public class STraceParser {
 
 
             return dep;
+        } else {
+            Pattern rp = Pattern.compile(MATCH_PATTERN_PARTIAL);
+
+            Matcher mp = rp.matcher(line);
+
+            if (mp.find()) {
+                FileAccessMode mode = null;
+                if (mp.group(3).contains("O_RDONLY")) mode = FileAccessMode.READ_MODE;
+                if (mp.group(3).contains("O_WRONLY")) mode = FileAccessMode.WRITE_MODE;
+                if (mp.group(3).contains("O_RDWR")) mode = FileAccessMode.WRITE_MODE;
+
+                File file = new File(mp.group(2));
+
+                long mils = (long) (Float.parseFloat(mp.group(1)) * 1000);
+
+                FileDependency dep = new FileDependency(mode, file, new Date(mils));
+
+                // TODO: This is not accurate...
+                dep.setFileExisted(true);
+
+                Log.log.log("[STRACE] Found partial match: " + line, Log.DETAIL, Ansi.Color.RED);
+
+                return dep;
+            } else /*if (line.contains("dummy"))*/ {
+                Log.log.log("[STRACE] Not parsed: " + line, Log.DETAIL, Ansi.Color.YELLOW);
+            }
         }
 
         return null;
