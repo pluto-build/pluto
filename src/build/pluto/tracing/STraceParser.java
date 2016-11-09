@@ -81,7 +81,7 @@ public class STraceParser {
                 Log.log.log("[STRACE] Found partial match: " + line, Log.DETAIL, Ansi.Color.RED);
 
                 return dep;
-            } else /*if (line.contains("dummy"))*/ {
+            } else if (!line.isEmpty()) {
                 Log.log.log("[STRACE] Not parsed: " + line, Log.DETAIL, Ansi.Color.YELLOW);
             }
         }

@@ -23,7 +23,7 @@ import static build.pluto.test.build.Validators.list;
 public class SynchronizedTracerTest2 extends ScopedBuildTest {
 
     private boolean find(List<FileDependency> deps, Predicate<FileDependency> predicate) {
-        for (FileDependency d: deps) {
+        for (FileDependency d : deps) {
             if (predicate.isFullfilled(d))
                 return true;
         }
@@ -50,6 +50,11 @@ public class SynchronizedTracerTest2 extends ScopedBuildTest {
 
         @Override
         public void ensureStarted() throws TracingException {
+
+        }
+
+        @Override
+        public void start() throws TracingException {
 
         }
 
@@ -120,9 +125,9 @@ public class SynchronizedTracerTest2 extends ScopedBuildTest {
     }
 
     @Test
-    public void testSynchronized500() throws ITracer.TracingException, IOException {
+    public void testSynchronized500() throws ITracer.TracingException, IOException, InterruptedException {
         Log.log.setLoggingLevel(Log.ALWAYS);
-        SynchronizedTracer tracer = new SynchronizedTracer(new Tracer());
+        ITracer tracer = new SynchronizedTracer(new TracerCommonsExec());
 
         tracer.ensureStarted();
 
@@ -131,16 +136,20 @@ public class SynchronizedTracerTest2 extends ScopedBuildTest {
             Log.log.log("Reading: " + f, Log.DETAIL);
             try {
                 FileCommands.readFileLines(f);
-            } catch (IOException e) {}
+            } catch (IOException e) {
+            }
 
             List<FileDependency> deps = tracer.popDependencies();
             Log.log.log(deps, Log.DETAIL);
-            assert(find(deps, new Predicate<FileDependency>() {
+            assert (find(deps, new Predicate<FileDependency>() {
                 @Override
                 public boolean isFullfilled(FileDependency fileDependency) {
                     return fileDependency.getFile().getAbsoluteFile().toString().equals(f.getAbsoluteFile().toString());
                 }
             }));
         }
+        /*Thread.sleep(2000);
+        List<FileDependency> deps = tracer.popDependencies();
+        Log.log.log(deps, Log.DETAIL);*/
     }
 }

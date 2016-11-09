@@ -7,9 +7,7 @@ import build.pluto.builder.RequiredBuilderFailed;
 import build.pluto.test.build.once.SimpleBuilder;
 import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 import build.pluto.test.build.once.SimpleRequirement;
-import build.pluto.tracing.ITracer;
-import build.pluto.tracing.SynchronizedTracer;
-import build.pluto.tracing.Tracer;
+import build.pluto.tracing.*;
 import org.junit.*;
 import org.sugarj.common.Log;
 
@@ -25,7 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 public class BuildInterruptTestWithDepDiscovery extends SimpleBuildTest {
 
-  private static ITracer tracer = new SynchronizedTracer(new Tracer());
+  private static ITracer tracer = TracingProvider.getTracer();
 
   @Override
   protected BuildRequest<?, ?, ?, ?> requirementForInput(TestBuilderInput input) {
@@ -54,10 +52,10 @@ public class BuildInterruptTestWithDepDiscovery extends SimpleBuildTest {
     Log.log.setLoggingLevel(Log.ALWAYS);
   }
 
-  @AfterClass
+  /*@AfterClass
   public static void stopTracer() {
     tracer.stop();
-  }
+  }*/
   
   @Test
   public void testSuccessfulBuild() throws IOException {

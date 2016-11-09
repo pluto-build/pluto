@@ -22,7 +22,7 @@ public class SynchronizedTracer implements ITracer {
     private List<FileDependency> buffer;
     //private File lastDummyFile;
     private static int TIMEOUT = 10000;
-    private static int MAX_RETRIES = 5;
+    private static int MAX_RETRIES = 3;
 
     public SynchronizedTracer(ITracer baseTracer) {
         this.baseTracer = baseTracer;
@@ -85,6 +85,11 @@ public class SynchronizedTracer implements ITracer {
         }
         this.buffer = new ArrayList<>();
         Log.log.log("Tracer started and synchronized...", Log.DETAIL);
+    }
+
+    @Override
+    public void start() throws TracingException {
+        baseTracer.start();
     }
 
     public List<FileDependency> synchronize(File dummy) throws TracingException {

@@ -29,7 +29,8 @@ public class Tracer implements ITracer {
         this.logFile = logFile;
     }
 
-    private void runTracer() throws TracingException {
+    @Override
+    public void start() throws TracingException {
 
         if (logFile != null && logFile.exists())
             logFile.delete();
@@ -42,8 +43,8 @@ public class Tracer implements ITracer {
         }
 
         // TODO: check if stracing is possible, not just parse correct lines in stop().
-        result = Exec.runNonBlocking("strace", "-f", "-q", "-e", "trace=open", "-ttt", "-p", Integer.toString(pid));
-        //result = new Exec(false).runNonBlockingWithPrefix("strace", null, "strace", "-f", "-q", "-e", "trace=open", "-ttt", "-p", Integer.toString(pid));
+        //result = Exec.runNonBlocking("strace", "-f", "-q", "-e", "trace=open", "-ttt", "-p", Integer.toString(pid));
+        result = new Exec(false).runNonBlockingWithPrefix("strace", null, "strace", "-f", "-q", "-e", "trace=open", "-ttt", "-p", Integer.toString(pid));
     }
 
     /**
@@ -57,7 +58,7 @@ public class Tracer implements ITracer {
             e.printStackTrace();
         }*/
         if (result == null)
-            runTracer();
+            start();
         popDependencies();
     }
 

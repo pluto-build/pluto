@@ -13,6 +13,7 @@ public interface ITracer {
     }
 
     void ensureStarted() throws TracingException;
+    void start() throws TracingException;
 
     List<FileDependency> popDependencies() throws TracingException;
 

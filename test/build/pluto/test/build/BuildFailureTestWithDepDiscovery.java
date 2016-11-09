@@ -6,9 +6,7 @@ import build.pluto.builder.BuildRequest;
 import build.pluto.test.build.once.SimpleBuilder;
 import build.pluto.test.build.once.SimpleBuilder.TestBuilderInput;
 import build.pluto.test.build.once.SimpleRequirement;
-import build.pluto.tracing.ITracer;
-import build.pluto.tracing.SynchronizedTracer;
-import build.pluto.tracing.Tracer;
+import build.pluto.tracing.*;
 import org.junit.*;
 import org.sugarj.common.Log;
 
@@ -34,7 +32,7 @@ public class BuildFailureTestWithDepDiscovery extends SimpleBuildTest {
   private File dep1FileFail;
   private File dep2File;
 
-  private static ITracer tracer = new SynchronizedTracer(new Tracer());
+  private static ITracer tracer = TracingProvider.getTracer();
   
   @Before
   public void makeConsistentState() throws IOException{
@@ -46,11 +44,11 @@ public class BuildFailureTestWithDepDiscovery extends SimpleBuildTest {
     dep2File = getRelativeFile("dep2.txt");
   }
 
-  @AfterClass
+  /*@AfterClass
   public static void stopTracer() {
     Log.log.log("Stopping tracer...", Log.DETAIL);
     tracer.stop();
-  }
+  }*/
   
   @Test
   public void testSuccessfulBuild() throws IOException {

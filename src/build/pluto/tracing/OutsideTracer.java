@@ -66,6 +66,11 @@ public class OutsideTracer implements ITracer {
     }
 
     @Override
+    public void start() throws TracingException {
+        ensureStarted();
+    }
+
+    @Override
     public List<FileDependency> popDependencies() throws TracingException {
         List<String> lines = null;
         List<FileDependency> dependencies = new ArrayList<>();

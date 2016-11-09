@@ -387,8 +387,8 @@ public class BuildManager extends BuildUnitProvider {
       report.finishedBuildRequirement(buildReq);
     }
 
-    if (requireStack.callStack.isEmpty())
-      tracer.stop();
+    //if (requireStack.callStack.isEmpty())
+    //  tracer.stop();
 
     return yield(buildReq, builder, depResult);
   }
