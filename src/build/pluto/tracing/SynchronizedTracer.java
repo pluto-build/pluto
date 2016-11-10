@@ -29,32 +29,6 @@ public class SynchronizedTracer implements ITracer {
         this.buffer = new ArrayList<>();
     }
 
-    /*private boolean bufferContainsFile(File file) {
-        for (FileDependency d: buffer) {
-            if (d.getFile().getAbsoluteFile().equals(file.getAbsoluteFile())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-      private List<FileDependency> clearUpToDummy() {
-        List<FileDependency> deps = new ArrayList<>();
-
-        if (bufferContainsDummy()) {
-            while (!buffer.get(0).getFile().getAbsoluteFile().toString().endsWith("synchronize.plutodummy")) {
-                deps.add(buffer.remove(0));
-            }
-            buffer.remove(0);
-            if (bufferContainsDummy())
-                deps.addAll(clearUpToDummy());
-        } else {
-            deps.addAll(buffer);
-            buffer.clear();
-        }
-        return deps;
-    }*/
-
     Random r = new Random();
 
     private File newDummyFile() {
@@ -119,22 +93,6 @@ public class SynchronizedTracer implements ITracer {
                 throw new TracingException("Could not synchronize tracer... Maybe tracer is not running anymore?");
         }
         return result;
-
-        /*while (!bufferContainsDummy()) {
-            buffer.addAll(baseTracer.popDependencies());
-            if (System.currentTimeMillis() - start > TIMEOUT) {
-                if (retries < MAX_RETRIES) {
-                    retries++;
-                    Log.log.log("Could not synchronize tracer... Trying again.", Log.DETAIL, Ansi.Color.RED);
-                    synchronize();
-                    retries = 0;
-                    return buffer;
-                } else {
-                    throw new TracingException("Could not synchronize tracer... Maybe tracer is not running anymore?");
-                }
-            }
-        }
-        return clearUpToDummy();*/
     }
 
     @Override

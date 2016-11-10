@@ -127,7 +127,7 @@ public class SynchronizedTracerTest2 extends ScopedBuildTest {
     @Test
     public void testSynchronized500() throws ITracer.TracingException, IOException, InterruptedException {
         Log.log.setLoggingLevel(Log.ALWAYS);
-        ITracer tracer = new SynchronizedTracer(new TracerCommonsExec());
+        ITracer tracer = TracingProvider.getTracer();
 
         tracer.ensureStarted();
 
