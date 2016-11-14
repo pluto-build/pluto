@@ -52,10 +52,10 @@ public class BuildInterruptTestWithDepDiscovery extends SimpleBuildTest {
     Log.log.setLoggingLevel(Log.ALWAYS);
   }
 
-  /*@AfterClass
+  @AfterClass
   public static void stopTracer() {
     tracer.stop();
-  }*/
+  }
   
   @Test
   public void testSuccessfulBuild() throws IOException {

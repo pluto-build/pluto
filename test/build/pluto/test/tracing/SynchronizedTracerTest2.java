@@ -3,6 +3,7 @@ package build.pluto.test.tracing;
 import build.pluto.test.build.ScopedBuildTest;
 import build.pluto.test.build.ScopedPath;
 import build.pluto.tracing.*;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
@@ -151,5 +152,10 @@ public class SynchronizedTracerTest2 extends ScopedBuildTest {
         /*Thread.sleep(2000);
         List<FileDependency> deps = tracer.popDependencies();
         Log.log.log(deps, Log.DETAIL);*/
+    }
+
+    @AfterClass
+    public static void stopTracer() {
+        TracingProvider.getTracer().stop();
     }
 }

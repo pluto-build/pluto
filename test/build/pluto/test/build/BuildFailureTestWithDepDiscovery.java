@@ -44,11 +44,11 @@ public class BuildFailureTestWithDepDiscovery extends SimpleBuildTest {
     dep2File = getRelativeFile("dep2.txt");
   }
 
-  /*@AfterClass
+  @AfterClass
   public static void stopTracer() {
     Log.log.log("Stopping tracer...", Log.DETAIL);
     tracer.stop();
-  }*/
+  }
   
   @Test
   public void testSuccessfulBuild() throws IOException {

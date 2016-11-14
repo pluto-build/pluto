@@ -15,7 +15,7 @@ public class TraceNonExistingFileAccessesTest {
 
     @Test
     public void testNonExistingFileAccesses() throws Exception {
-        SynchronizedTracer t = new SynchronizedTracer(new Tracer());
+        ITracer t = TracingProvider.getTracer();
         t.ensureStarted();
 
         // test read nonexisting file

@@ -3,10 +3,7 @@ package build.pluto.test.tracing;
 import build.pluto.test.build.ScopedBuildTest;
 import build.pluto.test.build.ScopedPath;
 import build.pluto.test.build.UnitValidators;
-import build.pluto.tracing.FileDependency;
-import build.pluto.tracing.ITracer;
-import build.pluto.tracing.SynchronizedTracer;
-import build.pluto.tracing.Tracer;
+import build.pluto.tracing.*;
 import org.junit.Test;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.util.Predicate;
@@ -36,7 +33,7 @@ public class SynchronizedTracerTest extends ScopedBuildTest {
 
     @Test
     public void testSynchronized1() throws ITracer.TracingException, IOException {
-        SynchronizedTracer tracer = new SynchronizedTracer(new Tracer());
+        ITracer tracer = TracingProvider.getTracer();
 
         tracer.ensureStarted();
 
@@ -81,5 +78,7 @@ public class SynchronizedTracerTest extends ScopedBuildTest {
                 return fileDependency.getFile().getAbsoluteFile().equals(testFile2.getAbsoluteFile());
             }
         }));
+
+        tracer.stop();
     }
 }

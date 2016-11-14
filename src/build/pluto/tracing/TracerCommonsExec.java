@@ -2,17 +2,11 @@ package build.pluto.tracing;
 
 import build.pluto.util.SystemUtils;
 import org.apache.commons.exec.*;
-import org.apache.commons.io.input.ReaderInputStream;
-import org.fusesource.jansi.Ansi;
-import org.sugarj.common.Exec;
-import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
-import org.sugarj.common.StringCommands;
-import org.sugarj.common.path.AbsolutePath;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -42,6 +36,9 @@ public class TracerCommonsExec implements ITracer {
         if (logFile != null && logFile.exists())
             logFile.delete();
 
+        if (isRunning())
+            stop();
+
 
         int pid = SystemUtils.getCurrentProcessID();
 
@@ -64,6 +61,7 @@ public class TracerCommonsExec implements ITracer {
         };
         PumpStreamHandler streamHandler = new PumpStreamHandler(null, errStream);
         executor.setStreamHandler(streamHandler);
+        executor.setWatchdog(new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT));
         try {
             executor.execute(CommandLine.parse("strace -f -q -e trace=open -ttt -p"+ Integer.toString(pid)),resultHandler);
             Log.log.log("Started tracer...", Log.DETAIL);
@@ -103,7 +101,6 @@ public class TracerCommonsExec implements ITracer {
     public void stop() {
         // TODO: check here
         if (executor != null) {
-            Log.log.log("Stopping tracer...", Log.DETAIL);
             executor.getWatchdog().destroyProcess();
             executor = null;
             errStream = null;
