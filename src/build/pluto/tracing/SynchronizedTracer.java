@@ -47,6 +47,10 @@ public class SynchronizedTracer implements ITracer {
         while (tries < MAX_RETRIES) {
             try {
                 baseTracer.ensureStarted();
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                }
                 synchronize(newDummyFile());
                 tries = MAX_RETRIES;
             }
