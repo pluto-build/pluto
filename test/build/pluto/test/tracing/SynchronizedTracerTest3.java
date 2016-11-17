@@ -17,6 +17,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import static build.pluto.test.build.Validators.list;
 import static build.pluto.test.build.Validators.validateThat;
@@ -122,6 +125,71 @@ public class SynchronizedTracerTest3 extends ScopedBuildTest {
             assert (found);
         }
         Log.log.log("Stray dependencies: " + deps, Log.CORE, Ansi.Color.RED);
+    }
+
+    @Test
+    public void testMultithreadedTracing() throws ITracer.TracingException, InterruptedException {
+        final int threads = 50;
+        final int par_threads = 4;
+        final int files = 10;
+
+        Log.log.setLoggingLevel(Log.ALWAYS);
+        ITracer tracer = TracingProvider.getTracer();
+
+        tracer.ensureStarted();
+
+        CountDownLatch doneSignal = new CountDownLatch(threads);
+
+        Executor e = new ScheduledThreadPoolExecutor(par_threads);
+
+        for (int i = 0; i < threads; ++i) // create and start threads
+            e.execute(new Thread(new Worker(doneSignal, i, files)));
+
+        doneSignal.await();           // wait for all to finish
+
+        List<FileDependency> deps = tracer.popDependencies();
+        for (int i = 0; i < threads; i++) {
+            for (int j = 0; j < files; j++) {
+                boolean found = false;
+                for (int k = 0; k < deps.size(); k++) {
+                    final String filePath = "/tmp/thread" + i + "_" + j + ".notexisting";
+                    if (deps.get(k).getFile().getAbsolutePath().equals(filePath)) {
+                        deps.remove(k);
+                        found = true;
+                        break;
+                    }
+                }
+                assert (found);
+            }
+        }
+    }
+
+
+    class Worker implements Runnable {
+        private final CountDownLatch doneSignal;
+        private final int num;
+        private final int num_files;
+        Worker(CountDownLatch doneSignal, int num, int num_files) {
+            this.doneSignal = doneSignal;
+            this.num = num;
+            this.num_files = num_files;
+        }
+        public void run() {
+            doWork();
+            doneSignal.countDown();
+        }
+
+        void doWork() {
+            Log.log.log("Worker " + num + " started...", Log.CORE);
+            for (int i = 0; i < num_files; i++) {
+                final File f = new File("/tmp/thread" + num + "_" + i + ".notexisting");
+                try {
+                    FileCommands.readFileLines(f);
+                } catch (IOException e) {
+                }
+            }
+            Log.log.log("Worker " + num + " done.", Log.CORE);
+        }
     }
 
     @AfterClass
