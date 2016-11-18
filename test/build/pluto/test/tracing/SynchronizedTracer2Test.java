@@ -21,7 +21,7 @@ import static build.pluto.test.build.Validators.list;
 /**
  * Created by manuel on 9/21/16.
  */
-public class SynchronizedTracerTest2 extends ScopedBuildTest {
+public class SynchronizedTracer2Test extends ScopedBuildTest {
 
     private boolean find(List<FileDependency> deps, Predicate<FileDependency> predicate) {
         for (FileDependency d : deps) {

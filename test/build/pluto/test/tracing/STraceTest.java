@@ -3,9 +3,7 @@ package build.pluto.test.tracing;
 import build.pluto.test.build.ScopedBuildTest;
 import build.pluto.test.build.ScopedPath;
 import build.pluto.test.build.cycle.fixpoint.FileUtils;
-import build.pluto.tracing.FileDependency;
-import build.pluto.tracing.FileAccessMode;
-import build.pluto.tracing.Tracer;
+import build.pluto.tracing.*;
 import org.junit.Test;
 import org.sugarj.common.FileCommands;
 
@@ -32,7 +30,7 @@ public class STraceTest extends ScopedBuildTest {
 
     @Test
     public void testTracing() throws Exception {
-        Tracer t = new Tracer();
+        ITracer t = new TracerCommonsExec();
         t.ensureStarted();
         Thread.sleep(200);
         assert(0 == FileUtils.readIntFromFile(file));

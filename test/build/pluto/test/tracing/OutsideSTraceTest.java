@@ -4,6 +4,7 @@ import build.pluto.test.build.ScopedBuildTest;
 import build.pluto.test.build.ScopedPath;
 import build.pluto.test.build.cycle.fixpoint.FileUtils;
 import build.pluto.tracing.*;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.sugarj.common.FileCommands;
 
@@ -27,6 +28,7 @@ public class OutsideSTraceTest extends ScopedBuildTest {
     @ScopedPath("test4.txt")
     private File file4;
 
+    @Ignore
     @Test
     public void testTracing() throws Exception {
         ITracer t = new OutsideTracer();

@@ -27,7 +27,7 @@ import static build.pluto.test.build.Validators.validateThat;
 /**
  * Created by manuel on 9/21/16.
  */
-public class SynchronizedTracerTest3 extends ScopedBuildTest {
+public class SynchronizedTracer3Test extends ScopedBuildTest {
 
     private boolean find(List<FileDependency> deps, Predicate<FileDependency> predicate) {
         for (FileDependency d : deps) {
@@ -130,7 +130,7 @@ public class SynchronizedTracerTest3 extends ScopedBuildTest {
     @Test
     public void testMultithreadedTracing() throws ITracer.TracingException, InterruptedException {
         final int threads = 50;
-        final int par_threads = 4;
+        final int par_threads = 2;
         final int files = 10;
 
         Log.log.setLoggingLevel(Log.ALWAYS);
@@ -184,6 +184,7 @@ public class SynchronizedTracerTest3 extends ScopedBuildTest {
             for (int i = 0; i < num_files; i++) {
                 final File f = new File("/tmp/thread" + num + "_" + i + ".notexisting");
                 try {
+                    Log.log.log("Worker " + num + " reading: " + f.toString(), Log.CORE);
                     FileCommands.readFileLines(f);
                 } catch (IOException e) {
                 }
