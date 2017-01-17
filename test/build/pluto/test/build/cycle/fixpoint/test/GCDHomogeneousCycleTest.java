@@ -56,7 +56,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
     }
   }
 
-  @Test(timeout = 1000)
+  @Test(timeout = 10000)
   public void testBuildGCDCycle() throws IOException {
     assertEquals(10, BigInteger.valueOf(20).gcd(BigInteger.valueOf(10)).intValue());
     new TrackingBuildManager().require(mainBuildRequest, true).getUnit();
@@ -66,7 +66,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
     assertAllFilesConsistent();
   }
 
-  @Test(timeout = 1000)
+  @Test(timeout = 10000)
   public void testRebuildRootUnitInconsistent() throws Throwable {
 
     Log.log.setLoggingLevel(Log.DETAIL | Log.CORE);
@@ -93,7 +93,7 @@ public class GCDHomogeneousCycleTest extends ScopedBuildTest {
 
   }
 
-  @Test(timeout = 1000)
+  @Test(timeout = 10000)
   public void testRebuildCycle1UnitInconsistent() throws Throwable {
 
     // Do a first clean build

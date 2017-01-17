@@ -47,14 +47,14 @@ public class NestedCycleAtOnceTest extends SimpleBuildTest{
 		return new BuildRequest<ArrayList<TestBuilderInput>,None, SimpleCyclicAtOnceBuilder, BuilderFactory<ArrayList<TestBuilderInput>, None, SimpleCyclicAtOnceBuilder>> (SimpleCyclicAtOnceBuilder.factory, BuildCycleAtOnceBuilder.singletonArrayList(input));
 	}
 	
-	@Test(timeout=2000)
+	@Test(timeout=10000)
 	public void testCleanRebuild() throws IOException {
 		TrackingBuildManager manager = buildMainFile();
 		
 		validateThat(executedFilesOf(manager).containsSameElements(main, cycleEntry, cyclePart, subcycleEntry, subcyclePart1));
 	}
 	
-	@Test(timeout=2000)
+	@Test(timeout=10000)
 	public void testRebuildWithChangedCycleStructure() throws IOException {
 		testCleanRebuild();
 		

@@ -62,7 +62,7 @@ public class GCDMultipleCyclesTest extends ScopedBuildTest{
 	}
 	
 
-	@Test (timeout = 1000)
+	@Test (timeout = 10000)
 	public void testBuildClean() throws IOException{
 		TrackingBuildManager manager = build();
 
@@ -71,7 +71,7 @@ public class GCDMultipleCyclesTest extends ScopedBuildTest{
 		validateThat(successfulyExecutedFilesOf(manager).containsSameElements(main, leaf, cycle1));
 	}
 	
-  @Test(timeout = 1000)
+  @Test(timeout = 10000)
 	public void testRebuildInconsistentLeafSource() throws IOException{
 		build();
 		
@@ -88,7 +88,7 @@ public class GCDMultipleCyclesTest extends ScopedBuildTest{
 		validateThat(requiredFilesOf(manager).containsSameElements(main, cycle1, cycle2, cycle3, leaf));
 	}
 	
-	@Test (timeout = 1000)
+	@Test (timeout = 10000)
 	public void testRebuildInconsistentCycle3Source() throws IOException{
 		build();
 		
