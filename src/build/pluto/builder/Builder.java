@@ -179,13 +179,13 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
                     }
                 }
             }
-            for (FileRequirement requirement : this.result.getGeneratedFileRequirements()) {
+            for (File file : this.result.getGeneratedFiles()) {
                 boolean found = false;
                 for (FileDependency fileDependency : trackedFileDependencies) {
-                    found |= (fileDependency.getFile().equals(requirement.file) && fileDependency.getMode() == FileAccessMode.WRITE_MODE);
+                    found |= (fileDependency.getFile().equals(file) && fileDependency.getMode() == FileAccessMode.WRITE_MODE);
                 }
                 if (!found) {
-                    Log.log.log("Defined provided file was not tracked: " + requirement.file, Log.CORE, Ansi.Color.RED);
+                    Log.log.log("Defined provided file was not tracked: " + file, Log.CORE, Ansi.Color.RED);
                 }
             }
         }
@@ -211,7 +211,6 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
             }
         }
         if (this.useVerificationMode()) {
-            // TODO: Implement this correctly.
             trackedFileDependencies.addAll(manager.tracer.popDependencies());
         }
     }
