@@ -91,7 +91,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity imple
         requirements.add(new FileRequirement(file, stampOfFile));
     }
 
-    private boolean requirementsContains(File file) {
+    public boolean requirementsContains(File file) {
         for (Requirement r: requirements) {
             if (r instanceof FileRequirement && ((FileRequirement)r).file.getAbsoluteFile().equals(file.getAbsoluteFile()))
                 return true;
@@ -121,7 +121,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity imple
         requirements.add(req);
     }
 
-    private boolean generatesContain(File file) {
+    public boolean generatesContains(File file) {
         for (FileRequirement r: generatedFiles) {
             if (r.file.getAbsoluteFile().equals(file.getAbsoluteFile()))
                 return true;
@@ -142,7 +142,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity imple
     }
 
     public void generatesOnce(FileRequirement req) {
-        if (generatesContain(req.file))
+        if (generatesContains(req.file))
             generatedFiles.add(req);
     }
 

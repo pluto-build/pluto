@@ -42,8 +42,28 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
         }
     };
 
+    public static BuilderFactory<TestBuilderInput, None, SimpleBuilder> factoryVerificationMode = new BuilderFactory<TestBuilderInput, None, SimpleBuilder>() {
+        @Override
+        public SimpleBuilder makeBuilder(TestBuilderInput input) {
+            SimpleBuilder builder = new SimpleBuilder(input);
+            builder.setVerificationMode(true);
+            return builder;
+        }
+
+        @Override
+        public boolean isOverlappingGeneratedFileCompatible(File overlap, Serializable input, BuilderFactory<?, ?, ?> otherFactory, Serializable otherInput) {
+            return false;
+        }
+
+        @Override
+        public InputParser<TestBuilderInput> inputParser() {
+            return null;
+        }
+    };
+
 
     private boolean fileDiscovery = false;
+    private boolean verificationMode = false;
 
     public static class TestBuilderInput implements Serializable {
         /**
@@ -139,7 +159,16 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
         return fileDiscovery;
     }
 
+    @Override
+    protected boolean useVerificationMode() {
+        return verificationMode;
+    }
+
     public void setFileDiscovery(boolean fileDiscovery) {
         this.fileDiscovery = fileDiscovery;
+    }
+
+    public void setVerificationMode(boolean verificationMode) {
+        this.verificationMode = verificationMode;
     }
 }
