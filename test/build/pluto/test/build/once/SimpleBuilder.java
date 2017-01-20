@@ -138,6 +138,8 @@ public class SimpleBuilder extends Builder<TestBuilderInput, None> {
                         depFile));
                 if (useFileDependencyDiscovery())
                     requireBuild(factoryFileDepDiscovery, depInput);
+                else if (useVerificationMode())
+                    requireBuild(factoryVerificationMode, depInput);
                 else
                     requireBuild(factory, depInput);
             } else {

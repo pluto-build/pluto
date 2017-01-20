@@ -156,20 +156,14 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
 
     private void verifyFileDependencies() {
         if (this.useVerificationMode()) {
-            Log.log.log("VERIFING:", Log.ALWAYS, Ansi.Color.RED);
-            Log.log.log(this.trackedFileDependencies.toString(), Log.ALWAYS, Ansi.Color.BLUE);
             for (FileDependency d : trackedFileDependencies) {
                 if (d.getMode().equals(FileAccessMode.READ_MODE)) {
                     if (!this.result.requirementsContains(d.getFile())) {
-                        Log.log.log("Read file was not required: " + d.getFile(), Log.ALWAYS, Ansi.Color.RED);
-                    } else {
-                        Log.log.log("Read file was correctly required: " + d.getFile(), Log.ALWAYS, Ansi.Color.GREEN);
+                        Log.log.log("Read file was not required: " + d.getFile(), Log.CORE, Ansi.Color.RED);
                     }
                 } else {
                     if (!this.result.generatesContains(d.getFile())) {
-                        Log.log.log("Written file was not generated: " + d.getFile(), Log.ALWAYS, Ansi.Color.RED);
-                    } else {
-                        Log.log.log("Written file was correctly generated: " + d.getFile(), Log.ALWAYS, Ansi.Color.GREEN);
+                        Log.log.log("Written file was not generated: " + d.getFile(), Log.CORE, Ansi.Color.RED);
                     }
                 }
             }
@@ -181,9 +175,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
                         found |= (fileDependency.getFile().equals(fileRequirement.file) && fileDependency.getMode() == FileAccessMode.READ_MODE);
                     }
                     if (!found) {
-                        Log.log.log("Defined required file was not tracked: " + fileRequirement.file, Log.ALWAYS, Ansi.Color.RED);
-                    } else {
-                        Log.log.log("Defined required file was correctly tracked: " + fileRequirement.file, Log.ALWAYS, Ansi.Color.GREEN);
+                        Log.log.log("Defined required file was not tracked: " + fileRequirement.file, Log.CORE, Ansi.Color.RED);
                     }
                 }
             }
@@ -193,9 +185,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
                     found |= (fileDependency.getFile().equals(requirement.file) && fileDependency.getMode() == FileAccessMode.WRITE_MODE);
                 }
                 if (!found) {
-                    Log.log.log("Defined provided file was not tracked: " + requirement.file, Log.ALWAYS, Ansi.Color.RED);
-                } else {
-                    Log.log.log("Defined provided file was correctly tracked: " + requirement.file, Log.ALWAYS, Ansi.Color.GREEN);
+                    Log.log.log("Defined provided file was not tracked: " + requirement.file, Log.CORE, Ansi.Color.RED);
                 }
             }
         }
