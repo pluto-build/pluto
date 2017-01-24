@@ -3,6 +3,7 @@ package build.pluto.builder;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -27,6 +28,7 @@ import build.pluto.tracing.FileDependency;
 import build.pluto.tracing.ITracer;
 import build.pluto.tracing.Tracer;
 import org.fusesource.jansi.Ansi;
+import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
 
 /**
@@ -170,6 +172,9 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
             for (Requirement requirement : this.result.getRequirements()) {
                 if (requirement instanceof FileRequirement) {
                     FileRequirement fileRequirement = (FileRequirement) requirement;
+                    Path path = FileCommands.getRessourcePath(this.getClass());
+                    if (path != null && fileRequirement.file.getAbsoluteFile().equals(path.toAbsolutePath().toFile()))
+                        break;
                     boolean found = false;
                     for (FileDependency fileDependency : trackedFileDependencies) {
                         found |= (fileDependency.getFile().equals(fileRequirement.file) && fileDependency.getMode() == FileAccessMode.READ_MODE);
