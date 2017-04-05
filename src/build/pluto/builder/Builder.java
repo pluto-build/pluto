@@ -202,7 +202,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
    * @return the build output of the request
    * @throws IOException
    */
-  private
+  public
 //@formatter:off
   <In_ extends Serializable,
    Out_ extends Output, 
