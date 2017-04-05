@@ -304,6 +304,13 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity imple
 		return InconsistenyReason.NO_REASON;
 	}
 
+  public boolean isExpired() {
+    if(buildResult != null && buildResult instanceof build.pluto.output.Out<?>) {
+      return ((build.pluto.output.Out<?>)buildResult).expired();
+    }
+    return false;
+  }
+
   public boolean isConsistent() {
 		ModuleVisitor<Boolean> isConsistentVisitor = new ModuleVisitor<Boolean>() {
 			@Override
