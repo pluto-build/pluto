@@ -321,7 +321,7 @@ public class BuildManager extends BuildUnitProvider implements AutoCloseable {
         }
       }
 
-      if (depResult != null && requireStack.isConsistent(buildReq))
+      if (depResult != null && !depResult.isExpired() && requireStack.isConsistent(buildReq))
         return yield(buildReq, builder, depResult);
 
       Set<BuildReason> reasons = computeLocalBuildReasons(buildReq, needBuildResult, dep, depResult);

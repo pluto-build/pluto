@@ -133,7 +133,7 @@ public abstract class BuildCycleAtOnceBuilder<In extends Serializable, Out exten
     }
   }
 
-  private 
+  public 
 //@formatter:off
   <In_ extends Serializable,
    Out_ extends Output, 
