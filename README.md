@@ -26,3 +26,8 @@ Tests that include dependency discovery can then be run by
 ```
 mvn -Dtest=*WithDepDiscovery test
 ```
+
+* Execute existing container
+```
+docker exec -it <container name> bash -c "cd /share/pluto/; cd common; mvn install; cd ../pluto; mvn -Dtest=*WithDepDiscovery test"
+```
