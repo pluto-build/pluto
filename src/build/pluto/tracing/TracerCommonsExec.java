@@ -2,11 +2,13 @@ package build.pluto.tracing;
 
 import build.pluto.util.SystemUtils;
 import org.apache.commons.exec.*;
+import org.fusesource.jansi.Ansi;
 import org.sugarj.common.Log;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -28,7 +30,7 @@ public class TracerCommonsExec implements ITracer {
     LogOutputStream errStream;
     DefaultExecutor executor;
 
-    List<FileDependency> buffer = new ArrayList<>();
+    HashSet<FileDependency> buffer = new HashSet<>();
 
     @Override
     public void start() throws TracingException {
@@ -63,7 +65,7 @@ public class TracerCommonsExec implements ITracer {
         executor.setStreamHandler(streamHandler);
         executor.setWatchdog(new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT));
         try {
-            executor.execute(CommandLine.parse("strace -f -q -e trace=open -ttt -p"+ Integer.toString(pid)),resultHandler);
+            executor.execute(CommandLine.parse("strace -f -q -e trace=open,rename -ttt -p"+ Integer.toString(pid)),resultHandler);
             Log.log.log("Started tracer...", Log.DETAIL);
         } catch (IOException e) {
             e.printStackTrace();
@@ -81,15 +83,17 @@ public class TracerCommonsExec implements ITracer {
     }
 
     @Override
-    public List<FileDependency> popDependencies() throws TracingException {
+    public HashSet<FileDependency> popDependencies() throws TracingException {
         if (!isRunning())
             throw new TracingException("Trace was not running...");
 
-        List<FileDependency> result;
+        HashSet<FileDependency> result;
         synchronized (buffer) {
-            result = new ArrayList<>(buffer);
+            result = new HashSet<>(buffer);
             buffer.clear();
         }
+
+        //Log.log.log("Popped: " + result, Log.DETAIL, Ansi.Color.CYAN);
 
         return result;
     }

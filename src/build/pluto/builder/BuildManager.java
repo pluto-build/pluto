@@ -410,6 +410,8 @@ public class BuildManager extends BuildUnitProvider {
     } else {
       if (!depResult.getGeneratedBy().deepEquals(buildReq)) {
         report.messageFromSystem("Builder Input changed", false, 10);
+        report.messageFromSystem(depResult.getGeneratedBy().input.toString(), false, 10);
+        report.messageFromSystem(buildReq.input.toString(), false, 10);
         reasons.add(BuildReason.ChangedBuilderInput);
       }
       

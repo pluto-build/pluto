@@ -3,12 +3,10 @@ package build.pluto.tracing;
 import org.fusesource.jansi.Ansi;
 import org.sugarj.common.FileCommands;
 import org.sugarj.common.Log;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Random;
 
 import static build.pluto.builder.Builder.PLUTO_HOME;
@@ -19,14 +17,14 @@ import static build.pluto.builder.Builder.PLUTO_HOME;
 public class SynchronizedTracer implements ITracer {
 
     private ITracer baseTracer;
-    private List<FileDependency> buffer;
+    private HashSet<FileDependency> buffer;
     //private File lastDummyFile;
     private static int TIMEOUT = 10000;
     private static int MAX_RETRIES = 3;
 
     public SynchronizedTracer(ITracer baseTracer) {
         this.baseTracer = baseTracer;
-        this.buffer = new ArrayList<>();
+        this.buffer = new HashSet<>();
     }
 
     Random r = new Random();
@@ -42,7 +40,7 @@ public class SynchronizedTracer implements ITracer {
             FileCommands.readFileLines(dummy);
         } catch (IOException e) {
         }
-        this.buffer = new ArrayList<>();
+        this.buffer = new HashSet<>();
         int tries = 0;
         while (tries < MAX_RETRIES) {
             try {
@@ -61,7 +59,7 @@ public class SynchronizedTracer implements ITracer {
                     throw te;
             }
         }
-        this.buffer = new ArrayList<>();
+        this.buffer = new HashSet<>();
         Log.log.log("Tracer started and synchronized...", Log.DETAIL);
     }
 
@@ -70,13 +68,13 @@ public class SynchronizedTracer implements ITracer {
         baseTracer.start();
     }
 
-    public List<FileDependency> synchronize(File dummy) throws TracingException {
+    public HashSet<FileDependency> synchronize(File dummy) throws TracingException {
         try {
             FileCommands.readFileAsString(dummy);
         } catch (IOException e) {
         }
 
-        List<FileDependency> result = new ArrayList<>();
+        HashSet<FileDependency> result = new HashSet<>();
         result.addAll(buffer);
         buffer.clear();
 
@@ -100,13 +98,13 @@ public class SynchronizedTracer implements ITracer {
     }
 
     @Override
-    public List<FileDependency> popDependencies() throws TracingException {
+    public HashSet<FileDependency> popDependencies() throws TracingException {
         return synchronize(newDummyFile());
     }
 
     @Override
     public void stop() {
-        this.buffer = new ArrayList<>();
+        this.buffer = new HashSet<>();
         baseTracer.stop();
     }
 

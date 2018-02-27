@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
 import build.pluto.BuildUnit;
@@ -199,7 +200,7 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
     private void generateCurrentFileDependencies() throws Tracer.TracingException {
         if (this.useFileDependencyDiscovery()) {
             if (!Thread.currentThread().isInterrupted()) {
-                List<FileDependency> fileDeps = manager.tracer.popDependencies();
+                HashSet<FileDependency> fileDeps = manager.tracer.popDependencies();
                 Log.log.log(fileDeps.toString(), Log.DETAIL, Ansi.Color.BLUE);
                 for (FileDependency d : fileDeps) {
                     if (!d.getFile().getAbsoluteFile().equals(this.persistentPath().getAbsoluteFile())) {
@@ -363,6 +364,24 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
         }
     }
 
+    private String[] blacklistContains = new String[] { ".java/.userPrefs/" };
+    private String[] blacklistStartsWith = new String[] { "/usr/lib/jvm/", "/sys/devices/", "/lib/", "/etc/", "/proc/" };
+
+    public boolean blacklistsExcluded(File file) {
+        // TODO: Very hacky...
+        if (file.getName().endsWith(".dep"))
+            return true;
+        for (String b: blacklistContains)
+            if (file.getAbsolutePath().contains(b))
+                return true;
+        for (String b: blacklistStartsWith)
+            if (file.getAbsolutePath().startsWith(b))
+                return true;
+        if (!file.isFile() || !file.exists())
+            return true;
+        return false;
+    }
+
     /**
      * Requires the given file stamped with the default stamper of this builder once. If it was already required, the call will be ignored.
      * The call to require needs to be placed before any calculation is done which
@@ -371,17 +390,21 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
      * @param p the required file
      */
     public void requireOnce(File p) {
-        requireOnce(p, defaultStamper.stampOf(p));
+        if (!blacklistsExcluded(p))
+            requireOnce(p, defaultStamper.stampOf(p));
     }
 
     public void requireOnce(File p, Stamper stamper) {
-        requireOnce(p, stamper.stampOf(p));
+        if (!blacklistsExcluded(p))
+            requireOnce(p, stamper.stampOf(p));
     }
 
     public void requireOnce(File p, Stamp stamp) {
         try {
-            result.requiresOnce(p, stamp);
+            if (!blacklistsExcluded(p))
+                result.requiresOnce(p, stamp);
         } catch (IllegalDependencyException e) {
+            Log.log.log("Found IllegalDependencyException " + e.getMessage(), Log.DETAIL, Ansi.Color.RED);
             File path = result.getPersistentPath().getAbsoluteFile();
             for (File f : e.deps)
                 if (f.getAbsoluteFile().equals(path))
@@ -432,7 +455,8 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
      * @param p the provided file
      */
     public void provideOnce(File p) {
-        result.generatesOnce(p, LastModifiedStamper.instance.stampOf(p));
+        if (!blacklistsExcluded(p))
+            result.generatesOnce(p, LastModifiedStamper.instance.stampOf(p));
     }
 
     /**
@@ -444,11 +468,13 @@ public abstract class Builder<In extends Serializable, Out extends Output> {
      * @param stamper the stamper used to stamp the file
      */
     public void provideOnce(File p, Stamper stamper) {
-        result.generatesOnce(p, stamper.stampOf(p));
+        if (!blacklistsExcluded(p))
+            result.generatesOnce(p, stamper.stampOf(p));
     }
 
     public void provideOnce(FileRequirement req) {
-        result.generatesOnce(req);
+        if (!blacklistsExcluded(req.file))
+            result.generatesOnce(req);
     }
 
 

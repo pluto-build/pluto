@@ -10,6 +10,7 @@ import org.sugarj.common.path.AbsolutePath;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -62,7 +63,7 @@ public class Tracer implements ITracer {
         popDependencies();
     }
 
-    public List<FileDependency> getAllDependencies() throws TracingException {
+    public HashSet<FileDependency> getAllDependencies() throws TracingException {
         if (result == null)
             throw new TracingException("Trace was not running...");
         List<String> resultList = result.peekErrMsgs();
@@ -73,7 +74,7 @@ public class Tracer implements ITracer {
     int readCount = 0;
 
     @Override
-    public List<FileDependency> popDependencies() throws TracingException {
+    public HashSet<FileDependency> popDependencies() throws TracingException {
         /*try {
             Thread.sleep(300);
         } catch (InterruptedException e) {

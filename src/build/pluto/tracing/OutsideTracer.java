@@ -7,6 +7,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import static build.pluto.builder.Builder.PLUTO_HOME;
@@ -54,7 +55,7 @@ public class OutsideTracer implements ITracer {
         } catch (IOException e) {
             throw new TracingException("strace appears not to be running...");
         }
-        List<FileDependency> deps = null;
+        HashSet<FileDependency> deps = null;
         boolean notReadDummy = true;
         do {
             deps = popDependencies();
@@ -71,9 +72,9 @@ public class OutsideTracer implements ITracer {
     }
 
     @Override
-    public List<FileDependency> popDependencies() throws TracingException {
+    public HashSet<FileDependency> popDependencies() throws TracingException {
         List<String> lines = null;
-        List<FileDependency> dependencies = new ArrayList<>();
+        HashSet<FileDependency> dependencies = new HashSet<>();
         try {
             lines = FileCommands.readFileLines(tracingFile);
         } catch (IOException e) {

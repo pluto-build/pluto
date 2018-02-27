@@ -7,11 +7,6 @@ public class FileDependency {
     FileAccessMode mode;
     boolean fileExisted;
     File file;
-    Date date;
-
-    public Date getDate() { return date; }
-
-    public void setDate(Date date) { this.date = date; }
 
     public FileAccessMode getMode() {
         return mode;
@@ -37,10 +32,9 @@ public class FileDependency {
         this.fileExisted = fileExisted;
     }
 
-    public FileDependency(FileAccessMode mode, File file, Date date) {
+    public FileDependency(FileAccessMode mode, File file) {
         this.mode = mode;
         this.file = file;
-        this.date = date;
         this.fileExisted = true;
     }
 
@@ -51,26 +45,22 @@ public class FileDependency {
 
         FileDependency that = (FileDependency) o;
 
-        if (getFileExisted() != that.getFileExisted()) return false;
-        if (getMode() != that.getMode()) return false;
-        if (getFile() != null ? !getFile().equals(that.getFile()) : that.getFile() != null) return false;
-        return getDate() != null ? getDate().equals(that.getDate()) : that.getDate() == null;
-
+        //if (fileExisted != that.fileExisted) return false;
+        if (mode != that.mode) return false;
+        return file != null ? file.equals(that.file) : that.file == null;
     }
 
     @Override
     public int hashCode() {
-        int result = getMode() != null ? getMode().hashCode() : 0;
-        result = 31 * result + (getFileExisted() ? 1 : 0);
-        result = 31 * result + (getFile() != null ? getFile().hashCode() : 0);
-        result = 31 * result + (getDate() != null ? getDate().hashCode() : 0);
+        int result = mode.hashCode();
+        result = 31 * result + (file != null ? file.hashCode() : 0);
         return result;
     }
 
     public String toString() {
         String notExisting = "";
-        if (!fileExisted)
-            notExisting = " (X)";
+        //if (!fileExisted)
+        //    notExisting = " (X)";
         return file.toString() + " (" + mode + notExisting + ")";
     }
 }

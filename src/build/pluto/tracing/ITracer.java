@@ -1,5 +1,6 @@
 package build.pluto.tracing;
 
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -15,7 +16,7 @@ public interface ITracer {
     void ensureStarted() throws TracingException;
     void start() throws TracingException;
 
-    List<FileDependency> popDependencies() throws TracingException;
+    HashSet<FileDependency> popDependencies() throws TracingException;
 
     void stop();
 

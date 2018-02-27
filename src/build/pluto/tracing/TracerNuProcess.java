@@ -16,7 +16,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
 
 /**
  * Created by Manuel Weiel on 9/7/16.
@@ -123,7 +123,7 @@ public class TracerNuProcess implements ITracer {
     }
 
     @Override
-    public List<FileDependency> popDependencies() throws TracingException {
+    public HashSet<FileDependency> popDependencies() throws TracingException {
         /*try {
             Thread.sleep(300);
         } catch (InterruptedException e) {

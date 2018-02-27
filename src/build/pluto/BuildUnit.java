@@ -22,6 +22,8 @@ import build.pluto.output.Output;
 import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamp;
 import build.pluto.util.TraceData;
+import org.fusesource.jansi.Ansi;
+import org.sugarj.common.Log;
 
 /**
  * Dependency management for modules.
@@ -92,16 +94,21 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity imple
     }
 
     public boolean requirementsContains(File file) {
-        for (Requirement r: requirements) {
-            if (r instanceof FileRequirement && ((FileRequirement)r).file.getAbsoluteFile().equals(file.getAbsoluteFile()))
+        // TODO: This code is horribly slow...
+        for (FileRequirement fr: this.getRequiredFiles()) {
+            if (fr.file.equals(file))
                 return true;
         }
         return false;
     }
 
     public void requiresOnce(File file, Stamp stampOfFile) {
-        if (!requirementsContains(file))
+        // TODO: The requirementsContains check is slow
+        if (!requirementsContains(file)) {
             requires(file, stampOfFile);
+        } else {
+            Log.log.log(" File already required: " + file, Log.DETAIL, Ansi.Color.CYAN);
+        }
     }
 
     public <Out_ extends Output> void requires(BuildRequirement<Out_> req) {
@@ -142,7 +149,7 @@ public final class BuildUnit<Out extends Output> extends PersistableEntity imple
     }
 
     public void generatesOnce(FileRequirement req) {
-        if (generatesContains(req.file))
+        if (!generatesContains(req.file))
             generatedFiles.add(req);
     }
 

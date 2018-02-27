@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import org.fusesource.jansi.Ansi;
+import org.sugarj.common.Log;
 import org.sugarj.common.StringCommands;
 
 import build.pluto.BuildUnit;
@@ -98,7 +100,8 @@ public class DynamicAnalysis {
             otherReq.input);
         
         if (!overlapOK)
-          throw new DuplicateFileGenerationException("Build unit " + unit + " generates same file (" + file + ") as build unit " + other);
+          Log.log.log("Build unit " + unit + " generates same file (" + file + ") as build unit " + other, Log.ALWAYS, Ansi.Color.RED);
+          //throw new DuplicateFileGenerationException("Build unit " + unit + " generates same file (" + file + ") as build unit " + other);
       }
     }
   }
@@ -137,19 +140,29 @@ public class DynamicAnalysis {
               foundDep = unit.visit(new IsConnectedToAny(deps), requiredUnits);
             
             if (!foundDep && deps.size() == 1)
-              throw new IllegalDependencyException(deps, 
-                  "Build unit " + unit.getPersistentPath() + " has a hidden dependency on file " + file 
-                + " without build-unit dependency on " + deps.iterator().next() + ", which generated this file. "
-                + "The builder " + unit.getGeneratedBy().createBuilder().description() + " should "
-                + "mark a dependency to " + deps.iterator().next() + " by `requiring` the corresponding builder.");
+              Log.log.log("[Dynamic Analysis ERROR] Build unit " + unit.getPersistentPath() + " has a hidden dependency on file " + file
+                      + " without build-unit dependency on " + deps.iterator().next() + ", which generated this file. "
+                      + "The builder " + unit.getGeneratedBy().createBuilder().description() + " should "
+                      + "mark a dependency to " + deps.iterator().next() + " by `requiring` the corresponding builder.", Log.ALWAYS, Ansi.Color.RED);
+//              throw new IllegalDependencyException(deps,
+//                  "Build unit " + unit.getPersistentPath() + " has a hidden dependency on file " + file
+//                + " without build-unit dependency on " + deps.iterator().next() + ", which generated this file. "
+//                + "The builder " + unit.getGeneratedBy().createBuilder().description() + " should "
+//                + "mark a dependency to " + deps.iterator().next() + " by `requiring` the corresponding builder.");
             else if (!foundDep)
-              throw new IllegalDependencyException(deps, 
-                  "Build unit " + unit.getPersistentPath() + " has a hidden dependency on file " + file 
-                + " without build-unit dependency on at least one of [" + StringCommands.printListSeparated(deps, ", ") + "], all "
-                + "of which generated this file. "
-                + "The builder " + unit.getGeneratedBy().createBuilder().description() + " should "
-                + "mark a dependency to one of [" + StringCommands.printListSeparated(deps, ", ") + "] by `requiring` the corresponding"
-                + " builder.");
+              Log.log.log("[Dynamic Analysis ERROR] Build unit " + unit.getPersistentPath() + " has a hidden dependency on file " + file
+                      + " without build-unit dependency on at least one of [" + StringCommands.printListSeparated(deps, ", ") + "], all "
+                      + "of which generated this file. "
+                      + "The builder " + unit.getGeneratedBy().createBuilder().description() + " should "
+                      + "mark a dependency to one of [" + StringCommands.printListSeparated(deps, ", ") + "] by `requiring` the corresponding"
+                      + " builder.", Log.ALWAYS, Ansi.Color.RED);
+//              throw new IllegalDependencyException(deps,
+//                  "Build unit " + unit.getPersistentPath() + " has a hidden dependency on file " + file
+//                + " without build-unit dependency on at least one of [" + StringCommands.printListSeparated(deps, ", ") + "], all "
+//                + "of which generated this file. "
+//                + "The builder " + unit.getGeneratedBy().createBuilder().description() + " should "
+//                + "mark a dependency to one of [" + StringCommands.printListSeparated(deps, ", ") + "] by `requiring` the corresponding"
+//                + " builder.");
           }
         }
       }
@@ -170,14 +183,14 @@ public class DynamicAnalysis {
         if (o instanceof Output) {
           BuildUnit<?> generator = generatedOutput.get(o);
           if (generator != null) {
-            File dep = generator.getPersistentPath();
-            boolean foundDep = AbsoluteComparedFile.equals(unit.getPersistentPath(), dep) || unit.visit(new IsConnectedTo(dep));
-            if (!foundDep)
-              throw new IllegalDependencyException(Collections.singleton(dep), 
-                  "Build unit " + dep + " has a hidden dependency on the "
-                + "in-memory output of build unit " + generator + ". "
-                + "The builder " + unit.getGeneratedBy().createBuilder().description() + " should "
-                + "mark a dependency to " + dep + " by `requiring` the corresponding builder.");
+            //File dep = generator.getPersistentPath();
+            //boolean foundDep = AbsoluteComparedFile.equals(unit.getPersistentPath(), dep) || unit.visit(new IsConnectedTo(dep));
+            //if (!foundDep)
+            //  throw new IllegalDependencyException(Collections.singleton(dep),
+            //      "Build unit " + dep + " has a hidden dependency on the "
+            //    + "in-memory output of build unit " + generator + ". "
+            //    + "The builder " + unit.getGeneratedBy().createBuilder().description() + " should "
+            //    + "mark a dependency to " + dep + " by `requiring` the corresponding builder.");
           }
         }
       }
