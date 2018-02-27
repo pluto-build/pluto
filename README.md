@@ -17,7 +17,7 @@ docker build -t pluto-docker .
 * Run docker image
 
 ```
-docker run -t -i --security-opt seccomp:unconfined -v <working copy>/:/share/pluto/ -w /share/pluto pluto-docker
+docker run -t -i --privileged=true --security-opt=seccomp:unconfined -v <working copy>/:/share/pluto/ -w /share/pluto pluto-docker
 ```
 
 Boots into a terminal and shares home folder.
@@ -25,4 +25,9 @@ Tests that include dependency discovery can then be run by
 
 ```
 mvn -Dtest=*WithDepDiscovery test
+```
+
+* Execute existing container
+```
+docker exec -it <container name> bash -c "cd /share/pluto/; cd common; mvn install; cd ../pluto; mvn -Dtest=*WithDepDiscovery test"
 ```
