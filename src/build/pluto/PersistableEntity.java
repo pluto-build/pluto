@@ -101,10 +101,8 @@ public abstract class PersistableEntity implements Serializable {
     if (!p.exists())
       return null;
       
-    ObjectInputStream in = null;
     E entity = null;
-    try {
-      in = new ObjectInputStream(new FileInputStream(p));
+    try(ObjectInputStream in = new ObjectInputStream(new FileInputStream(p))) {
       long id = in.readLong();
 
       entity = readFromMemoryCache(clazz, p);
@@ -132,9 +130,6 @@ public abstract class PersistableEntity implements Serializable {
       if (entity != null)
         entity.removeFromMemoryCache();
       return null;
-    } finally {
-      if (in != null)
-        in.close();
     }
   }
   
